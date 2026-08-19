@@ -1,20 +1,22 @@
 package edu.nus.cs3227.fencingtournament.ui;
 
+import edu.nus.cs3227.fencingtournament.application.TournamentService;
+import edu.nus.cs3227.fencingtournament.persistence.JsonTournamentRepository;
 import javafx.application.Application;
-import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
-/** Initial JavaFX shell. Tournament views will be introduced in later increments. */
+/** JavaFX composition root for the registration workflow. */
 public final class FencingTournamentApp extends Application {
     @Override
     public void start(Stage stage) {
-        Label message = new Label("Fencing Tournament Manager\nProject skeleton");
-        StackPane root = new StackPane(message);
+        TournamentView view = new TournamentView();
+        TournamentService service = new TournamentService(new JsonTournamentRepository());
+        new TournamentController(service, view);
 
         stage.setTitle("Fencing Tournament Manager");
-        stage.setScene(new Scene(root, 720, 480));
+        stage.setMinWidth(620);
+        stage.setMinHeight(440);
+        stage.setScene(view.scene());
         stage.show();
     }
 }

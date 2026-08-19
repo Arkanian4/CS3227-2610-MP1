@@ -2,8 +2,9 @@
 
 A local JavaFX desktop application for organising small internal fencing club tournaments.
 
-The project currently contains only the application and domain skeleton. Tournament workflows
-(registration, pool generation, results, standings, and elimination) have not yet been implemented.
+The application currently supports local tournament creation, fencer registration, and JSON
+save/load. Pool generation, results, standings, and elimination workflows are planned for later
+iterations.
 
 ## Prerequisites
 
@@ -24,7 +25,8 @@ From the project root, run:
 .\gradlew.bat run
 ```
 
-The application opens a placeholder JavaFX window. It does not yet manage tournament data.
+The application opens the registration screen. Create or load a tournament, add/remove fencers,
+and save the current tournament to a local JSON file.
 
 ## Structure
 
