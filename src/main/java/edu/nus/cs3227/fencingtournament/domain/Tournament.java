@@ -2,6 +2,7 @@ package edu.nus.cs3227.fencingtournament.domain;
 
 import edu.nus.cs3227.fencingtournament.domain.elimination.EliminationBracket;
 import edu.nus.cs3227.fencingtournament.domain.pool.Pool;
+import edu.nus.cs3227.fencingtournament.domain.pool.BoutScore;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -39,7 +40,8 @@ public final class Tournament {
         validateRoster(fencers);
         this.fencers = new ArrayList<>(fencers);
         this.seeding = seeding;
-        this.pools = List.copyOf(pools);
+        this.pools = new ArrayList<>(pools);
+        validatePoolResults(this.pools, settings.poolBoutScoreLimit());
         this.eliminationBracket = eliminationBracket;
     }
 
@@ -93,11 +95,44 @@ public final class Tournament {
     }
 
     public List<Pool> pools() {
-        return pools;
+        return List.copyOf(pools);
+    }
+
+    /** Records a result for an incomplete scheduled pool bout. */
+    public void recordPoolBoutResult(UUID poolId, UUID boutId, BoutScore score) {
+        updatePool(poolId, pool -> pool.recordBoutResult(boutId, score,
+                settings.poolBoutScoreLimit()));
+    }
+
+    /** Explicitly replaces a previously recorded result for correction purposes. */
+    public void replacePoolBoutResult(UUID poolId, UUID boutId, BoutScore score) {
+        updatePool(poolId, pool -> pool.replaceBoutResult(boutId, score,
+                settings.poolBoutScoreLimit()));
     }
 
     public EliminationBracket eliminationBracket() {
         return eliminationBracket;
+    }
+
+    private void updatePool(UUID poolId, java.util.function.UnaryOperator<Pool> update) {
+        if (pools.isEmpty()) {
+            throw new IllegalStateException("Pools must be generated before recording results.");
+        }
+        if (eliminationBracket != null) {
+            throw new IllegalStateException("Pool results cannot be changed after elimination begins.");
+        }
+        if (poolId == null) {
+            throw new IllegalArgumentException("Pool ID must not be null.");
+        }
+
+        for (int index = 0; index < pools.size(); index++) {
+            Pool pool = pools.get(index);
+            if (pool.id().equals(poolId)) {
+                pools.set(index, update.apply(pool));
+                return;
+            }
+        }
+        throw new IllegalArgumentException("Pool does not belong to this tournament.");
     }
 
     private void requireRegistrationPhase() {
@@ -130,6 +165,24 @@ public final class Tournament {
             if (!fencerIds.add(fencer.id())) {
                 throw new IllegalArgumentException("Fencer IDs must be unique within a tournament.");
             }
+        }
+    }
+
+    private static void validatePoolResults(List<Pool> pools, int scoreLimit) {
+        for (Pool pool : pools) {
+            if (pool == null) {
+                throw new IllegalArgumentException("Tournament pools must not contain null entries.");
+            }
+            pool.bouts().stream()
+                    .map(edu.nus.cs3227.fencingtournament.domain.pool.PoolBout::score)
+                    .filter(Objects::nonNull)
+                    .forEach(score -> {
+                        if (score.firstScore() > scoreLimit || score.secondScore() > scoreLimit
+                                || Math.max(score.firstScore(), score.secondScore()) != scoreLimit) {
+                            throw new IllegalArgumentException(
+                                    "Completed pool scores must use the configured winning limit.");
+                        }
+                    });
         }
     }
 }

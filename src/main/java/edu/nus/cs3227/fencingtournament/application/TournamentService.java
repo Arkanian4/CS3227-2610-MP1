@@ -3,6 +3,7 @@ package edu.nus.cs3227.fencingtournament.application;
 import edu.nus.cs3227.fencingtournament.domain.Fencer;
 import edu.nus.cs3227.fencingtournament.domain.Tournament;
 import edu.nus.cs3227.fencingtournament.domain.TournamentSettings;
+import edu.nus.cs3227.fencingtournament.domain.pool.BoutScore;
 import edu.nus.cs3227.fencingtournament.domain.standings.TieBreakCriterion;
 import edu.nus.cs3227.fencingtournament.domain.standings.TieBreakPolicy;
 
@@ -47,6 +48,14 @@ public final class TournamentService {
 
     public boolean removeFencer(UUID fencerId) {
         return requireActiveTournament().removeFencer(fencerId);
+    }
+
+    public void recordPoolBoutResult(UUID poolId, UUID boutId, BoutScore score) {
+        requireActiveTournament().recordPoolBoutResult(poolId, boutId, score);
+    }
+
+    public void replacePoolBoutResult(UUID poolId, UUID boutId, BoutScore score) {
+        requireActiveTournament().replacePoolBoutResult(poolId, boutId, score);
     }
 
     public Optional<Tournament> currentTournament() {
