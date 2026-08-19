@@ -1,17 +1,25 @@
 package edu.nus.cs3227.fencingtournament.ui;
 
+import edu.nus.cs3227.fencingtournament.application.PoolProgress;
 import edu.nus.cs3227.fencingtournament.application.TournamentService;
 import edu.nus.cs3227.fencingtournament.domain.Fencer;
 import edu.nus.cs3227.fencingtournament.domain.Tournament;
+import edu.nus.cs3227.fencingtournament.domain.TournamentPhase;
+import edu.nus.cs3227.fencingtournament.domain.pool.BoutScore;
+import edu.nus.cs3227.fencingtournament.domain.pool.Pool;
+import edu.nus.cs3227.fencingtournament.domain.pool.PoolBout;
+import edu.nus.cs3227.fencingtournament.domain.standings.PoolStanding;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.stage.FileChooser;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
-/** Connects JavaFX events to the application service. */
+/** Routes JavaFX events to the application service and renders returned state. */
 public final class TournamentController {
     private final TournamentService service;
     private final TournamentView view;
@@ -21,6 +29,7 @@ public final class TournamentController {
         this.service = service;
         this.view = view;
         wireActions();
+        refreshWorkspace();
     }
 
     private void wireActions() {
@@ -28,108 +37,212 @@ public final class TournamentController {
         view.loadButton().setOnAction(event -> loadTournament());
         view.saveButton().setOnAction(event -> saveTournament());
         view.addFencerButton().setOnAction(event -> addFencer());
-        view.removeFencerButton().setOnAction(event -> removeSelectedFencer());
+        view.removeFencerButton().setOnAction(event -> removeFencer());
+        view.moveSeedUpButton().setOnAction(event -> moveSeed(-1));
+        view.moveSeedDownButton().setOnAction(event -> moveSeed(1));
+        view.applySeedingButton().setOnAction(event -> applySeeding());
+        view.generatePoolsButton().setOnAction(event -> generatePools());
+        view.poolList().getSelectionModel().selectedItemProperty().addListener(
+                (observable, oldValue, newValue) -> renderSelectedPool(newValue));
+        view.boutTable().getSelectionModel().selectedItemProperty().addListener(
+                (observable, oldValue, newValue) -> view.showSelectedBout(newValue));
+        view.standingsPoolSelector().setOnAction(event -> renderStandings(
+                view.standingsPoolSelector().getSelectionModel().getSelectedItem()));
+        view.recordResultButton().setOnAction(event -> recordResult());
     }
 
     private void createTournament() {
         try {
-            Tournament tournament = service.createTournament(view.tournamentNameField().getText());
+            service.createTournament(view.tournamentNameField().getText());
             currentFile = null;
-            view.showTournament(tournament);
             view.tournamentNameField().clear();
-            view.showStatus("Tournament created. Add fencers to begin registration.");
+            refreshWorkspace();
+            view.showStatus("Tournament created. Register fencers, then apply seeding.");
         } catch (IllegalArgumentException exception) {
-            view.showStatus(exception.getMessage());
+            showError(exception);
         }
     }
 
     private void loadTournament() {
-        FileChooser chooser = jsonFileChooser("Open tournament");
-        var selectedFile = chooser.showOpenDialog(view.getScene().getWindow());
-        if (selectedFile == null) {
-            return;
-        }
-
+        var selected = jsonFileChooser("Open tournament").showOpenDialog(view.getScene().getWindow());
+        if (selected == null) return;
         try {
-            Optional<Tournament> loaded = service.loadTournament(selectedFile.toPath());
+            Optional<Tournament> loaded = service.loadTournament(selected.toPath());
             if (loaded.isEmpty()) {
                 view.showStatus("The selected tournament file does not exist.");
                 return;
             }
-            currentFile = selectedFile.toPath();
-            view.showTournament(loaded.orElseThrow());
+            currentFile = selected.toPath();
+            refreshWorkspace();
             view.showStatus("Tournament loaded.");
         } catch (IOException | IllegalArgumentException exception) {
-            view.showStatus("Could not load tournament: " + exception.getMessage());
+            showError("Could not load tournament: " + exception.getMessage());
         }
     }
 
     private void saveTournament() {
         Path path = currentFile;
         if (path == null) {
-            FileChooser chooser = jsonFileChooser("Save tournament");
-            var selectedFile = chooser.showSaveDialog(view.getScene().getWindow());
-            if (selectedFile == null) {
-                return;
-            }
-            path = selectedFile.toPath();
+            var selected = jsonFileChooser("Save tournament").showSaveDialog(view.getScene().getWindow());
+            if (selected == null) return;
+            path = selected.toPath();
         }
-
         try {
             service.saveTournament(path);
             currentFile = path;
             view.showStatus("Tournament saved.");
-        } catch (IOException | IllegalStateException | IllegalArgumentException exception) {
-            view.showStatus("Could not save tournament: " + exception.getMessage());
+        } catch (IOException | IllegalArgumentException | IllegalStateException exception) {
+            showError("Could not save tournament: " + exception.getMessage());
         }
     }
 
     private void addFencer() {
         try {
             service.addFencer(view.fencerNameField().getText());
-            refreshTournament();
             view.fencerNameField().clear();
+            refreshWorkspace();
             view.showStatus("Fencer added.");
         } catch (IllegalArgumentException | IllegalStateException exception) {
-            view.showStatus(exception.getMessage());
+            showError(exception);
         }
     }
 
-    private void removeSelectedFencer() {
+    private void removeFencer() {
         Fencer selected = view.fencerList().getSelectionModel().getSelectedItem();
         if (selected == null) {
             view.showStatus("Select a fencer to remove.");
             return;
         }
-
         Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION,
-                "Remove " + selected.name() + " from this tournament?",
-                ButtonType.CANCEL, ButtonType.OK);
+                "Remove " + selected.name() + " from this tournament?", ButtonType.CANCEL, ButtonType.OK);
         confirmation.setTitle("Remove fencer");
         confirmation.setHeaderText(null);
-        Optional<ButtonType> result = confirmation.showAndWait();
-        if (result.isEmpty() || result.get() != ButtonType.OK) {
-            return;
-        }
-
+        if (confirmation.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) return;
         try {
             service.removeFencer(selected.id());
-            refreshTournament();
+            refreshWorkspace();
             view.showStatus("Fencer removed.");
         } catch (IllegalArgumentException | IllegalStateException exception) {
-            view.showStatus(exception.getMessage());
+            showError(exception);
         }
     }
 
-    private void refreshTournament() {
-        service.currentTournament().ifPresent(view::showTournament);
+    private void moveSeed(int direction) {
+        int selected = view.seedList().getSelectionModel().getSelectedIndex();
+        int destination = selected + direction;
+        if (selected < 0 || destination < 0 || destination >= view.seedList().getItems().size()) return;
+        var items = view.seedList().getItems();
+        Fencer fencer = items.remove(selected);
+        items.add(destination, fencer);
+        view.seedList().getSelectionModel().select(destination);
+    }
+
+    private void applySeeding() {
+        try {
+            service.seedFencers(view.seedList().getItems().stream().map(Fencer::id).toList());
+            refreshWorkspace();
+            view.showStatus("Seeding applied. Generate pools when ready.");
+        } catch (IllegalArgumentException | IllegalStateException exception) {
+            showError(exception);
+        }
+    }
+
+    private void generatePools() {
+        try {
+            service.generatePools();
+            refreshWorkspace();
+            view.tabs().getSelectionModel().select(view.poolsTab());
+            view.showStatus("Pools generated. Select a pool to record results.");
+        } catch (IllegalArgumentException | IllegalStateException exception) {
+            showError(exception);
+        }
+    }
+
+    private void renderSelectedPool(Pool pool) {
+        if (pool == null) return;
+        List<String> members = pool.memberIds().stream().map(this::fencerName).toList();
+        List<PoolBoutRow> bouts = pool.bouts().stream().map(this::boutRow).toList();
+        view.renderSelectedPool(pool.name(), members, bouts);
+    }
+
+    private void recordResult() {
+        PoolBoutRow row = view.boutTable().getSelectionModel().getSelectedItem();
+        Pool pool = view.poolList().getSelectionModel().getSelectedItem();
+        if (row == null || pool == null) {
+            view.showStatus("Select a pending bout first.");
+            return;
+        }
+        try {
+            int first = Integer.parseInt(view.firstScoreField().getText().trim());
+            int second = Integer.parseInt(view.secondScoreField().getText().trim());
+            service.recordPoolBoutResult(pool.id(), row.boutId(), new BoutScore(first, second));
+            refreshWorkspace();
+            view.showStatus("Result recorded.");
+        } catch (NumberFormatException exception) {
+            view.showStatus("Scores must be whole numbers.");
+        } catch (IllegalArgumentException | IllegalStateException exception) {
+            showError(exception);
+        }
+    }
+
+    private void renderStandings(Pool pool) {
+        if (pool == null) return;
+        try {
+            List<PoolStandingRow> rows = service.standingsForPool(pool.id()).stream()
+                    .map(this::standingRow).toList();
+            view.renderStandings(rows, pool.isComplete());
+        } catch (IllegalArgumentException exception) {
+            showError(exception);
+        }
+    }
+
+    private void refreshWorkspace() {
+        Optional<Tournament> current = service.currentTournament();
+        if (current.isEmpty()) {
+            view.setNoTournamentState();
+            return;
+        }
+        Tournament tournament = current.orElseThrow();
+        TournamentPhase phase = service.currentPhase();
+        PoolProgress progress = phase == TournamentPhase.POOL_PHASE ? service.poolProgress() : null;
+        view.showTournamentName(tournament.name());
+        view.showPhase(phase, progress);
+        List<Fencer> fencers = tournament.fencers();
+        List<Fencer> seedOrder = tournament.seeding() == null ? fencers : tournament.seeding().fencerIds().stream()
+                .map(tournament::findFencer).flatMap(Optional::stream).toList();
+        view.renderFencers(fencers, seedOrder);
+        if (!tournament.pools().isEmpty()) {
+            view.renderPools(tournament.pools());
+            renderSelectedPool(view.poolList().getSelectionModel().getSelectedItem());
+            renderStandings(view.standingsPoolSelector().getSelectionModel().getSelectedItem());
+        }
+        view.setPhaseControls(phase, true);
+    }
+
+    private PoolBoutRow boutRow(PoolBout bout) {
+        String score = bout.score() == null ? "—" : bout.score().firstScore() + " - " + bout.score().secondScore();
+        return new PoolBoutRow(bout.id(), fencerName(bout.firstFencerId()), fencerName(bout.secondFencerId()),
+                score, bout.score() == null ? "Pending" : "Completed", bout.score() != null);
+    }
+
+    private PoolStandingRow standingRow(PoolStanding standing) {
+        return new PoolStandingRow(fencerName(standing.fencerId()), standing.rank(), standing.boutsFenced(),
+                standing.victories(), standing.victoryRatio(), standing.touchesScored(),
+                standing.touchesReceived(), standing.indicator());
+    }
+
+    private String fencerName(UUID id) {
+        return service.currentTournament().flatMap(tournament -> tournament.findFencer(id))
+                .map(Fencer::name).orElse("Unknown fencer");
     }
 
     private static FileChooser jsonFileChooser(String title) {
         FileChooser chooser = new FileChooser();
         chooser.setTitle(title);
-        chooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("Tournament JSON (*.json)", "*.json"));
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Tournament JSON (*.json)", "*.json"));
         return chooser;
     }
+
+    private void showError(Exception exception) { showError(exception.getMessage()); }
+    private void showError(String message) { view.showStatus(message == null ? "Operation failed." : message); }
 }

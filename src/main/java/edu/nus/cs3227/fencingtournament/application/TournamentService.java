@@ -3,6 +3,12 @@ package edu.nus.cs3227.fencingtournament.application;
 import edu.nus.cs3227.fencingtournament.domain.Fencer;
 import edu.nus.cs3227.fencingtournament.domain.Tournament;
 import edu.nus.cs3227.fencingtournament.domain.TournamentSettings;
+import edu.nus.cs3227.fencingtournament.domain.Seeding;
+import edu.nus.cs3227.fencingtournament.domain.TournamentPhase;
+import edu.nus.cs3227.fencingtournament.domain.pool.Pool;
+import edu.nus.cs3227.fencingtournament.domain.rules.PoolGenerator;
+import edu.nus.cs3227.fencingtournament.domain.rules.StandingsCalculator;
+import edu.nus.cs3227.fencingtournament.domain.standings.PoolStanding;
 import edu.nus.cs3227.fencingtournament.domain.pool.BoutScore;
 import edu.nus.cs3227.fencingtournament.domain.standings.TieBreakCriterion;
 import edu.nus.cs3227.fencingtournament.domain.standings.TieBreakPolicy;
@@ -16,6 +22,8 @@ import java.util.UUID;
 /** Placeholder for user-workflow orchestration and persistence coordination. */
 public final class TournamentService {
     private final TournamentRepository repository;
+    private final PoolGenerator poolGenerator = new PoolGenerator();
+    private final StandingsCalculator standingsCalculator = new StandingsCalculator();
     private Tournament activeTournament;
 
     public TournamentService(TournamentRepository repository) {
@@ -56,6 +64,46 @@ public final class TournamentService {
 
     public void replacePoolBoutResult(UUID poolId, UUID boutId, BoutScore score) {
         requireActiveTournament().replacePoolBoutResult(poolId, boutId, score);
+    }
+
+    public void seedFencers(List<UUID> orderedFencerIds) {
+        requireActiveTournament().applySeeding(new Seeding(orderedFencerIds));
+    }
+
+    public void generatePools() {
+        Tournament tournament = requireActiveTournament();
+        tournament.installPools(poolGenerator.generate(
+                tournament.seeding(), tournament.settings().targetPoolSize()));
+    }
+
+    public List<Pool> pools() {
+        return requireActiveTournament().pools();
+    }
+
+    public Optional<Pool> findPool(UUID poolId) {
+        return pools().stream().filter(pool -> pool.id().equals(poolId)).findFirst();
+    }
+
+    public List<PoolStanding> standingsForPool(UUID poolId) {
+        Tournament tournament = requireActiveTournament();
+        Pool pool = findPool(poolId).orElseThrow(() ->
+                new IllegalArgumentException("Pool does not belong to this tournament."));
+        return standingsCalculator.calculatePoolStandings(
+                pool, tournament.seeding(), tournament.settings().tieBreakPolicy());
+    }
+
+    public PoolProgress poolProgress() {
+        int total = 0;
+        int completed = 0;
+        for (Pool pool : pools()) {
+            total += pool.bouts().size();
+            completed += (int) pool.bouts().stream().filter(bout -> bout.score() != null).count();
+        }
+        return new PoolProgress(completed, total);
+    }
+
+    public TournamentPhase currentPhase() {
+        return requireActiveTournament().phase();
     }
 
     public Optional<Tournament> currentTournament() {

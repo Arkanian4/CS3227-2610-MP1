@@ -2,6 +2,7 @@ package edu.nus.cs3227.fencingtournament.application;
 
 import edu.nus.cs3227.fencingtournament.domain.Fencer;
 import edu.nus.cs3227.fencingtournament.domain.Tournament;
+import edu.nus.cs3227.fencingtournament.domain.TournamentPhase;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -43,6 +44,26 @@ class TournamentServiceTest {
 
         assertTrue(service.loadTournament(Path.of("missing.json")).isEmpty());
         assertEquals(created, service.currentTournament().orElseThrow());
+    }
+
+    @Test
+    void serviceCoordinatesSeedingPoolGenerationAndReadModels() {
+        TournamentService service = new TournamentService(new InMemoryRepository());
+        service.createTournament("Internal Open");
+        List<Fencer> fencers = java.util.stream.IntStream.range(0, 5)
+                .mapToObj(index -> service.addFencer("Fencer " + (index + 1)))
+                .toList();
+
+        service.seedFencers(fencers.stream().map(Fencer::id).toList());
+        assertEquals(TournamentPhase.SEEDING, service.currentPhase());
+
+        service.generatePools();
+
+        assertEquals(TournamentPhase.POOL_PHASE, service.currentPhase());
+        assertEquals(1, service.pools().size());
+        assertEquals(0, service.poolProgress().completedBouts());
+        assertEquals(10, service.poolProgress().totalBouts());
+        assertEquals(5, service.standingsForPool(service.pools().get(0).id()).size());
     }
 
     private static final class InMemoryRepository implements TournamentRepository {

@@ -3,6 +3,7 @@ package edu.nus.cs3227.fencingtournament.domain;
 import edu.nus.cs3227.fencingtournament.domain.elimination.EliminationBracket;
 import edu.nus.cs3227.fencingtournament.domain.pool.Pool;
 import edu.nus.cs3227.fencingtournament.domain.pool.BoutScore;
+import edu.nus.cs3227.fencingtournament.domain.rules.PoolGenerator;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -18,7 +19,7 @@ public final class Tournament {
     private final String name;
     private final TournamentSettings settings;
     private final List<Fencer> fencers;
-    private final Seeding seeding;
+    private Seeding seeding;
     private final List<Pool> pools;
     private final EliminationBracket eliminationBracket;
 
@@ -92,6 +93,60 @@ public final class Tournament {
 
     public Seeding seeding() {
         return seeding;
+    }
+
+    /** Accepts a complete seed order before pools are generated. */
+    public void applySeeding(Seeding newSeeding) {
+        if (!pools.isEmpty() || eliminationBracket != null) {
+            throw new IllegalStateException("Seeding cannot change after pools are generated.");
+        }
+        if (newSeeding == null || newSeeding.fencerIds().size() != fencers.size()
+                || !new java.util.HashSet<>(newSeeding.fencerIds()).equals(
+                fencers.stream().map(Fencer::id).collect(java.util.stream.Collectors.toSet()))) {
+            throw new IllegalArgumentException("Seeding must contain every registered fencer exactly once.");
+        }
+        seeding = newSeeding;
+    }
+
+    /** Installs validated generated pools for the current seeding. */
+    public void installPools(List<Pool> generatedPools) {
+        if (seeding == null) {
+            throw new IllegalStateException("Complete seeding is required before generating pools.");
+        }
+        if (!pools.isEmpty() || eliminationBracket != null) {
+            throw new IllegalStateException("Pools have already been generated.");
+        }
+        if (generatedPools == null || generatedPools.isEmpty()) {
+            throw new IllegalArgumentException("Generated pools must not be empty.");
+        }
+
+        Set<UUID> rosterIds = fencers.stream().map(Fencer::id).collect(java.util.stream.Collectors.toSet());
+        Set<UUID> assignedIds = new HashSet<>();
+        for (Pool pool : generatedPools) {
+            if (pool == null) {
+                throw new IllegalArgumentException("Generated pools must not contain null entries.");
+            }
+            for (UUID memberId : pool.memberIds()) {
+                if (!rosterIds.contains(memberId) || !assignedIds.add(memberId)) {
+                    throw new IllegalArgumentException("Generated pools must cover each registered fencer exactly once.");
+                }
+            }
+        }
+        if (!assignedIds.equals(rosterIds)) {
+            throw new IllegalArgumentException("Generated pools must include every registered fencer.");
+        }
+        pools.addAll(generatedPools);
+    }
+
+    public TournamentPhase phase() {
+        if (eliminationBracket != null) {
+            return eliminationBracket.matches().stream().anyMatch(match -> match.score() == null)
+                    ? TournamentPhase.ELIMINATION_PHASE : TournamentPhase.COMPLETE;
+        }
+        if (!pools.isEmpty()) {
+            return TournamentPhase.POOL_PHASE;
+        }
+        return seeding == null ? TournamentPhase.REGISTRATION : TournamentPhase.SEEDING;
     }
 
     public List<Pool> pools() {
