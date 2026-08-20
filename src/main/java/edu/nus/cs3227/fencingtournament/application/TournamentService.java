@@ -97,7 +97,7 @@ public final class TournamentService {
         Tournament tournament = requireActiveTournament();
         List<Pool> tournamentPools = tournament.pools();
         if (tournamentPools.isEmpty() || tournamentPools.stream().anyMatch(pool -> !pool.isComplete())) {
-            throw new IllegalStateException("Pool seeding is available after all pool bouts are complete.");
+            throw new IllegalStateException("Pool Result is available after all pool bouts are complete.");
         }
         return standingsCalculator.calculateOverallStandings(
                 tournamentPools, tournament.seeding(), tournament.settings().tieBreakPolicy());

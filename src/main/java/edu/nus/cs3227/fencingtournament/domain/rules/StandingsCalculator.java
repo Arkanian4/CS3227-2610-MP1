@@ -34,7 +34,7 @@ public final class StandingsCalculator {
                 Statistics first = statistics.get(bout.firstFencerId());
                 Statistics second = statistics.get(bout.secondFencerId());
                 if (first == null || second == null) throw new IllegalArgumentException("Pool fencer is missing from seeding.");
-                if (bout.score() == null) throw new IllegalStateException("All pool bouts must be completed before pool seeding is calculated.");
+                if (bout.score() == null) throw new IllegalStateException("All pool bouts must be completed before Pool Result is calculated.");
                 BoutScore score = bout.score();
                 first.boutsFenced++; second.boutsFenced++;
                 first.touchesScored += score.firstScore(); first.touchesReceived += score.secondScore();

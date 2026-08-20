@@ -42,7 +42,7 @@ public final class TournamentView extends BorderPane {
     private final TabPane tabs = new TabPane();
     private final Tab fencersTab = new Tab("Setup");
     private final Tab poolsTab = new Tab("Pools");
-    private final Tab standingsTab = new Tab("Standings");
+    private final Tab standingsTab = new Tab("Pool Result");
     private final VBox createTournamentSection = new VBox();
     private final VBox registrationSection = new VBox();
     private final VBox seedingSection = new VBox();
@@ -132,15 +132,15 @@ public final class TournamentView extends BorderPane {
     }
     public void renderStandings(List<PoolStandingRow> standings, boolean complete) {
         standingsTable.getItems().clear();
-        standingsStatusLabel.setText("Pool seeding is calculated after all pool bouts are complete.");
+        standingsStatusLabel.setText("Pool Result is calculated after all pool bouts are complete.");
         standingsStatusLabel.getStyleClass().setAll("standing-status", complete ? "is-final" : "is-provisional");
     }
 
     public void renderOverallSeeding(List<OverallSeedingRow> rows) {
         standingsTable.getItems().setAll(rows.stream()
-                .sorted(Comparator.comparingInt(OverallSeedingRow::originalSeed))
+                .sorted(Comparator.comparingInt(OverallSeedingRow::rank))
                 .toList());
-        standingsStatusLabel.setText("Final pool seeding");
+        standingsStatusLabel.setText("Final Pool Result");
         standingsStatusLabel.getStyleClass().setAll("standing-status", "is-final");
     }
     public void showSelectedBout(PoolBoutRow bout) {
@@ -208,7 +208,7 @@ public final class TournamentView extends BorderPane {
         HBox names = new HBox(40, firstFencerLabel, secondFencerLabel); names.setAlignment(Pos.CENTER); resultEntry.getChildren().setAll(title, selectedBoutLabel, names, resultStateLabel, scoreFields); resultEntry.setAlignment(Pos.CENTER); resultEntry.getStyleClass().add("result-entry");
     }
     private VBox buildStandingsTab() {
-        Label title = new Label("Pool seeding"); title.getStyleClass().add("screen-title"); Label description = new Label("Overall ranking after every pool bout has been finalized."); description.getStyleClass().add("screen-subtitle"); HBox status = new HBox(standingsStatusLabel); status.setAlignment(Pos.CENTER_LEFT);
+        Label title = new Label("Pool Result"); title.getStyleClass().add("screen-title"); Label description = new Label("Overall placing after every pool bout has been finalized."); description.getStyleClass().add("screen-subtitle"); HBox status = new HBox(standingsStatusLabel); status.setAlignment(Pos.CENTER_LEFT);
         VBox root = new VBox(6, title, description, status, standingsTable); root.getStyleClass().add("screen-content"); VBox.setVgrow(standingsTable, Priority.ALWAYS); return root;
     }
     private HBox buildStatusBar() { statusLabel.getStyleClass().add("status-text"); HBox bar = new HBox(statusLabel); bar.getStyleClass().add("status-bar"); return bar; }
@@ -220,10 +220,9 @@ public final class TournamentView extends BorderPane {
     private ListCell<Fencer> fencerCell() { return new ListCell<>() { @Override protected void updateItem(Fencer fencer, boolean empty) { super.updateItem(fencer, empty); setText(empty || fencer == null ? null : fencer.name()); }}; }
     private void configureTables() {
         poolMatrixTable.setPlaceholder(new Label("Select a pool to see its matrix.")); poolMatrixTable.setFixedCellSize(48); poolMatrixTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY); poolMatrixTable.getStyleClass().add("pool-matrix");
-        TableColumn<OverallSeedingRow, String> seed = textColumn("Seed", row -> Integer.toString(row.originalSeed()), 54);
         TableColumn<OverallSeedingRow, String> fencer = textColumn("Fencer", OverallSeedingRow::name, 180);
         fencer.getStyleClass().add("standing-name-column");
-        standingsTable.getColumns().addAll(seed, fencer,
+        standingsTable.getColumns().addAll(textColumn("Place", row -> Integer.toString(row.rank()), 58), fencer,
                 textColumn("V", row -> Integer.toString(row.wins()), 48),
                 textColumn("M", row -> Integer.toString(row.matches()), 52),
                 textColumn("V/M", row -> String.format("%.2f", row.ratio()), 60),
@@ -235,7 +234,7 @@ public final class TournamentView extends BorderPane {
             column.setReorderable(false);
         });
         standingsTable.setSortPolicy(table -> false);
-        standingsTable.setPlaceholder(new Label("Pool seeding is not available yet.")); standingsTable.getStyleClass().add("standings-table");
+        standingsTable.setPlaceholder(new Label("Pool Result is not available yet.")); standingsTable.getStyleClass().add("standings-table");
     }
     private void configureMatrixColumns(List<PoolMatrixRow> rows) {
         poolMatrixTable.getColumns().clear(); TableColumn<PoolMatrixRow, String> name = textColumn("Fencer", PoolMatrixRow::fencerName, 174); name.getStyleClass().add("matrix-name-column"); poolMatrixTable.getColumns().add(name); if (rows.isEmpty()) return;
