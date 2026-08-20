@@ -230,14 +230,20 @@ public final class TournamentView extends BorderPane {
                 textColumn("TS", row -> Integer.toString(row.touchesScored()), 56),
                 textColumn("TR", row -> Integer.toString(row.touchesReceived()), 56),
                 textColumn("Indices", row -> Integer.toString(row.indicator()), 68));
-        standingsTable.getColumns().forEach(column -> column.setSortable(false));
+        standingsTable.getColumns().forEach(column -> {
+            column.setSortable(false);
+            column.setReorderable(false);
+        });
         standingsTable.setSortPolicy(table -> false);
         standingsTable.setPlaceholder(new Label("Pool seeding is not available yet.")); standingsTable.getStyleClass().add("standings-table");
     }
     private void configureMatrixColumns(List<PoolMatrixRow> rows) {
         poolMatrixTable.getColumns().clear(); TableColumn<PoolMatrixRow, String> name = textColumn("Fencer", PoolMatrixRow::fencerName, 174); name.getStyleClass().add("matrix-name-column"); poolMatrixTable.getColumns().add(name); if (rows.isEmpty()) return;
-        for (UUID opponentId : rows.get(0).cells().keySet()) { String nameText = fencerNameForColumn(rows, opponentId); TableColumn<PoolMatrixRow, String> column = new TableColumn<>(nameText); column.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().cell(opponentId))); column.setPrefWidth(Math.max(84, nameText.length() * 8 + 26)); column.setCellFactory(ignored -> matrixCell(opponentId)); column.setSortable(false); column.getStyleClass().add("matrix-score-column"); poolMatrixTable.getColumns().add(column); }
-        poolMatrixTable.getColumns().forEach(column -> column.setSortable(false));
+        for (UUID opponentId : rows.get(0).cells().keySet()) { String nameText = fencerNameForColumn(rows, opponentId); TableColumn<PoolMatrixRow, String> column = new TableColumn<>(nameText); column.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().cell(opponentId))); column.setPrefWidth(Math.max(84, nameText.length() * 8 + 26)); column.setCellFactory(ignored -> matrixCell(opponentId)); column.setSortable(false); column.setReorderable(false); column.getStyleClass().add("matrix-score-column"); poolMatrixTable.getColumns().add(column); }
+        poolMatrixTable.getColumns().forEach(column -> {
+            column.setSortable(false);
+            column.setReorderable(false);
+        });
         poolMatrixTable.setSortPolicy(table -> false);
     }
     private TableCell<PoolMatrixRow, String> matrixCell(UUID opponentId) { return new TableCell<>() { @Override protected void updateItem(String value, boolean empty) { super.updateItem(value, empty); getStyleClass().removeAll("matrix-diagonal", "matrix-pending", "matrix-win", "matrix-loss", "matrix-selected"); setText(empty ? null : value == null ? "" : value); setAlignment(Pos.CENTER); if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) { setOnMouseClicked(null); return; } PoolMatrixRow row = getTableView().getItems().get(getIndex()); setOnMouseClicked(event -> matrixCellHandler.accept(row.fencerId(), opponentId)); if ("—".equals(value)) getStyleClass().add("matrix-diagonal"); else if (value == null || value.isBlank()) getStyleClass().add("matrix-pending"); else getStyleClass().add(isWinner(row, opponentId, value) ? "matrix-win" : "matrix-loss"); if (row.fencerId().equals(selectedMatrixRow) && opponentId.equals(selectedMatrixOpponent)) getStyleClass().add("matrix-selected"); }}; }
