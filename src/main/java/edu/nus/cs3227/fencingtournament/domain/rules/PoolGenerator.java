@@ -94,12 +94,6 @@ public final class PoolGenerator {
     }
 
     private static String poolName(int poolIndex) {
-        int value = poolIndex;
-        StringBuilder suffix = new StringBuilder();
-        do {
-            suffix.append((char) ('A' + value % 26));
-            value = value / 26 - 1;
-        } while (value >= 0);
-        return "Pool " + suffix.reverse();
+        return "POOL #" + (poolIndex + 1);
     }
 }

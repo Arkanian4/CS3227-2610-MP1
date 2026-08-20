@@ -37,6 +37,24 @@ class FinalStandingsCalculatorTest {
         assertThrows(IllegalStateException.class, () -> calculator.calculate(postPoolStandings(fencers), bracketGenerator.generate(fencers)));
     }
 
+    @Test
+    void lowerPostPoolSeedAdvancesPastAndFinishesAboveDefeatedHigherSeed() {
+        List<UUID> fencers = java.util.stream.IntStream.range(0, 4).mapToObj(ignored -> UUID.randomUUID()).toList();
+        EliminationBracket bracket = bracketGenerator.generate(fencers);
+        List<EliminationMatch> opening = bracket.matches().stream().filter(match -> match.round() == 1)
+                .sorted(java.util.Comparator.comparingInt(EliminationMatch::position)).toList();
+        bracket = bracket.recordResult(opening.getFirst().id(), new BoutScore(0, 15), 15);
+        bracket = bracket.recordResult(opening.get(1).id(), new BoutScore(15, 0), 15);
+        EliminationMatch finalMatch = bracket.matches().stream().filter(EliminationMatch::isReady).findFirst().orElseThrow();
+        bracket = bracket.recordResult(finalMatch.id(), new BoutScore(15, 0), 15);
+
+        List<FinalStanding> results = calculator.calculate(postPoolStandings(fencers), bracket);
+
+        assertEquals(fencers.get(3), results.getFirst().fencerId());
+        assertEquals(fencers.get(1), results.get(1).fencerId());
+        assertEquals(fencers.get(0), results.get(2).fencerId());
+    }
+
     private static EliminationBracket completeWithFirstFencerWinning(EliminationBracket bracket) {
         EliminationBracket current = bracket;
         while (!current.isComplete()) {

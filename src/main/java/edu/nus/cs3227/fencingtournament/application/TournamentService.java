@@ -78,9 +78,13 @@ public final class TournamentService {
     }
 
     public void generatePools() {
+        generatePools(requireActiveTournament().settings().targetPoolSize());
+    }
+
+    public void generatePools(int maximumPoolSize) {
         Tournament tournament = requireActiveTournament();
         tournament.installPools(poolGenerator.generate(
-                tournament.seeding(), tournament.settings().targetPoolSize()));
+                tournament.seeding(), maximumPoolSize));
     }
 
     public List<Pool> pools() {
@@ -114,7 +118,7 @@ public final class TournamentService {
         if (tournament.eliminationBracket() != null) return tournament.eliminationBracket();
         List<UUID> qualified = overallStandings().stream()
                 .sorted(java.util.Comparator.comparingInt(OverallStanding::rank))
-                .limit(tournament.settings().advancingFencerCount())
+                .limit(16)
                 .map(OverallStanding::fencerId).toList();
         EliminationBracket bracket = bracketGenerator.generate(qualified);
         tournament.installEliminationBracket(bracket);
@@ -165,7 +169,7 @@ public final class TournamentService {
                 5,
                 5,
                 15,
-                8,
+                16,
                 new TieBreakPolicy(List.of(
                         TieBreakCriterion.VICTORY_RATIO,
                         TieBreakCriterion.INDICATOR,
