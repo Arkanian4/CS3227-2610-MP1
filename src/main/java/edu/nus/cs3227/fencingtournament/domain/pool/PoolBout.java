@@ -2,7 +2,7 @@ package edu.nus.cs3227.fencingtournament.domain.pool;
 
 import java.util.UUID;
 
-/** One scheduled pairing in a pool. A null score represents an uncompleted bout in this skeleton. */
+/** One scheduled pairing in a pool. A null score represents an uncompleted bout. */
 public record PoolBout(UUID id, UUID firstFencerId, UUID secondFencerId, BoutScore score) {
     public PoolBout {
         if (id == null || firstFencerId == null || secondFencerId == null) {

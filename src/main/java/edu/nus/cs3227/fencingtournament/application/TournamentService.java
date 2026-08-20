@@ -32,7 +32,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-/** Placeholder for user-workflow orchestration and persistence coordination. */
+/** Coordinates tournament workflows, derived read models, and optional autosave. */
 public final class TournamentService {
     private final TournamentRepository repository;
     private final PoolGenerator poolGenerator = new PoolGenerator();

@@ -1,0 +1,66 @@
+# User Guide
+
+## Setup
+
+Install JDK 21 or later. From the project root, run:
+
+```powershell
+.\gradlew.bat run
+```
+
+Run the tests with `./gradlew.bat test`.
+
+## Tournament Home
+
+Tournament Home lists ongoing tournaments before completed tournaments. Choose **Open** to
+continue an ongoing tournament or **View Results** to inspect a completed one.
+
+Choose **+ New Tournament**, enter a name, and choose **Create**. Names are trimmed and unique
+without regard to letter case. For example, `Club Open` and ` club open ` cannot both be created.
+
+## Registration and seeding
+
+Add fencers by display name. Names must be non-blank and unique within the tournament. During
+registration, select a fencer and choose **Remove selected** to remove them after confirmation.
+
+With at least two fencers, choose **Continue to seeding**. Use **Move up** and **Move down** to
+reorder the seed list, then choose **Confirm seed order**. The order distributes fencers across
+pools and is the final standings tie-breaker.
+
+## Pools and Pool Result
+
+Choose a maximum pool size of 5, 6, or 7 and select **Generate pools**. Pools are balanced
+round-robin groups labelled `POOL #1`, `POOL #2`, and so on.
+
+In the **Pools** tab, select a pool. In the score matrix, `V5` is a five-touch win for the row
+fencer, a non-prefixed score is a loss, grey diagonal cells are self-matchups, and blank cells are
+uncompleted bouts. Select an unfinished cell, enter scores, and choose **Record result**.
+
+Pool bouts are to 5: scores cannot be negative or tied, one score must be 5, and neither score can
+exceed 5. Select a completed bout and choose **Edit result** to correct it. If a DE tableau already
+exists, confirmation is required because the dependent tableau and results will be reset.
+
+After every pool bout is complete, **Pool Result** displays overall place, wins, bouts fenced, win
+ratio, touches scored/received, indicator, and advancement status. Placing uses win ratio,
+indicator, touches scored, then original seed. The top 16 fencers, or all fencers if fewer than 16
+compete, advance to direct elimination.
+
+## Direct Elimination and final results
+
+Choose **Generate direct elimination** from Pool Result. The seeded tableau expands to the next
+power of two; higher seeds receive automatic byes. Ready DE bouts are to 15, using the same
+non-negative, non-tied, winning-score validation as pools.
+
+Completed non-bye DE bouts can be corrected with **Edit result**. Scores are prefilled. Choose
+**Save changes** or **Cancel**. If a changed winner would invalidate a completed later bout, the
+app asks for confirmation and clears only the affected downstream path.
+
+When the final is recorded, **Final Results** lists final place and fencer. The champion is first,
+the final loser second, and same-round eliminations use Pool Result place as the tie-breaker.
+
+## Saving and opening tournaments
+
+Successful changes are automatically saved in `tournaments/`; no normal Save action is required.
+Saved tournaments are restored to Tournament Home when the app starts. The header **Open** action
+imports a tournament JSON file into this local autosaved collection. If autosaving fails, the app
+reports the error while retaining the in-memory tournament for the current session.

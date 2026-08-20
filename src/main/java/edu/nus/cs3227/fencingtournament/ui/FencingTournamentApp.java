@@ -7,7 +7,7 @@ import javafx.stage.Stage;
 import java.nio.file.Path;
 import java.io.IOException;
 
-/** JavaFX composition root for the registration workflow. */
+/** JavaFX composition root for the local tournament-management application. */
 public final class FencingTournamentApp extends Application {
     @Override
     public void start(Stage stage) {
