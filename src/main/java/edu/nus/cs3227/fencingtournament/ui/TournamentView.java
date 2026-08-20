@@ -78,6 +78,7 @@ public final class TournamentView extends BorderPane {
     private final TextField firstScoreField = new TextField();
     private final TextField secondScoreField = new TextField();
     private final Button recordResultButton = new Button("Record result");
+    private final Button editPoolResultButton = new Button("Edit result");
     private final Label firstFencerLabel = new Label("—");
     private final Label secondFencerLabel = new Label("—");
     private final Label resultStateLabel = new Label();
@@ -186,6 +187,7 @@ public final class TournamentView extends BorderPane {
     public TextField firstScoreField() { return firstScoreField; }
     public TextField secondScoreField() { return secondScoreField; }
     public Button recordResultButton() { return recordResultButton; }
+    public Button editPoolResultButton() { return editPoolResultButton; }
     public void setMatrixCellHandler(BiConsumer<UUID, UUID> handler) { matrixCellHandler = handler == null ? (row, opponent) -> { } : handler; }
     public void markSelectedMatrixCell(UUID row, UUID opponent) { selectedMatrixRow = row; selectedMatrixOpponent = opponent; renderPoolMatrix(renderedMatrixRows); }
     public void setEliminationMatchHandler(Consumer<UUID> handler) { eliminationMatchHandler = handler == null ? ignored -> { } : handler; }
@@ -287,17 +289,24 @@ public final class TournamentView extends BorderPane {
     public void showSelectedBout(PoolBoutRow bout) {
         if (bout == null) {
             firstFencerLabel.setText("—"); secondFencerLabel.setText("—"); resultStateLabel.setText("Select an unfinished bout in the matrix");
-            scoreFields.setVisible(false); scoreFields.setManaged(false); recordResultButton.setDisable(true); return;
+            scoreFields.setVisible(false); scoreFields.setManaged(false); recordResultButton.setDisable(true); editPoolResultButton.setVisible(false); editPoolResultButton.setManaged(false); return;
         }
         firstFencerLabel.setText(bout.firstName()); secondFencerLabel.setText(bout.secondName());
         if (bout.completed()) {
             resultStateLabel.setText("Completed · " + bout.scoreText()); resultStateLabel.getStyleClass().setAll("result-state", "is-completed");
-            scoreFields.setVisible(false); scoreFields.setManaged(false); recordResultButton.setDisable(true);
+            scoreFields.setVisible(false); scoreFields.setManaged(false); recordResultButton.setDisable(true); editPoolResultButton.setVisible(true); editPoolResultButton.setManaged(true);
         } else {
             resultStateLabel.setText("Pending result"); resultStateLabel.getStyleClass().setAll("result-state", "is-pending");
-            scoreFields.setVisible(true); scoreFields.setManaged(true); firstScoreField.clear(); secondScoreField.clear(); recordResultButton.setDisable(false);
+            scoreFields.setVisible(true); scoreFields.setManaged(true); firstScoreField.clear(); secondScoreField.clear(); recordResultButton.setDisable(false); editPoolResultButton.setVisible(false); editPoolResultButton.setManaged(false);
         }
     }
+    public void beginPoolResultEdit(PoolBoutRow bout) {
+        String[] scores = bout.scoreText().split("\\s*-\\s*");
+        firstScoreField.setText(scores[0]); secondScoreField.setText(scores[1]); scoreFields.setVisible(true); scoreFields.setManaged(true);
+        recordResultButton.setText("Save correction"); recordResultButton.setDisable(false); editPoolResultButton.setVisible(false); editPoolResultButton.setManaged(false);
+        resultStateLabel.setText("Editing recorded result"); resultStateLabel.getStyleClass().setAll("result-state", "is-pending");
+    }
+    public void endPoolResultEdit() { recordResultButton.setText("Record result"); }
     public void showPhase(TournamentPhase phase, PoolProgress progress) {
         phaseLabel.setText(phaseText(phase));
         progressLabel.setText(progress == null || progress.totalBouts() == 0 ? "" : progress.completedBouts() + " of " + progress.totalBouts() + " pool bouts complete");
@@ -377,8 +386,8 @@ public final class TournamentView extends BorderPane {
         Label versus = new Label("vs"); versus.getStyleClass().add("result-versus"); versus.setMinWidth(23); versus.setPrefWidth(23); versus.setMaxWidth(23); versus.setAlignment(Pos.CENTER);
         HBox names = new HBox(14, firstFencerLabel, versus, secondFencerLabel); names.setAlignment(Pos.CENTER);
         HBox scoreLine = new HBox(14, firstScoreField, dash, secondScoreField); scoreLine.setAlignment(Pos.CENTER);
-        scoreFields.getChildren().setAll(scoreLine, recordResultButton); scoreFields.setSpacing(8); scoreFields.setAlignment(Pos.CENTER);
-        resultEntry.getChildren().setAll(title, names, resultStateLabel, scoreFields); resultEntry.setAlignment(Pos.CENTER); resultEntry.getStyleClass().add("result-entry");
+        scoreFields.getChildren().setAll(scoreLine, recordResultButton); scoreFields.setSpacing(8); scoreFields.setAlignment(Pos.CENTER); editPoolResultButton.getStyleClass().add("secondary-action");
+        resultEntry.getChildren().setAll(title, names, resultStateLabel, scoreFields, editPoolResultButton); resultEntry.setAlignment(Pos.CENTER); resultEntry.getStyleClass().add("result-entry");
     }
     private VBox buildStandingsTab() {
         Label title = new Label("Pool Result"); title.getStyleClass().add("screen-title"); Label description = new Label("Overall placing after every pool bout has been finalized."); description.getStyleClass().add("screen-subtitle"); HBox status = new HBox(standingsStatusLabel, generateEliminationButton); status.setSpacing(16); status.setAlignment(Pos.CENTER_LEFT); generateEliminationButton.getStyleClass().add("primary-action");

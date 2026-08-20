@@ -54,6 +54,22 @@ class BracketGeneratorTest {
         assertEquals(fencers.get(0), completed.matches().getFirst().winnerId());
     }
 
+    @Test
+    void editingSemiFinalReplaysThePendingFinalWithTheCorrectedWinner() {
+        List<UUID> fencers = ids(4);
+        EliminationBracket bracket = generator.generate(fencers);
+        List<EliminationMatch> opening = bracket.matches().stream().filter(match -> match.round() == 1)
+                .sorted(java.util.Comparator.comparingInt(EliminationMatch::position)).toList();
+        bracket = bracket.recordResult(opening.get(0).id(), new BoutScore(15, 4), 15);
+        bracket = bracket.recordResult(opening.get(1).id(), new BoutScore(15, 7), 15);
+
+        EliminationBracket corrected = bracket.replaceResult(opening.get(0).id(), new BoutScore(3, 15), 15, false);
+        EliminationMatch finalMatch = corrected.matches().stream().filter(match -> match.round() == 2).findFirst().orElseThrow();
+
+        assertTrue(finalMatch.isReady());
+        assertEquals(opening.get(0).secondSlot().fencerId(), finalMatch.firstSlot().fencerId());
+    }
+
     private static int matchPosition(List<EliminationMatch> matches, UUID fencerId) {
         return matches.stream().filter(match -> fencerId.equals(match.firstSlot().fencerId())
                 || fencerId.equals(match.secondSlot().fencerId())).findFirst().orElseThrow().position();

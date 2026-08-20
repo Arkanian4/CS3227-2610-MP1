@@ -146,7 +146,13 @@ public final class TournamentService {
     }
 
     public void replacePoolBoutResult(UUID poolId, UUID boutId, BoutScore score) {
-        requireActiveTournament().replacePoolBoutResult(poolId, boutId, score);
+        replacePoolBoutResult(poolId, boutId, score, false);
+    }
+
+    public boolean poolEditNeedsReset() { return requireActiveTournament().eliminationBracket() != null; }
+
+    public void replacePoolBoutResult(UUID poolId, UUID boutId, BoutScore score, boolean resetElimination) {
+        requireActiveTournament().replacePoolBoutResult(poolId, boutId, score, resetElimination);
     }
 
     public void seedFencers(List<UUID> orderedFencerIds) {
@@ -203,6 +209,12 @@ public final class TournamentService {
 
     public void recordEliminationBoutResult(UUID matchId, BoutScore score) {
         requireActiveTournament().recordEliminationBoutResult(matchId, score);
+    }
+
+    public boolean eliminationEditNeedsReset(UUID matchId) { return requireActiveTournament().eliminationEditNeedsReset(matchId); }
+
+    public void replaceEliminationBoutResult(UUID matchId, BoutScore score, boolean resetDownstream) {
+        requireActiveTournament().replaceEliminationBoutResult(matchId, score, resetDownstream);
     }
 
     /** Returns final placements only after the completed DE bracket determines a champion. */

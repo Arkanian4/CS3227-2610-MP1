@@ -13,6 +13,7 @@ import edu.nus.cs3227.fencingtournament.domain.elimination.EliminationMatch;
 import edu.nus.cs3227.fencingtournament.domain.standings.OverallStanding;
 import edu.nus.cs3227.fencingtournament.domain.standings.FinalStanding;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.stage.FileChooser;
 
@@ -29,6 +30,8 @@ public final class TournamentController {
     private Path currentFile;
     private PoolBoutRow selectedBout;
     private EliminationMatchRow selectedEliminationMatch;
+    private boolean selectedPoolRowIsScheduledFirst = true;
+    private boolean editingPoolResult;
 
     public TournamentController(TournamentService service, TournamentView view) {
         this.service = service;
@@ -60,12 +63,11 @@ public final class TournamentController {
             view.markSelectedMatrixCell(rowId, opponentId);
             Pool selectedPool = view.poolList().getSelectionModel().getSelectedItem();
             if (selectedPool == null) return;
-            selectedPool.bouts().stream().map(this::boutRow)
-                    .filter(bout -> samePair(bout, rowId, opponentId))
-                    .findFirst()
-                    .ifPresent(this::selectBout);
+            selectedPool.bouts().stream().filter(bout -> samePair(bout, rowId, opponentId)).findFirst()
+                    .ifPresent(bout -> selectBout(orientedBoutRow(bout, rowId), bout.firstFencerId().equals(rowId)));
         });
         view.recordResultButton().setOnAction(event -> recordResult());
+        view.editPoolResultButton().setOnAction(event -> beginPoolResultEdit());
         view.setEliminationMatchHandler(this::selectEliminationMatch);
         view.recordEliminationResultButton().setOnAction(event -> recordEliminationResult());
     }
@@ -220,14 +222,35 @@ public final class TournamentController {
         try {
             int first = Integer.parseInt(view.firstScoreField().getText().trim());
             int second = Integer.parseInt(view.secondScoreField().getText().trim());
-            service.recordPoolBoutResult(pool.id(), row.boutId(), new BoutScore(first, second));
+            BoutScore score = selectedPoolRowIsScheduledFirst ? new BoutScore(first, second) : new BoutScore(second, first);
+            if (editingPoolResult) {
+                boolean resetElimination = service.poolEditNeedsReset();
+                if (resetElimination && !confirmPoolReset()) return;
+                service.replacePoolBoutResult(pool.id(), row.boutId(), score, resetElimination);
+                editingPoolResult = false; view.endPoolResultEdit();
+            } else service.recordPoolBoutResult(pool.id(), row.boutId(), score);
             refreshWorkspace();
-            view.showStatus("Result recorded.");
+            view.showStatus("Result saved.");
         } catch (NumberFormatException exception) {
             view.showStatus("Scores must be whole numbers.");
         } catch (IllegalArgumentException | IllegalStateException exception) {
             showError(exception);
         }
+    }
+
+    private void beginPoolResultEdit() {
+        if (selectedBout == null || !selectedBout.completed()) return;
+        editingPoolResult = true;
+        view.beginPoolResultEdit(selectedBout);
+    }
+
+    private boolean confirmPoolReset() {
+        ButtonType reset = new ButtonType("Edit and reset DE", ButtonBar.ButtonData.OK_DONE);
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
+                "Changing this pool result will invalidate the current Direct Elimination bracket, including all DE results. Continue?",
+                ButtonType.CANCEL, reset);
+        alert.setTitle("Reset Direct Elimination"); alert.setHeaderText(null);
+        return alert.showAndWait().orElse(ButtonType.CANCEL) == reset;
     }
 
     private void generateEliminationBracket() {
@@ -269,6 +292,10 @@ public final class TournamentController {
     private void selectBout(PoolBoutRow bout) {
         selectedBout = bout;
         view.showSelectedBout(bout);
+    }
+    private void selectBout(PoolBoutRow bout, boolean rowIsScheduledFirst) {
+        selectedPoolRowIsScheduledFirst = rowIsScheduledFirst;
+        selectBout(bout);
     }
 
     private void refreshWorkspace() {
@@ -327,6 +354,14 @@ public final class TournamentController {
         String score = bout.score() == null ? "—" : bout.score().firstScore() + " - " + bout.score().secondScore();
         return new PoolBoutRow(bout.id(), bout.firstFencerId(), bout.secondFencerId(),
                 fencerName(bout.firstFencerId()), fencerName(bout.secondFencerId()),
+                score, bout.score() == null ? "Pending" : "Completed", bout.score() != null);
+    }
+
+    private PoolBoutRow orientedBoutRow(PoolBout bout, UUID rowFencerId) {
+        if (bout.firstFencerId().equals(rowFencerId)) return boutRow(bout);
+        String score = bout.score() == null ? "—" : bout.score().secondScore() + " - " + bout.score().firstScore();
+        return new PoolBoutRow(bout.id(), bout.secondFencerId(), bout.firstFencerId(),
+                fencerName(bout.secondFencerId()), fencerName(bout.firstFencerId()),
                 score, bout.score() == null ? "Pending" : "Completed", bout.score() != null);
     }
 

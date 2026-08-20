@@ -163,8 +163,16 @@ public final class Tournament {
 
     /** Explicitly replaces a previously recorded result for correction purposes. */
     public void replacePoolBoutResult(UUID poolId, UUID boutId, BoutScore score) {
-        updatePool(poolId, pool -> pool.replaceBoutResult(boutId, score,
-                settings.poolBoutScoreLimit()));
+        replacePoolBoutResult(poolId, boutId, score, false);
+    }
+
+    /** Corrects a pool result and, if explicitly authorised, invalidates the dependent DE bracket. */
+    public void replacePoolBoutResult(UUID poolId, UUID boutId, BoutScore score, boolean resetElimination) {
+        if (eliminationBracket != null && !resetElimination) {
+            throw new IllegalStateException("Changing this pool result will invalidate the Direct Elimination bracket and its results.");
+        }
+        updatePool(poolId, pool -> pool.replaceBoutResult(boutId, score, settings.poolBoutScoreLimit()), true);
+        if (resetElimination) eliminationBracket = null;
     }
 
     public EliminationBracket eliminationBracket() {
@@ -186,11 +194,22 @@ public final class Tournament {
         eliminationBracket = eliminationBracket.recordResult(matchId, score, settings.eliminationBoutScoreLimit());
     }
 
-    private void updatePool(UUID poolId, java.util.function.UnaryOperator<Pool> update) {
+    public boolean eliminationEditNeedsReset(UUID matchId) {
+        if (eliminationBracket == null) throw new IllegalStateException("Generate the elimination bracket first.");
+        return eliminationBracket.hasCompletedDescendant(matchId);
+    }
+
+    public void replaceEliminationBoutResult(UUID matchId, BoutScore score, boolean resetDownstream) {
+        if (eliminationBracket == null) throw new IllegalStateException("Generate the elimination bracket first.");
+        eliminationBracket = eliminationBracket.replaceResult(matchId, score, settings.eliminationBoutScoreLimit(), resetDownstream);
+    }
+
+    private void updatePool(UUID poolId, java.util.function.UnaryOperator<Pool> update) { updatePool(poolId, update, false); }
+    private void updatePool(UUID poolId, java.util.function.UnaryOperator<Pool> update, boolean allowEliminationReset) {
         if (pools.isEmpty()) {
             throw new IllegalStateException("Pools must be generated before recording results.");
         }
-        if (eliminationBracket != null) {
+        if (eliminationBracket != null && !allowEliminationReset) {
             throw new IllegalStateException("Pool results cannot be changed after elimination begins.");
         }
         if (poolId == null) {
