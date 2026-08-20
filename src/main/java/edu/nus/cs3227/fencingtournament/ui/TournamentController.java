@@ -40,8 +40,9 @@ public final class TournamentController {
     private void wireActions() {
         view.createButton().setOnAction(event -> createTournament());
         view.homeCreateButton().setOnAction(event -> createTournamentFromHome());
-        view.homeOpenButton().setOnAction(event -> openSelectedTournament());
-        view.tournamentList().setOnMouseClicked(event -> { if (event.getClickCount() == 2) openSelectedTournament(); });
+        view.homeNewButton().setOnAction(event -> view.showNewTournamentForm(true));
+        view.homeCancelButton().setOnAction(event -> { view.homeTournamentNameField().clear(); view.showNewTournamentForm(false); });
+        view.setTournamentOpenHandler(this::openTournament);
         view.homeButton().setOnAction(event -> { service.returnToTournamentHome(); refreshWorkspace(); });
         view.loadButton().setOnAction(event -> loadTournament());
         view.saveButton().setOnAction(event -> saveTournament());
@@ -85,15 +86,14 @@ public final class TournamentController {
         try {
             service.createTournament(view.homeTournamentNameField().getText());
             view.homeTournamentNameField().clear();
+            view.showNewTournamentForm(false);
             refreshWorkspace();
             view.showStatus("Tournament created.");
         } catch (IllegalArgumentException exception) { showError(exception); }
     }
 
-    private void openSelectedTournament() {
-        var selected = view.tournamentList().getSelectionModel().getSelectedItem();
-        if (selected == null) { view.showStatus("Select a tournament to open."); return; }
-        try { service.openTournament(selected.id()); refreshWorkspace(); view.showStatus("Tournament opened."); }
+    private void openTournament(UUID tournamentId) {
+        try { service.openTournament(tournamentId); refreshWorkspace(); view.showStatus("Tournament opened."); }
         catch (IllegalArgumentException exception) { showError(exception); }
     }
 
@@ -302,6 +302,10 @@ public final class TournamentController {
                 view.renderStandings(List.of(), false);
             }
         }
+        else {
+            selectedBout = null;
+            view.clearPoolWorkspace();
+        }
         if (tournament.eliminationBracket() != null) {
             EliminationBracket bracket = tournament.eliminationBracket();
             List<EliminationMatchRow> eliminationRows = eliminationRows(bracket);
@@ -314,6 +318,9 @@ public final class TournamentController {
             view.renderFinalResults(service.finalStandings().stream().map(this::finalResultsRow).toList());
         }
         view.setPhaseControls(phase, true, poolResultsFinalized, tournament.eliminationBracket() != null);
+        if (phase == TournamentPhase.REGISTRATION || phase == TournamentPhase.SEEDING) {
+            view.selectSetupTab();
+        }
     }
 
     private PoolBoutRow boutRow(PoolBout bout) {

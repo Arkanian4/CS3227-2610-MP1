@@ -63,6 +63,22 @@
     -fx-padding: 24;
     -fx-spacing: 16;
 }
+.home-screen { -fx-background-color: #f5f6f7; }
+.home-content { -fx-max-width: 820; -fx-pref-width: 820; -fx-padding: 30 24 24 24; -fx-spacing: 10; }
+.home-title { -fx-font-size: 25px; -fx-font-weight: 800; -fx-text-fill: #172333; }
+.home-create-form { -fx-padding: 10 0 6 0; }
+.home-tournament-scroll { -fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent; -fx-padding: 8 0 0 0; }
+.home-tournament-scroll > .viewport { -fx-background-color: transparent; }
+.home-section-heading { -fx-padding: 16 0 5 0; -fx-font-size: 11px; -fx-font-weight: 800; -fx-text-fill: #5b6d79; }
+.home-tournament-row, .home-tournament-row-complete { -fx-padding: 13 14; -fx-background-color: #ffffff; -fx-border-color: #d9e0e3; -fx-border-radius: 4; -fx-background-radius: 4; }
+.home-tournament-row-complete { -fx-background-color: #f8f9f9; -fx-border-color: #e2e6e7; }
+.home-tournament-name { -fx-font-size: 15px; -fx-font-weight: 800; -fx-text-fill: #1d2d3a; }
+.home-tournament-meta { -fx-font-size: 12px; -fx-text-fill: #6a7983; }
+.home-status { -fx-padding: 2 6; -fx-font-size: 11px; -fx-font-weight: 700; -fx-background-radius: 3; }
+.home-status-ongoing { -fx-text-fill: #17614f; -fx-background-color: #e2f0e9; }
+.home-status-complete { -fx-text-fill: #5c6770; -fx-background-color: #eaedef; }
+.home-view-action { -fx-background-color: #ffffff; -fx-text-fill: #40545e; -fx-border-color: #bcc7cf; }
+.home-empty-title { -fx-font-size: 15px; -fx-font-weight: 700; -fx-text-fill: #263746; }
 .setup-empty-state {
     -fx-max-width: 680;
     -fx-padding: 48 0 0 0;
