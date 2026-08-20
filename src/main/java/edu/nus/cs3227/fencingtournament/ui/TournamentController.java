@@ -39,6 +39,10 @@ public final class TournamentController {
 
     private void wireActions() {
         view.createButton().setOnAction(event -> createTournament());
+        view.homeCreateButton().setOnAction(event -> createTournamentFromHome());
+        view.homeOpenButton().setOnAction(event -> openSelectedTournament());
+        view.tournamentList().setOnMouseClicked(event -> { if (event.getClickCount() == 2) openSelectedTournament(); });
+        view.homeButton().setOnAction(event -> { service.returnToTournamentHome(); refreshWorkspace(); });
         view.loadButton().setOnAction(event -> loadTournament());
         view.saveButton().setOnAction(event -> saveTournament());
         view.addFencerButton().setOnAction(event -> addFencer());
@@ -77,6 +81,22 @@ public final class TournamentController {
         }
     }
 
+    private void createTournamentFromHome() {
+        try {
+            service.createTournament(view.homeTournamentNameField().getText());
+            view.homeTournamentNameField().clear();
+            refreshWorkspace();
+            view.showStatus("Tournament created.");
+        } catch (IllegalArgumentException exception) { showError(exception); }
+    }
+
+    private void openSelectedTournament() {
+        var selected = view.tournamentList().getSelectionModel().getSelectedItem();
+        if (selected == null) { view.showStatus("Select a tournament to open."); return; }
+        try { service.openTournament(selected.id()); refreshWorkspace(); view.showStatus("Tournament opened."); }
+        catch (IllegalArgumentException exception) { showError(exception); }
+    }
+
     private void loadTournament() {
         var selected = jsonFileChooser("Open tournament").showOpenDialog(view.getScene().getWindow());
         if (selected == null) return;
@@ -103,6 +123,7 @@ public final class TournamentController {
         }
         try {
             service.saveTournament(path);
+            service.saveAll(Path.of("tournaments"));
             currentFile = path;
             view.showStatus("Tournament saved.");
         } catch (IOException | IllegalArgumentException | IllegalStateException exception) {
@@ -253,9 +274,12 @@ public final class TournamentController {
     private void refreshWorkspace() {
         Optional<Tournament> current = service.currentTournament();
         if (current.isEmpty()) {
+            view.renderTournamentList(service.listTournaments());
             view.setNoTournamentState();
             return;
         }
+        view.renderTournamentList(service.listTournaments());
+        view.showWorkspace();
         Tournament tournament = current.orElseThrow();
         TournamentPhase phase = service.currentPhase();
         PoolProgress progress = phase == TournamentPhase.POOL_PHASE ? service.poolProgress() : null;

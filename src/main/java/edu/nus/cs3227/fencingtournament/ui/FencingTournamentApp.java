@@ -4,6 +4,8 @@ import edu.nus.cs3227.fencingtournament.application.TournamentService;
 import edu.nus.cs3227.fencingtournament.persistence.JsonTournamentRepository;
 import javafx.application.Application;
 import javafx.stage.Stage;
+import java.nio.file.Path;
+import java.io.IOException;
 
 /** JavaFX composition root for the registration workflow. */
 public final class FencingTournamentApp extends Application {
@@ -11,6 +13,11 @@ public final class FencingTournamentApp extends Application {
     public void start(Stage stage) {
         TournamentView view = new TournamentView();
         TournamentService service = new TournamentService(new JsonTournamentRepository());
+        try {
+            service.loadAll(Path.of("tournaments"));
+        } catch (IOException exception) {
+            view.showStatus("Some saved tournaments could not be loaded: " + exception.getMessage());
+        }
         new TournamentController(service, view);
 
         stage.setTitle("Fencing Tournament Manager");

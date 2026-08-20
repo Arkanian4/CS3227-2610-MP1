@@ -65,6 +65,13 @@ public final class JsonTournamentRepository implements TournamentRepository {
         }
         requirePath(path);
 
+        if (Files.exists(path)) {
+            Optional<Tournament> existing = load(path);
+            if (existing.isPresent() && !existing.get().id().equals(tournament.id())) {
+                throw new IOException("A different tournament already exists at this path.");
+            }
+        }
+
         Path parent = path.toAbsolutePath().getParent();
         if (parent != null) {
             Files.createDirectories(parent);

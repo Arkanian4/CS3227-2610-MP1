@@ -2,6 +2,7 @@ package edu.nus.cs3227.fencingtournament.ui;
 
 import edu.nus.cs3227.fencingtournament.application.PoolProgress;
 import edu.nus.cs3227.fencingtournament.domain.Fencer;
+import edu.nus.cs3227.fencingtournament.domain.Tournament;
 import edu.nus.cs3227.fencingtournament.domain.TournamentPhase;
 import edu.nus.cs3227.fencingtournament.domain.pool.Pool;
 import javafx.collections.FXCollections;
@@ -37,6 +38,12 @@ public final class TournamentView extends BorderPane {
     private final Button createButton = new Button("Create tournament");
     private final Button loadButton = new Button("Open");
     private final Button saveButton = new Button("Save");
+    private final Button homeButton = new Button("Tournament Home");
+    private final TextField homeTournamentNameField = new TextField();
+    private final Button homeCreateButton = new Button("New tournament");
+    private final Button homeOpenButton = new Button("Open selected");
+    private final ListView<Tournament> tournamentList = new ListView<>(FXCollections.observableArrayList());
+    private final VBox homeScreen = new VBox();
 
     private final TextField fencerNameField = new TextField();
     private final Button addFencerButton = new Button("Add fencer");
@@ -104,6 +111,7 @@ public final class TournamentView extends BorderPane {
         standingsTab.setContent(buildStandingsTab());
         eliminationTab.setContent(buildEliminationTab());
         finalResultsTab.setContent(buildFinalResultsTab());
+        buildHomeScreen();
         for (Tab tab : List.of(fencersTab, poolsTab, standingsTab, eliminationTab, finalResultsTab)) tab.setClosable(false);
         tabs.getTabs().addAll(fencersTab, poolsTab, standingsTab, eliminationTab, finalResultsTab);
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
@@ -123,6 +131,14 @@ public final class TournamentView extends BorderPane {
     public Button createButton() { return createButton; }
     public Button loadButton() { return loadButton; }
     public Button saveButton() { return saveButton; }
+    public Button homeButton() { return homeButton; }
+    public TextField homeTournamentNameField() { return homeTournamentNameField; }
+    public Button homeCreateButton() { return homeCreateButton; }
+    public Button homeOpenButton() { return homeOpenButton; }
+    public ListView<Tournament> tournamentList() { return tournamentList; }
+    public void showWorkspace() { setCenter(tabs); }
+    public void showHome() { setCenter(homeScreen); }
+    public void renderTournamentList(List<Tournament> tournaments) { tournamentList.getItems().setAll(tournaments); }
     public TextField fencerNameField() { return fencerNameField; }
     public Button addFencerButton() { return addFencerButton; }
     public Button removeFencerButton() { return removeFencerButton; }
@@ -277,6 +293,7 @@ public final class TournamentView extends BorderPane {
         tournamentNameLabel.setText("No tournament open"); phaseLabel.setText("Create a tournament or open an existing file"); progressLabel.setText("");
         fencerList.getItems().clear(); seedList.getItems().clear(); poolList.getItems().clear(); poolMatrixGrid.getChildren().clear(); standingsGrid.getChildren().clear(); finalResultsGrid.getChildren().clear(); showSelectedBout(null);
         setPhaseControls(TournamentPhase.REGISTRATION, false, false, false);
+        showHome();
     }
     public void showTournamentName(String name) { tournamentNameLabel.setText(name); }
 
@@ -284,8 +301,16 @@ public final class TournamentView extends BorderPane {
         Label appName = new Label("Fencing Tournament Manager"); appName.getStyleClass().add("app-name"); tournamentNameLabel.getStyleClass().add("tournament-name"); phaseLabel.getStyleClass().add("phase-name"); progressLabel.getStyleClass().add("progress-text");
         loadButton.getStyleClass().add("secondary-action"); saveButton.getStyleClass().add("primary-action");
         HBox identity = new HBox(14, appName, tournamentNameLabel); identity.setAlignment(Pos.CENTER_LEFT);
-        VBox state = new VBox(2, phaseLabel, progressLabel); HBox actions = new HBox(8, loadButton, saveButton); actions.setAlignment(Pos.CENTER_RIGHT); HBox.setHgrow(actions, Priority.ALWAYS);
+        VBox state = new VBox(2, phaseLabel, progressLabel); HBox actions = new HBox(8, homeButton, loadButton, saveButton); actions.setAlignment(Pos.CENTER_RIGHT); HBox.setHgrow(actions, Priority.ALWAYS);
         HBox bar = new HBox(20, identity, state, actions); bar.setAlignment(Pos.CENTER_LEFT); bar.getStyleClass().add("top-bar"); return new VBox(bar);
+    }
+    private VBox buildHomeScreen() {
+        Label title = new Label("Tournaments"); title.getStyleClass().add("screen-title");
+        Label subtitle = new Label("Open an existing tournament or create a new club event."); subtitle.getStyleClass().add("screen-subtitle");
+        homeTournamentNameField.setPromptText("Tournament name"); homeCreateButton.getStyleClass().add("primary-action"); homeOpenButton.getStyleClass().add("secondary-action");
+        HBox create = formRow(homeTournamentNameField, homeCreateButton);
+        tournamentList.setPlaceholder(new Label("No tournaments yet.")); tournamentList.setPrefHeight(420); tournamentList.setCellFactory(ignored -> new ListCell<>() { @Override protected void updateItem(Tournament tournament, boolean empty) { super.updateItem(tournament, empty); setText(empty || tournament == null ? null : tournament.name() + "  ·  " + phaseText(tournament.phase()) + "  ·  " + tournament.fencers().size() + " fencers"); }});
+        homeScreen.getChildren().setAll(title, subtitle, create, new Label("TOURNAMENTS"), tournamentList, homeOpenButton); homeScreen.setSpacing(12); homeScreen.setPadding(new Insets(28)); homeScreen.getStyleClass().add("screen-content"); return homeScreen;
     }
     private VBox buildSetupTab() {
         tournamentNameField.setPromptText("Tournament name, e.g. Friday Internal Open"); tournamentNameField.setOnAction(event -> createButton.fire()); createButton.getStyleClass().add("primary-action");

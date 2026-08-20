@@ -31,6 +31,31 @@ class TournamentServiceTest {
     }
 
     @Test
+    void multipleTournamentsCanBeSelectedWithoutSharingRosterState() {
+        TournamentService service = new TournamentService(new InMemoryRepository());
+
+        Tournament first = service.createTournament("Club Open");
+        service.addFencer("Alice");
+        Tournament second = service.createTournament("Training Night");
+        service.addFencer("Bob");
+
+        service.openTournament(first.id());
+        assertEquals(List.of("Alice"), service.registeredFencers().stream().map(Fencer::name).toList());
+        service.openTournament(second.id());
+        assertEquals(List.of("Bob"), service.registeredFencers().stream().map(Fencer::name).toList());
+        assertEquals(2, service.listTournaments().size());
+    }
+
+    @Test
+    void tournamentNamesAreUniqueIgnoringCaseAndWhitespace() {
+        TournamentService service = new TournamentService(new InMemoryRepository());
+        Tournament original = service.createTournament("  Club Open  ");
+
+        assertThrows(IllegalArgumentException.class, () -> service.createTournament("club open"));
+        assertEquals(original.id(), service.currentTournament().orElseThrow().id());
+    }
+
+    @Test
     void serviceRequiresActiveTournamentForRegistrationAndSaving() {
         TournamentService service = new TournamentService(new InMemoryRepository());
 
