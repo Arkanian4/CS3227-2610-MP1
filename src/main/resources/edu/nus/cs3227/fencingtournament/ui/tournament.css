@@ -152,7 +152,8 @@
 .standings-table .column-header-background { -fx-background-color: #eef1f3; }
 .standings-table .column-header { -fx-background-color: #eef1f3; -fx-padding: 8 6; }
 .standings-table .column-header .label { -fx-font-size: 12px; -fx-font-weight: 700; -fx-text-fill: #435565; }
-.standings-table .table-cell { -fx-padding: 8 10; -fx-font-size: 13px; }
+.standings-table .table-cell { -fx-padding: 8 6; -fx-font-size: 13px; -fx-alignment: CENTER; }
+.standings-table .standing-name-column .table-cell { -fx-alignment: CENTER-LEFT; }
 .standing-status { -fx-font-size: 12px; -fx-font-weight: 700; }
 .standing-status.is-final { -fx-text-fill: #17614f; }
 .standing-status.is-provisional { -fx-text-fill: #7b6234; }

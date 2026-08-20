@@ -5,6 +5,7 @@ import edu.nus.cs3227.fencingtournament.domain.pool.BoutScore;
 import edu.nus.cs3227.fencingtournament.domain.pool.Pool;
 import edu.nus.cs3227.fencingtournament.domain.pool.PoolBout;
 import edu.nus.cs3227.fencingtournament.domain.standings.PoolStanding;
+import edu.nus.cs3227.fencingtournament.domain.standings.OverallStanding;
 import edu.nus.cs3227.fencingtournament.domain.standings.TieBreakCriterion;
 import edu.nus.cs3227.fencingtournament.domain.standings.TieBreakPolicy;
 import org.junit.jupiter.api.Test;
@@ -142,6 +143,37 @@ class StandingsCalculatorTest {
         assertThrows(IllegalArgumentException.class,
                 () -> calculator.calculatePoolStandings(pool,
                         new Seeding(List.of(fencers.get(0))), allCriteria()));
+    }
+
+    @Test
+    void overallStandingsAggregateCompletedPoolsAndPreserveSeeds() {
+        List<UUID> fencers = ids(4);
+        Pool firstPool = new Pool(UUID.randomUUID(), "Pool A",
+                List.of(fencers.get(0), fencers.get(1)),
+                List.of(bout(fencers.get(0), fencers.get(1), new BoutScore(5, 2))));
+        Pool secondPool = new Pool(UUID.randomUUID(), "Pool B",
+                List.of(fencers.get(2), fencers.get(3)),
+                List.of(bout(fencers.get(2), fencers.get(3), new BoutScore(5, 4))));
+
+        List<OverallStanding> standings = calculator.calculateOverallStandings(
+                List.of(firstPool, secondPool), new Seeding(fencers), allCriteria());
+
+        assertEquals(4, standings.size());
+        assertEquals(fencers.get(0), standings.get(0).fencerId());
+        assertEquals(1, standings.get(0).victories());
+        assertEquals(1, standings.get(0).boutsFenced());
+        assertEquals(1, standings.get(0).seed());
+        assertEquals(1, standings.get(0).rank());
+    }
+
+    @Test
+    void overallStandingsRejectIncompletePools() {
+        List<UUID> fencers = ids(2);
+        Pool incomplete = new Pool(UUID.randomUUID(), "Pool A", fencers,
+                List.of(bout(fencers.get(0), fencers.get(1), null)));
+
+        assertThrows(IllegalStateException.class, () -> calculator.calculateOverallStandings(
+                List.of(incomplete), new Seeding(fencers), allCriteria()));
     }
 
     private List<PoolStanding> calculate(Pool pool, List<UUID> fencers, TieBreakPolicy policy) {

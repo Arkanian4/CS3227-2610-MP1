@@ -9,6 +9,7 @@ import edu.nus.cs3227.fencingtournament.domain.pool.Pool;
 import edu.nus.cs3227.fencingtournament.domain.rules.PoolGenerator;
 import edu.nus.cs3227.fencingtournament.domain.rules.StandingsCalculator;
 import edu.nus.cs3227.fencingtournament.domain.standings.PoolStanding;
+import edu.nus.cs3227.fencingtournament.domain.standings.OverallStanding;
 import edu.nus.cs3227.fencingtournament.domain.pool.BoutScore;
 import edu.nus.cs3227.fencingtournament.domain.standings.TieBreakCriterion;
 import edu.nus.cs3227.fencingtournament.domain.standings.TieBreakPolicy;
@@ -90,6 +91,16 @@ public final class TournamentService {
                 new IllegalArgumentException("Pool does not belong to this tournament."));
         return standingsCalculator.calculatePoolStandings(
                 pool, tournament.seeding(), tournament.settings().tieBreakPolicy());
+    }
+
+    public List<OverallStanding> overallStandings() {
+        Tournament tournament = requireActiveTournament();
+        List<Pool> tournamentPools = tournament.pools();
+        if (tournamentPools.isEmpty() || tournamentPools.stream().anyMatch(pool -> !pool.isComplete())) {
+            throw new IllegalStateException("Pool seeding is available after all pool bouts are complete.");
+        }
+        return standingsCalculator.calculateOverallStandings(
+                tournamentPools, tournament.seeding(), tournament.settings().tieBreakPolicy());
     }
 
     public PoolProgress poolProgress() {

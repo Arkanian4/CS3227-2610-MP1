@@ -8,7 +8,7 @@ import edu.nus.cs3227.fencingtournament.domain.TournamentPhase;
 import edu.nus.cs3227.fencingtournament.domain.pool.BoutScore;
 import edu.nus.cs3227.fencingtournament.domain.pool.Pool;
 import edu.nus.cs3227.fencingtournament.domain.pool.PoolBout;
-import edu.nus.cs3227.fencingtournament.domain.standings.PoolStanding;
+import edu.nus.cs3227.fencingtournament.domain.standings.OverallStanding;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.stage.FileChooser;
@@ -55,8 +55,6 @@ public final class TournamentController {
                     .findFirst()
                     .ifPresent(this::selectBout);
         });
-        view.standingsPoolSelector().setOnAction(event -> renderStandings(
-                view.standingsPoolSelector().getSelectionModel().getSelectedItem()));
         view.recordResultButton().setOnAction(event -> recordResult());
     }
 
@@ -203,17 +201,6 @@ public final class TournamentController {
         view.showSelectedBout(bout);
     }
 
-    private void renderStandings(Pool pool) {
-        if (pool == null) return;
-        try {
-            List<PoolStandingRow> rows = service.standingsForPool(pool.id()).stream()
-                    .map(this::standingRow).toList();
-            view.renderStandings(rows, pool.isComplete());
-        } catch (IllegalArgumentException exception) {
-            showError(exception);
-        }
-    }
-
     private void refreshWorkspace() {
         Optional<Tournament> current = service.currentTournament();
         if (current.isEmpty()) {
@@ -229,12 +216,20 @@ public final class TournamentController {
         List<Fencer> seedOrder = tournament.seeding() == null ? fencers : tournament.seeding().fencerIds().stream()
                 .map(tournament::findFencer).flatMap(Optional::stream).toList();
         view.renderFencers(fencers, seedOrder);
+        boolean poolResultsFinalized = !tournament.pools().isEmpty()
+                && tournament.pools().stream().allMatch(Pool::isComplete);
         if (!tournament.pools().isEmpty()) {
             view.renderPools(tournament.pools());
             renderSelectedPool(view.poolList().getSelectionModel().getSelectedItem());
-            renderStandings(view.standingsPoolSelector().getSelectionModel().getSelectedItem());
+            if (poolResultsFinalized) {
+                List<OverallSeedingRow> rows = service.overallStandings().stream()
+                        .map(this::overallSeedingRow).toList();
+                view.renderOverallSeeding(rows);
+            } else {
+                view.renderStandings(List.of(), false);
+            }
         }
-        view.setPhaseControls(phase, true);
+        view.setPhaseControls(phase, true, poolResultsFinalized);
     }
 
     private PoolBoutRow boutRow(PoolBout bout) {
@@ -277,10 +272,10 @@ public final class TournamentController {
                 || (bout.firstId().equals(second) && bout.secondId().equals(first));
     }
 
-    private PoolStandingRow standingRow(PoolStanding standing) {
-        return new PoolStandingRow(fencerName(standing.fencerId()), standing.rank(), standing.boutsFenced(),
-                standing.victories(), standing.victoryRatio(), standing.touchesScored(),
-                standing.touchesReceived(), standing.indicator());
+    private OverallSeedingRow overallSeedingRow(OverallStanding standing) {
+        return new OverallSeedingRow(fencerName(standing.fencerId()), standing.rank(), standing.victories(),
+                standing.boutsFenced(), standing.victoryRatio(), standing.touchesScored(),
+                standing.touchesReceived(), standing.indicator(), standing.seed());
     }
 
     private String fencerName(UUID id) {

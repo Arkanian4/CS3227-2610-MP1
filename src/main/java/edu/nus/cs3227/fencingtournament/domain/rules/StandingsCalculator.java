@@ -5,6 +5,7 @@ import edu.nus.cs3227.fencingtournament.domain.pool.BoutScore;
 import edu.nus.cs3227.fencingtournament.domain.pool.Pool;
 import edu.nus.cs3227.fencingtournament.domain.pool.PoolBout;
 import edu.nus.cs3227.fencingtournament.domain.standings.PoolStanding;
+import edu.nus.cs3227.fencingtournament.domain.standings.OverallStanding;
 import edu.nus.cs3227.fencingtournament.domain.standings.TieBreakCriterion;
 import edu.nus.cs3227.fencingtournament.domain.standings.TieBreakPolicy;
 
@@ -18,6 +19,41 @@ import java.util.UUID;
 
 /** Calculates provisional or final standings from the recorded bouts of one pool. */
 public final class StandingsCalculator {
+    /** Calculates one tournament-wide ranking from all completed pool bouts. */
+    public List<OverallStanding> calculateOverallStandings(List<Pool> pools, Seeding seeding,
+                                                            TieBreakPolicy tieBreakPolicy) {
+        if (pools == null || pools.isEmpty() || seeding == null || tieBreakPolicy == null) {
+            throw new IllegalArgumentException("Pools, seeding, and tie-break policy are required.");
+        }
+        Map<UUID, Integer> seeds = seedMap(seeding);
+        Map<UUID, Statistics> statistics = new LinkedHashMap<>();
+        for (UUID fencerId : seeding.fencerIds()) statistics.put(fencerId, new Statistics(fencerId, seeds.get(fencerId)));
+        for (Pool pool : pools) {
+            if (pool == null) throw new IllegalArgumentException("Pools must not contain null entries.");
+            for (PoolBout bout : pool.bouts()) {
+                Statistics first = statistics.get(bout.firstFencerId());
+                Statistics second = statistics.get(bout.secondFencerId());
+                if (first == null || second == null) throw new IllegalArgumentException("Pool fencer is missing from seeding.");
+                if (bout.score() == null) throw new IllegalStateException("All pool bouts must be completed before pool seeding is calculated.");
+                BoutScore score = bout.score();
+                first.boutsFenced++; second.boutsFenced++;
+                first.touchesScored += score.firstScore(); first.touchesReceived += score.secondScore();
+                second.touchesScored += score.secondScore(); second.touchesReceived += score.firstScore();
+                if (score.firstFencerWon()) first.victories++; else second.victories++;
+            }
+        }
+        validateCriteria(tieBreakPolicy);
+        List<Statistics> ordered = new ArrayList<>(statistics.values());
+        ordered.sort(comparator(tieBreakPolicy.criteria()));
+        List<OverallStanding> result = new ArrayList<>(ordered.size());
+        for (int index = 0; index < ordered.size(); index++) {
+            Statistics statistic = ordered.get(index);
+            result.add(new OverallStanding(statistic.fencerId, statistic.boutsFenced, statistic.victories,
+                    statistic.victoryRatio(), statistic.touchesScored, statistic.touchesReceived,
+                    statistic.indicator(), statistic.seed, index + 1));
+        }
+        return List.copyOf(result);
+    }
     /**
      * Calculates standings using only completed bouts. A fencer with no completed bouts remains
      * in the result with zero statistics. If the pool is incomplete, the returned ranks are
@@ -63,10 +99,8 @@ public final class StandingsCalculator {
             }
         }
 
+        validateCriteria(tieBreakPolicy);
         List<TieBreakCriterion> criteria = tieBreakPolicy.criteria();
-        if (criteria == null || criteria.stream().anyMatch(criterion -> criterion == null)) {
-            throw new IllegalArgumentException("Tie-break criteria must not contain null values.");
-        }
         List<Statistics> ordered = new ArrayList<>(statistics.values());
         ordered.sort(comparator(criteria));
 
@@ -84,6 +118,13 @@ public final class StandingsCalculator {
                     index + 1));
         }
         return List.copyOf(standings);
+    }
+
+    private static void validateCriteria(TieBreakPolicy tieBreakPolicy) {
+        List<TieBreakCriterion> criteria = tieBreakPolicy.criteria();
+        if (criteria == null || criteria.stream().anyMatch(criterion -> criterion == null)) {
+            throw new IllegalArgumentException("Tie-break criteria must not contain null values.");
+        }
     }
 
     private static Comparator<Statistics> comparator(List<TieBreakCriterion> criteria) {
