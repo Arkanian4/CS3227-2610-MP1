@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 /** Placeholder for user-workflow orchestration and persistence coordination. */
 public final class TournamentService {
@@ -39,15 +40,21 @@ public final class TournamentService {
     private final StandingsCalculator standingsCalculator = new StandingsCalculator();
     private final FinalStandingsCalculator finalStandingsCalculator = new FinalStandingsCalculator();
     private final Map<UUID, Tournament> tournaments = new LinkedHashMap<>();
-    private final Map<UUID, Path> tournamentFiles = new LinkedHashMap<>();
     private final Set<String> tournamentNameKeys = new HashSet<>();
+    private final Path autoSaveDirectory;
     private Tournament activeTournament;
 
     public TournamentService(TournamentRepository repository) {
+        this(repository, null);
+    }
+
+    /** Creates a service that autosaves the complete local tournament collection after each mutation. */
+    public TournamentService(TournamentRepository repository, Path autoSaveDirectory) {
         if (repository == null) {
             throw new IllegalArgumentException("Tournament repository must not be null.");
         }
         this.repository = repository;
+        this.autoSaveDirectory = autoSaveDirectory;
     }
 
     public Tournament createTournament(String name) {
@@ -55,10 +62,12 @@ public final class TournamentService {
         if (tournamentNameKeys.contains(nameKey(normalized))) {
             throw new IllegalArgumentException("A tournament with this name already exists. Choose a different name.");
         }
-        activeTournament = Tournament.create(normalized, defaultSettings());
-        tournaments.put(activeTournament.id(), activeTournament);
-        tournamentNameKeys.add(nameKey(activeTournament.name()));
-        return activeTournament;
+        return mutate(() -> {
+            activeTournament = Tournament.create(normalized, defaultSettings());
+            tournaments.put(activeTournament.id(), activeTournament);
+            tournamentNameKeys.add(nameKey(activeTournament.name()));
+            return activeTournament;
+        });
     }
 
     public Optional<Tournament> loadTournament(Path path) throws IOException {
@@ -71,16 +80,16 @@ public final class TournamentService {
             }
             activeTournament = tournament;
             tournaments.put(tournament.id(), tournament);
-            tournamentFiles.put(tournament.id(), path);
             tournamentNameKeys.add(key);
         });
+        if (loaded.isPresent() && autoSaveDirectory != null) {
+            try {
+                saveAll(autoSaveDirectory);
+            } catch (IOException exception) {
+                throw new TournamentPersistenceException("Tournament loaded, but automatic saving failed.", exception);
+            }
+        }
         return loaded;
-    }
-
-    public void saveTournament(Path path) throws IOException {
-        Tournament tournament = requireActiveTournament();
-        repository.save(tournament, path);
-        tournamentFiles.put(tournament.id(), path);
     }
 
     public List<Tournament> listTournaments() {
@@ -113,7 +122,6 @@ public final class TournamentService {
                 Tournament tournament = value.get();
                 if (tournamentNameKeys.add(nameKey(tournament.name()))) {
                     tournaments.put(tournament.id(), tournament);
-                    tournamentFiles.put(tournament.id(), file);
                     loaded.add(tournament);
                 }
             }
@@ -127,22 +135,23 @@ public final class TournamentService {
         for (Tournament tournament : tournaments.values()) {
             Path file = directory.resolve(safeFileName(tournament.name()) + ".json");
             repository.save(tournament, file);
-            tournamentFiles.put(tournament.id(), file);
         }
     }
 
     public Fencer addFencer(String name) {
         Fencer fencer = Fencer.create(name);
-        requireActiveTournament().addFencer(fencer);
-        return fencer;
+        return mutate(() -> {
+            requireActiveTournament().addFencer(fencer);
+            return fencer;
+        });
     }
 
     public boolean removeFencer(UUID fencerId) {
-        return requireActiveTournament().removeFencer(fencerId);
+        return mutate(() -> requireActiveTournament().removeFencer(fencerId));
     }
 
     public void recordPoolBoutResult(UUID poolId, UUID boutId, BoutScore score) {
-        requireActiveTournament().recordPoolBoutResult(poolId, boutId, score);
+        mutate(() -> { requireActiveTournament().recordPoolBoutResult(poolId, boutId, score); return null; });
     }
 
     public void replacePoolBoutResult(UUID poolId, UUID boutId, BoutScore score) {
@@ -152,11 +161,11 @@ public final class TournamentService {
     public boolean poolEditNeedsReset() { return requireActiveTournament().eliminationBracket() != null; }
 
     public void replacePoolBoutResult(UUID poolId, UUID boutId, BoutScore score, boolean resetElimination) {
-        requireActiveTournament().replacePoolBoutResult(poolId, boutId, score, resetElimination);
+        mutate(() -> { requireActiveTournament().replacePoolBoutResult(poolId, boutId, score, resetElimination); return null; });
     }
 
     public void seedFencers(List<UUID> orderedFencerIds) {
-        requireActiveTournament().applySeeding(new Seeding(orderedFencerIds));
+        mutate(() -> { requireActiveTournament().applySeeding(new Seeding(orderedFencerIds)); return null; });
     }
 
     public void generatePools() {
@@ -164,9 +173,11 @@ public final class TournamentService {
     }
 
     public void generatePools(int maximumPoolSize) {
-        Tournament tournament = requireActiveTournament();
-        tournament.installPools(poolGenerator.generate(
-                tournament.seeding(), maximumPoolSize));
+        mutate(() -> {
+            Tournament tournament = requireActiveTournament();
+            tournament.installPools(poolGenerator.generate(tournament.seeding(), maximumPoolSize));
+            return null;
+        });
     }
 
     public List<Pool> pools() {
@@ -198,23 +209,29 @@ public final class TournamentService {
     public EliminationBracket generateEliminationBracket() {
         Tournament tournament = requireActiveTournament();
         if (tournament.eliminationBracket() != null) return tournament.eliminationBracket();
-        List<UUID> qualified = overallStandings().stream()
-                .sorted(java.util.Comparator.comparingInt(OverallStanding::rank))
-                .limit(16)
-                .map(OverallStanding::fencerId).toList();
-        EliminationBracket bracket = bracketGenerator.generate(qualified);
-        tournament.installEliminationBracket(bracket);
-        return bracket;
+        return mutate(() -> {
+            List<UUID> qualified = overallStandings().stream()
+                    .sorted(java.util.Comparator.comparingInt(OverallStanding::rank))
+                    .limit(16)
+                    .map(OverallStanding::fencerId).toList();
+            EliminationBracket bracket = bracketGenerator.generate(qualified);
+            tournament.installEliminationBracket(bracket);
+            return bracket;
+        });
     }
 
     public void recordEliminationBoutResult(UUID matchId, BoutScore score) {
-        requireActiveTournament().recordEliminationBoutResult(matchId, score);
+        mutate(() -> { requireActiveTournament().recordEliminationBoutResult(matchId, score); return null; });
     }
 
     public boolean eliminationEditNeedsReset(UUID matchId) { return requireActiveTournament().eliminationEditNeedsReset(matchId); }
 
+    public boolean eliminationEditNeedsReset(UUID matchId, BoutScore score) {
+        return requireActiveTournament().eliminationEditNeedsReset(matchId, score);
+    }
+
     public void replaceEliminationBoutResult(UUID matchId, BoutScore score, boolean resetDownstream) {
-        requireActiveTournament().replaceEliminationBoutResult(matchId, score, resetDownstream);
+        mutate(() -> { requireActiveTournament().replaceEliminationBoutResult(matchId, score, resetDownstream); return null; });
     }
 
     /** Returns final placements only after the completed DE bracket determines a champion. */
@@ -250,6 +267,17 @@ public final class TournamentService {
             throw new IllegalStateException("Create or load a tournament first.");
         }
         return activeTournament;
+    }
+
+    private <T> T mutate(Supplier<T> operation) {
+        T result = operation.get();
+        if (autoSaveDirectory == null) return result;
+        try {
+            saveAll(autoSaveDirectory);
+        } catch (IOException exception) {
+            throw new TournamentPersistenceException("Change applied, but automatic saving failed.", exception);
+        }
+        return result;
     }
 
     private static String normalizeName(String name) {

@@ -12,7 +12,7 @@ public final class FencingTournamentApp extends Application {
     @Override
     public void start(Stage stage) {
         TournamentView view = new TournamentView();
-        TournamentService service = new TournamentService(new JsonTournamentRepository());
+        TournamentService service = new TournamentService(new JsonTournamentRepository(), Path.of("tournaments"));
         try {
             service.loadAll(Path.of("tournaments"));
         } catch (IOException exception) {

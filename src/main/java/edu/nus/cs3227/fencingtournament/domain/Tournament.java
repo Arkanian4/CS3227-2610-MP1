@@ -199,6 +199,11 @@ public final class Tournament {
         return eliminationBracket.hasCompletedDescendant(matchId);
     }
 
+    public boolean eliminationEditNeedsReset(UUID matchId, BoutScore score) {
+        if (eliminationBracket == null) throw new IllegalStateException("Generate the elimination bracket first.");
+        return eliminationBracket.changingWinnerWouldInvalidateCompletedDescendant(matchId, score, settings.eliminationBoutScoreLimit());
+    }
+
     public void replaceEliminationBoutResult(UUID matchId, BoutScore score, boolean resetDownstream) {
         if (eliminationBracket == null) throw new IllegalStateException("Generate the elimination bracket first.");
         eliminationBracket = eliminationBracket.replaceResult(matchId, score, settings.eliminationBoutScoreLimit(), resetDownstream);

@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BracketGeneratorTest {
@@ -68,6 +70,77 @@ class BracketGeneratorTest {
 
         assertTrue(finalMatch.isReady());
         assertEquals(opening.get(0).secondSlot().fencerId(), finalMatch.firstSlot().fencerId());
+    }
+
+    @Test
+    void editingScoreWithoutChangingWinnerPreservesCompletedFinal() {
+        EliminationBracket bracket = completedFourFencerBracket();
+        EliminationMatch semiFinal = openingMatches(bracket).getFirst();
+        EliminationMatch finalMatch = finalMatch(bracket);
+
+        EliminationBracket corrected = bracket.replaceResult(semiFinal.id(), new BoutScore(15, 12), 15, false);
+
+        assertEquals(new BoutScore(15, 12), match(corrected, semiFinal.id()).score());
+        assertEquals(finalMatch.score(), finalMatch(corrected).score());
+        assertTrue(corrected.isComplete());
+    }
+
+    @Test
+    void changedWinnerAfterCompletedFinalRequiresResetAndClearsOnlyDependentFinal() {
+        EliminationBracket bracket = completedFourFencerBracket();
+        EliminationMatch firstSemiFinal = openingMatches(bracket).getFirst();
+        EliminationMatch secondSemiFinal = openingMatches(bracket).get(1);
+
+        assertThrows(IllegalStateException.class,
+                () -> bracket.replaceResult(firstSemiFinal.id(), new BoutScore(6, 15), 15, false));
+        EliminationBracket corrected = bracket.replaceResult(firstSemiFinal.id(), new BoutScore(6, 15), 15, true);
+
+        assertEquals(new BoutScore(6, 15), match(corrected, firstSemiFinal.id()).score());
+        assertEquals(match(bracket, secondSemiFinal.id()).score(), match(corrected, secondSemiFinal.id()).score());
+        assertFalse(finalMatch(corrected).isResolved());
+        assertFalse(corrected.isComplete());
+    }
+
+    @Test
+    void editingFinalToDifferentWinnerKeepsBracketComplete() {
+        EliminationBracket bracket = completedFourFencerBracket();
+        EliminationMatch finalMatch = finalMatch(bracket);
+
+        EliminationBracket corrected = bracket.replaceResult(finalMatch.id(), new BoutScore(7, 15), 15, false);
+
+        assertTrue(corrected.isComplete());
+        assertEquals(finalMatch.secondSlot().fencerId(), finalMatch(corrected).winnerId());
+    }
+
+    @Test
+    void invalidEditedScoreIsRejectedWithoutChangingBracket() {
+        EliminationBracket bracket = completedFourFencerBracket();
+        EliminationMatch finalMatch = finalMatch(bracket);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> bracket.replaceResult(finalMatch.id(), new BoutScore(14, 10), 15, false));
+
+        assertEquals(new BoutScore(15, 11), finalMatch(bracket).score());
+        assertTrue(bracket.isComplete());
+    }
+
+    private EliminationBracket completedFourFencerBracket() {
+        EliminationBracket bracket = generator.generate(ids(4));
+        for (EliminationMatch semiFinal : openingMatches(bracket)) bracket = bracket.recordResult(semiFinal.id(), new BoutScore(15, 8), 15);
+        return bracket.recordResult(finalMatch(bracket).id(), new BoutScore(15, 11), 15);
+    }
+
+    private static List<EliminationMatch> openingMatches(EliminationBracket bracket) {
+        return bracket.matches().stream().filter(match -> match.round() == 1)
+                .sorted(java.util.Comparator.comparingInt(EliminationMatch::position)).toList();
+    }
+
+    private static EliminationMatch finalMatch(EliminationBracket bracket) {
+        return bracket.matches().stream().filter(match -> match.nextMatchId() == null).findFirst().orElseThrow();
+    }
+
+    private static EliminationMatch match(EliminationBracket bracket, UUID matchId) {
+        return bracket.matches().stream().filter(match -> match.id().equals(matchId)).findFirst().orElseThrow();
     }
 
     private static int matchPosition(List<EliminationMatch> matches, UUID fencerId) {

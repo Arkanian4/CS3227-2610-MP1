@@ -2,6 +2,7 @@ package edu.nus.cs3227.fencingtournament.ui;
 
 import edu.nus.cs3227.fencingtournament.application.PoolProgress;
 import edu.nus.cs3227.fencingtournament.application.TournamentService;
+import edu.nus.cs3227.fencingtournament.application.TournamentPersistenceException;
 import edu.nus.cs3227.fencingtournament.domain.Fencer;
 import edu.nus.cs3227.fencingtournament.domain.Tournament;
 import edu.nus.cs3227.fencingtournament.domain.TournamentPhase;
@@ -18,7 +19,6 @@ import javafx.scene.control.ButtonType;
 import javafx.stage.FileChooser;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -27,11 +27,11 @@ import java.util.UUID;
 public final class TournamentController {
     private final TournamentService service;
     private final TournamentView view;
-    private Path currentFile;
     private PoolBoutRow selectedBout;
     private EliminationMatchRow selectedEliminationMatch;
     private boolean selectedPoolRowIsScheduledFirst = true;
     private boolean editingPoolResult;
+    private boolean editingEliminationResult;
 
     public TournamentController(TournamentService service, TournamentView view) {
         this.service = service;
@@ -48,7 +48,6 @@ public final class TournamentController {
         view.setTournamentOpenHandler(this::openTournament);
         view.homeButton().setOnAction(event -> { service.returnToTournamentHome(); refreshWorkspace(); });
         view.loadButton().setOnAction(event -> loadTournament());
-        view.saveButton().setOnAction(event -> saveTournament());
         view.addFencerButton().setOnAction(event -> addFencer());
         view.removeFencerButton().setOnAction(event -> removeFencer());
         view.moveSeedUpButton().setOnAction(event -> moveSeed(-1));
@@ -70,16 +69,17 @@ public final class TournamentController {
         view.editPoolResultButton().setOnAction(event -> beginPoolResultEdit());
         view.setEliminationMatchHandler(this::selectEliminationMatch);
         view.recordEliminationResultButton().setOnAction(event -> recordEliminationResult());
+        view.editEliminationResultButton().setOnAction(event -> beginEliminationResultEdit());
+        view.cancelEliminationEditButton().setOnAction(event -> cancelEliminationResultEdit());
     }
 
     private void createTournament() {
         try {
             service.createTournament(view.tournamentNameField().getText());
-            currentFile = null;
             view.tournamentNameField().clear();
             refreshWorkspace();
             view.showStatus("Tournament created. Register fencers, then apply seeding.");
-        } catch (IllegalArgumentException exception) {
+        } catch (IllegalArgumentException | TournamentPersistenceException exception) {
             showError(exception);
         }
     }
@@ -91,12 +91,12 @@ public final class TournamentController {
             view.showNewTournamentForm(false);
             refreshWorkspace();
             view.showStatus("Tournament created.");
-        } catch (IllegalArgumentException exception) { showError(exception); }
+        } catch (IllegalArgumentException | TournamentPersistenceException exception) { showError(exception); }
     }
 
     private void openTournament(UUID tournamentId) {
         try { service.openTournament(tournamentId); refreshWorkspace(); view.showStatus("Tournament opened."); }
-        catch (IllegalArgumentException exception) { showError(exception); }
+        catch (IllegalArgumentException | TournamentPersistenceException exception) { showError(exception); }
     }
 
     private void loadTournament() {
@@ -108,28 +108,13 @@ public final class TournamentController {
                 view.showStatus("The selected tournament file does not exist.");
                 return;
             }
-            currentFile = selected.toPath();
             refreshWorkspace();
             view.showStatus("Tournament loaded.");
+        } catch (TournamentPersistenceException exception) {
+            refreshWorkspace();
+            showError("Could not load tournament: " + exception.getMessage());
         } catch (IOException | IllegalArgumentException exception) {
             showError("Could not load tournament: " + exception.getMessage());
-        }
-    }
-
-    private void saveTournament() {
-        Path path = currentFile;
-        if (path == null) {
-            var selected = jsonFileChooser("Save tournament").showSaveDialog(view.getScene().getWindow());
-            if (selected == null) return;
-            path = selected.toPath();
-        }
-        try {
-            service.saveTournament(path);
-            service.saveAll(Path.of("tournaments"));
-            currentFile = path;
-            view.showStatus("Tournament saved.");
-        } catch (IOException | IllegalArgumentException | IllegalStateException exception) {
-            showError("Could not save tournament: " + exception.getMessage());
         }
     }
 
@@ -139,7 +124,7 @@ public final class TournamentController {
             view.fencerNameField().clear();
             refreshWorkspace();
             view.showStatus("Fencer added.");
-        } catch (IllegalArgumentException | IllegalStateException exception) {
+        } catch (IllegalArgumentException | IllegalStateException | TournamentPersistenceException exception) {
             showError(exception);
         }
     }
@@ -159,7 +144,7 @@ public final class TournamentController {
             service.removeFencer(selected.id());
             refreshWorkspace();
             view.showStatus("Fencer removed.");
-        } catch (IllegalArgumentException | IllegalStateException exception) {
+        } catch (IllegalArgumentException | IllegalStateException | TournamentPersistenceException exception) {
             showError(exception);
         }
     }
@@ -179,7 +164,7 @@ public final class TournamentController {
             service.seedFencers(view.seedList().getItems().stream().map(Fencer::id).toList());
             refreshWorkspace();
             view.showStatus("Seeding applied. Generate pools when ready.");
-        } catch (IllegalArgumentException | IllegalStateException exception) {
+        } catch (IllegalArgumentException | IllegalStateException | TournamentPersistenceException exception) {
             showError(exception);
         }
     }
@@ -195,7 +180,7 @@ public final class TournamentController {
             refreshWorkspace();
             view.tabs().getSelectionModel().select(view.poolsTab());
             view.showStatus("Pools generated. Select a pool to record results.");
-        } catch (IllegalArgumentException | IllegalStateException exception) {
+        } catch (IllegalArgumentException | IllegalStateException | TournamentPersistenceException exception) {
             showError(exception);
         }
     }
@@ -233,7 +218,7 @@ public final class TournamentController {
             view.showStatus("Result saved.");
         } catch (NumberFormatException exception) {
             view.showStatus("Scores must be whole numbers.");
-        } catch (IllegalArgumentException | IllegalStateException exception) {
+        } catch (IllegalArgumentException | IllegalStateException | TournamentPersistenceException exception) {
             showError(exception);
         }
     }
@@ -259,7 +244,7 @@ public final class TournamentController {
             refreshWorkspace();
             view.tabs().getSelectionModel().select(view.eliminationTab());
             view.showStatus("Direct elimination bracket generated.");
-        } catch (IllegalArgumentException | IllegalStateException exception) { showError(exception); }
+        } catch (IllegalArgumentException | IllegalStateException | TournamentPersistenceException exception) { showError(exception); }
     }
 
     private void selectEliminationMatch(UUID matchId) {
@@ -271,13 +256,22 @@ public final class TournamentController {
     }
 
     private void recordEliminationResult() {
-        if (selectedEliminationMatch == null || !selectedEliminationMatch.ready()) {
+        if (selectedEliminationMatch == null || (!selectedEliminationMatch.ready() && !editingEliminationResult)) {
             view.showStatus("Select a pending DE bout first."); return;
         }
         try {
-            service.recordEliminationBoutResult(selectedEliminationMatch.matchId(), new BoutScore(
+            BoutScore score = new BoutScore(
                     Integer.parseInt(view.eliminationFirstScoreField().getText().trim()),
-                    Integer.parseInt(view.eliminationSecondScoreField().getText().trim())));
+                    Integer.parseInt(view.eliminationSecondScoreField().getText().trim()));
+            if (editingEliminationResult) {
+                boolean resetDownstream = service.eliminationEditNeedsReset(selectedEliminationMatch.matchId(), score);
+                if (resetDownstream && !confirmEliminationReset()) return;
+                service.replaceEliminationBoutResult(selectedEliminationMatch.matchId(), score, resetDownstream);
+                editingEliminationResult = false;
+                view.endEliminationResultEdit();
+            } else {
+                service.recordEliminationBoutResult(selectedEliminationMatch.matchId(), score);
+            }
             refreshWorkspace();
             if (service.currentPhase() == TournamentPhase.COMPLETE) {
                 view.tabs().getSelectionModel().select(view.finalResultsTab());
@@ -286,7 +280,29 @@ public final class TournamentController {
                 view.showStatus("DE result recorded.");
             }
         } catch (NumberFormatException exception) { view.showStatus("Scores must be whole numbers.");
-        } catch (IllegalArgumentException | IllegalStateException exception) { showError(exception); }
+        } catch (IllegalArgumentException | IllegalStateException | TournamentPersistenceException exception) { showError(exception); }
+    }
+
+    private void beginEliminationResultEdit() {
+        if (selectedEliminationMatch == null || !selectedEliminationMatch.resolved() || selectedEliminationMatch.bye()) return;
+        editingEliminationResult = true;
+        view.beginEliminationResultEdit(selectedEliminationMatch);
+    }
+
+    private void cancelEliminationResultEdit() {
+        editingEliminationResult = false;
+        view.endEliminationResultEdit();
+        view.showSelectedEliminationMatch(selectedEliminationMatch);
+    }
+
+    private boolean confirmEliminationReset() {
+        ButtonType reset = new ButtonType("Edit and reset later results", ButtonBar.ButtonData.OK_DONE);
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
+                "Changing this result changes the advancing fencer and will invalidate later Direct Elimination results that depend on it. Continue?",
+                ButtonType.CANCEL, reset);
+        alert.setTitle("Reset later Direct Elimination results");
+        alert.setHeaderText(null);
+        return alert.showAndWait().orElse(ButtonType.CANCEL) == reset;
     }
 
     private void selectBout(PoolBoutRow bout) {
@@ -345,9 +361,7 @@ public final class TournamentController {
             view.renderFinalResults(service.finalStandings().stream().map(this::finalResultsRow).toList());
         }
         view.setPhaseControls(phase, true, poolResultsFinalized, tournament.eliminationBracket() != null);
-        if (phase == TournamentPhase.REGISTRATION || phase == TournamentPhase.SEEDING) {
-            view.selectSetupTab();
-        }
+        view.selectTabForPhase(phase);
     }
 
     private PoolBoutRow boutRow(PoolBout bout) {
@@ -470,6 +484,9 @@ public final class TournamentController {
         return chooser;
     }
 
-    private void showError(Exception exception) { showError(exception.getMessage()); }
+    private void showError(Exception exception) {
+        if (exception instanceof TournamentPersistenceException) refreshWorkspace();
+        showError(exception.getMessage());
+    }
     private void showError(String message) { view.showStatus(message == null ? "Operation failed." : message); }
 }

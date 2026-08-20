@@ -37,7 +37,6 @@ public final class TournamentView extends BorderPane {
     private final TextField tournamentNameField = new TextField();
     private final Button createButton = new Button("Create tournament");
     private final Button loadButton = new Button("Open");
-    private final Button saveButton = new Button("Save");
     private final Button homeButton = new Button("Tournament Home");
     private final TextField homeTournamentNameField = new TextField();
     private final Button homeNewButton = new Button("+ New Tournament");
@@ -95,6 +94,8 @@ public final class TournamentView extends BorderPane {
     private final TextField eliminationFirstScoreField = new TextField();
     private final TextField eliminationSecondScoreField = new TextField();
     private final Button recordEliminationResultButton = new Button("Record result");
+    private final Button editEliminationResultButton = new Button("Edit result");
+    private final Button cancelEliminationEditButton = new Button("Cancel");
     private final Label eliminationFirstNameLabel = new Label("—");
     private final Label eliminationSecondNameLabel = new Label("—");
     private List<EliminationMatchRow> renderedEliminationMatches = List.of();
@@ -135,7 +136,6 @@ public final class TournamentView extends BorderPane {
     public TextField tournamentNameField() { return tournamentNameField; }
     public Button createButton() { return createButton; }
     public Button loadButton() { return loadButton; }
-    public Button saveButton() { return saveButton; }
     public Button homeButton() { return homeButton; }
     public TextField homeTournamentNameField() { return homeTournamentNameField; }
     public Button homeNewButton() { return homeNewButton; }
@@ -144,6 +144,15 @@ public final class TournamentView extends BorderPane {
     public void showWorkspace() { setCenter(tabs); }
     public void showHome() { setCenter(homeScreen); }
     public void selectSetupTab() { tabs.getSelectionModel().select(fencersTab); }
+    /** Selects the first workspace tab relevant to the opened tournament's current phase. */
+    public void selectTabForPhase(TournamentPhase phase) {
+        switch (phase) {
+        case REGISTRATION, SEEDING -> tabs.getSelectionModel().select(fencersTab);
+        case POOL_PHASE -> tabs.getSelectionModel().select(poolsTab);
+        case ELIMINATION_PHASE -> tabs.getSelectionModel().select(eliminationTab);
+        case COMPLETE -> tabs.getSelectionModel().select(finalResultsTab);
+        }
+    }
     public void clearPoolWorkspace() {
         poolList.getItems().clear(); poolMatrixGrid.getChildren().clear(); selectedPoolLabel.setText("Select a pool");
         poolProgressLabel.setText(""); selectedMatrixRow = null; selectedMatrixOpponent = null; renderedMatrixRows = List.of(); showSelectedBout(null);
@@ -183,6 +192,8 @@ public final class TournamentView extends BorderPane {
     public TextField eliminationFirstScoreField() { return eliminationFirstScoreField; }
     public TextField eliminationSecondScoreField() { return eliminationSecondScoreField; }
     public Button recordEliminationResultButton() { return recordEliminationResultButton; }
+    public Button editEliminationResultButton() { return editEliminationResultButton; }
+    public Button cancelEliminationEditButton() { return cancelEliminationEditButton; }
     public ListView<Pool> poolList() { return poolList; }
     public TextField firstScoreField() { return firstScoreField; }
     public TextField secondScoreField() { return secondScoreField; }
@@ -268,10 +279,11 @@ public final class TournamentView extends BorderPane {
     }
 
     public void showSelectedEliminationMatch(EliminationMatchRow match) {
+        endEliminationResultEdit();
         if (match == null) {
             selectedEliminationMatchId = null;
             selectedEliminationMatchLabel.setText("Select a pending bout in the bracket"); eliminationFirstNameLabel.setText("—"); eliminationSecondNameLabel.setText("—");
-            eliminationFirstScoreField.clear(); eliminationSecondScoreField.clear(); eliminationFirstScoreField.setDisable(true); eliminationSecondScoreField.setDisable(true); recordEliminationResultButton.setDisable(true); return;
+            eliminationFirstScoreField.clear(); eliminationSecondScoreField.clear(); eliminationFirstScoreField.setDisable(true); eliminationSecondScoreField.setDisable(true); recordEliminationResultButton.setDisable(true); editEliminationResultButton.setVisible(false); editEliminationResultButton.setManaged(false); return;
         }
         selectedEliminationMatchId = match.matchId();
         if (!renderedEliminationMatches.isEmpty()) renderEliminationBracket(renderedEliminationMatches);
@@ -280,11 +292,25 @@ public final class TournamentView extends BorderPane {
         eliminationFirstNameLabel.setText(participantText(match.first())); eliminationSecondNameLabel.setText(participantText(match.second()));
         if (match.ready()) {
             eliminationFirstScoreField.clear(); eliminationSecondScoreField.clear();
-            eliminationFirstScoreField.setDisable(false); eliminationSecondScoreField.setDisable(false); recordEliminationResultButton.setDisable(false);
+            eliminationFirstScoreField.setDisable(false); eliminationSecondScoreField.setDisable(false); recordEliminationResultButton.setDisable(false); editEliminationResultButton.setVisible(false); editEliminationResultButton.setManaged(false);
         } else {
             eliminationFirstScoreField.setText(match.first().score()); eliminationSecondScoreField.setText(match.second().score());
             eliminationFirstScoreField.setDisable(true); eliminationSecondScoreField.setDisable(true); recordEliminationResultButton.setDisable(true);
+            boolean editable = match.resolved() && !match.bye();
+            editEliminationResultButton.setVisible(editable); editEliminationResultButton.setManaged(editable);
         }
+    }
+    public void beginEliminationResultEdit(EliminationMatchRow match) {
+        eliminationFirstScoreField.setText(match.first().score()); eliminationSecondScoreField.setText(match.second().score());
+        eliminationFirstScoreField.setDisable(false); eliminationSecondScoreField.setDisable(false);
+        recordEliminationResultButton.setText("Save changes"); recordEliminationResultButton.setDisable(false);
+        cancelEliminationEditButton.setVisible(true); cancelEliminationEditButton.setManaged(true);
+        editEliminationResultButton.setVisible(false); editEliminationResultButton.setManaged(false);
+        selectedEliminationMatchLabel.setText(selectedEliminationMatchLabel.getText().replace("selected bout", "editing result"));
+    }
+    public void endEliminationResultEdit() {
+        recordEliminationResultButton.setText("Record result");
+        cancelEliminationEditButton.setVisible(false); cancelEliminationEditButton.setManaged(false);
     }
     public void showSelectedBout(PoolBoutRow bout) {
         if (bout == null) {
@@ -317,7 +343,7 @@ public final class TournamentView extends BorderPane {
         boolean seeding = hasTournament && phase == TournamentPhase.SEEDING;
         boolean pools = hasTournament && (phase == TournamentPhase.POOL_PHASE || phase == TournamentPhase.ELIMINATION_PHASE || phase == TournamentPhase.COMPLETE);
         showOnly(createTournamentSection, !hasTournament); showOnly(registrationSection, registration); showOnly(seedingSection, seeding);
-        saveButton.setDisable(!hasTournament); fencerNameField.setDisable(!registration); addFencerButton.setDisable(!registration); removeFencerButton.setDisable(!registration); fencerList.setDisable(!registration);
+        fencerNameField.setDisable(!registration); addFencerButton.setDisable(!registration); removeFencerButton.setDisable(!registration); fencerList.setDisable(!registration);
         seedList.setDisable(!seeding); moveSeedUpButton.setDisable(!seeding); moveSeedDownButton.setDisable(!seeding); applySeedingButton.setDisable(!(registration || seeding));
         confirmSeedingButton.setDisable(!registration || seedList.getItems().size() < 2); applySeedingButton.setText("Apply revised order"); generatePoolsButton.setDisable(!seeding || seedList.getItems().size() < 2); poolsTab.setDisable(!pools); standingsTab.setDisable(!poolResultsFinalized); eliminationTab.setDisable(!hasEliminationBracket); finalResultsTab.setDisable(phase != TournamentPhase.COMPLETE); generateEliminationButton.setDisable(!poolResultsFinalized || hasEliminationBracket);
     }
@@ -331,9 +357,9 @@ public final class TournamentView extends BorderPane {
 
     private VBox buildHeader() {
         Label appName = new Label("Fencing Tournament Manager"); appName.getStyleClass().add("app-name"); tournamentNameLabel.getStyleClass().add("tournament-name"); phaseLabel.getStyleClass().add("phase-name"); progressLabel.getStyleClass().add("progress-text");
-        loadButton.getStyleClass().add("secondary-action"); saveButton.getStyleClass().add("primary-action");
+        loadButton.getStyleClass().add("secondary-action");
         HBox identity = new HBox(14, appName, tournamentNameLabel); identity.setAlignment(Pos.CENTER_LEFT);
-        VBox state = new VBox(2, phaseLabel, progressLabel); HBox actions = new HBox(8, homeButton, loadButton, saveButton); actions.setAlignment(Pos.CENTER_RIGHT); HBox.setHgrow(actions, Priority.ALWAYS);
+        VBox state = new VBox(2, phaseLabel, progressLabel); HBox actions = new HBox(8, homeButton, loadButton); actions.setAlignment(Pos.CENTER_RIGHT); HBox.setHgrow(actions, Priority.ALWAYS);
         HBox bar = new HBox(20, identity, state, actions); bar.setAlignment(Pos.CENTER_LEFT); bar.getStyleClass().add("top-bar"); return new VBox(bar);
     }
     private VBox buildHomeScreen() {
@@ -397,10 +423,11 @@ public final class TournamentView extends BorderPane {
         Label title = new Label("Direct Elimination"); title.getStyleClass().add("screen-title");
         Label hint = new Label("Select a pending bracket bout to record its result."); hint.getStyleClass().add("screen-subtitle");
         bracketBoard.getStyleClass().add("bracket-board"); bracketCanvas.getStyleClass().add("bracket-canvas"); bracketCanvas.setAlignment(Pos.TOP_CENTER); bracketScroll.setFitToHeight(false); bracketScroll.setFitToWidth(true); bracketScroll.setPannable(true); bracketScroll.setPrefViewportHeight(380); bracketScroll.getStyleClass().add("bracket-scroll");
-        eliminationFirstScoreField.setPrefWidth(64); eliminationSecondScoreField.setPrefWidth(64); recordEliminationResultButton.getStyleClass().add("primary-action");
+        eliminationFirstScoreField.setPrefWidth(64); eliminationSecondScoreField.setPrefWidth(64); recordEliminationResultButton.getStyleClass().add("primary-action"); editEliminationResultButton.getStyleClass().add("secondary-action"); cancelEliminationEditButton.getStyleClass().add("secondary-action"); endEliminationResultEdit();
         HBox firstRow = new HBox(12, eliminationFirstNameLabel, eliminationFirstScoreField); HBox.setHgrow(eliminationFirstNameLabel, Priority.ALWAYS); firstRow.getStyleClass().add("de-result-row");
         HBox secondRow = new HBox(12, eliminationSecondNameLabel, eliminationSecondScoreField); HBox.setHgrow(eliminationSecondNameLabel, Priority.ALWAYS); secondRow.getStyleClass().add("de-result-row");
-        VBox entry = new VBox(7, new Label("RECORD RESULT"), selectedEliminationMatchLabel, firstRow, secondRow, recordEliminationResultButton); entry.setAlignment(Pos.CENTER_LEFT); entry.getStyleClass().add("de-result-entry");
+        HBox actions = new HBox(8, recordEliminationResultButton, cancelEliminationEditButton);
+        VBox entry = new VBox(7, new Label("RECORD RESULT"), selectedEliminationMatchLabel, firstRow, secondRow, actions, editEliminationResultButton); entry.setAlignment(Pos.CENTER_LEFT); entry.getStyleClass().add("de-result-entry");
         VBox root = new VBox(16, title, hint, bracketScroll, entry); root.getStyleClass().add("screen-content"); VBox.setVgrow(bracketScroll, Priority.ALWAYS); return root;
     }
     private VBox buildFinalResultsTab() {
@@ -521,7 +548,7 @@ public final class TournamentView extends BorderPane {
         else if (match.ready()) card.getStyleClass().add("fencing-ready-card");
         else card.getStyleClass().add("fencing-future-card");
         if (finalRound) card.getStyleClass().add("fencing-final-card");
-        if (match.ready() && match.matchId().equals(selectedEliminationMatchId)) card.getStyleClass().add("fencing-selected-card");
+        if ((match.ready() || (match.resolved() && !match.bye())) && match.matchId().equals(selectedEliminationMatchId)) card.getStyleClass().add("fencing-selected-card");
 
         Pane firstRow = participantCardRow(match.first());
         Pane secondRow = participantCardRow(match.second());
@@ -534,7 +561,7 @@ public final class TournamentView extends BorderPane {
         }
         firstRow.relocate(0, 0); secondRow.relocate(0, 28);
         card.getChildren().addAll(firstRow, secondRow);
-        if (match.ready()) card.setOnMouseClicked(event -> eliminationMatchHandler.accept(match.matchId()));
+        if (match.ready() || (match.resolved() && !match.bye())) card.setOnMouseClicked(event -> eliminationMatchHandler.accept(match.matchId()));
         card.relocate(boardX(match.round()), geometry.centreY() - TABLEAU_CARD_HEIGHT / 2);
         bracketBoard.getChildren().add(card);
     }

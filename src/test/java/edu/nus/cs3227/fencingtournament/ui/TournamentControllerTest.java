@@ -4,6 +4,7 @@ import edu.nus.cs3227.fencingtournament.application.TournamentRepository;
 import edu.nus.cs3227.fencingtournament.application.TournamentService;
 import edu.nus.cs3227.fencingtournament.domain.Fencer;
 import edu.nus.cs3227.fencingtournament.domain.Tournament;
+import edu.nus.cs3227.fencingtournament.domain.TournamentPhase;
 import edu.nus.cs3227.fencingtournament.domain.pool.BoutScore;
 import javafx.application.Platform;
 import org.junit.jupiter.api.BeforeAll;
@@ -53,6 +54,22 @@ class TournamentControllerTest {
 
             assertNotNull(service.currentTournament().orElseThrow().eliminationBracket());
             assertSame(view.eliminationTab(), view.tabs().getSelectionModel().getSelectedItem());
+        });
+    }
+
+    @Test
+    void openingTournamentSelectsTheTabForItsCurrentPhase() throws Exception {
+        onJavaFxThread(() -> {
+            TournamentView view = new TournamentView();
+
+            view.selectTabForPhase(TournamentPhase.REGISTRATION);
+            assertSame(view.tabs().getTabs().getFirst(), view.tabs().getSelectionModel().getSelectedItem());
+            view.selectTabForPhase(TournamentPhase.POOL_PHASE);
+            assertSame(view.poolsTab(), view.tabs().getSelectionModel().getSelectedItem());
+            view.selectTabForPhase(TournamentPhase.ELIMINATION_PHASE);
+            assertSame(view.eliminationTab(), view.tabs().getSelectionModel().getSelectedItem());
+            view.selectTabForPhase(TournamentPhase.COMPLETE);
+            assertSame(view.finalResultsTab(), view.tabs().getSelectionModel().getSelectedItem());
         });
     }
 

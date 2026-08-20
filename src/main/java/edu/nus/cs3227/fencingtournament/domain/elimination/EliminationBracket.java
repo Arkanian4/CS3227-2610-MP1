@@ -27,6 +27,12 @@ public record EliminationBracket(UUID id, int size, List<EliminationMatch> match
         EliminationMatch edited = matches.get(indexOf(matches, matchId));
         if (!edited.isResolved() || edited.score() == null) throw new IllegalStateException("Only completed fenced bouts can be edited.");
         validateScore(matchId, score, scoreLimit);
+        UUID correctedWinner = score.firstFencerWon() ? edited.firstSlot().fencerId() : edited.secondSlot().fencerId();
+        if (correctedWinner.equals(edited.winnerId())) {
+            List<EliminationMatch> updated = new ArrayList<>(matches);
+            updated.set(indexOf(updated, matchId), edited.resolve(correctedWinner, score));
+            return new EliminationBracket(id, size, updated);
+        }
         Set<UUID> invalidated = descendantsOf(matchId);
         boolean completedDescendant = matches.stream().anyMatch(match -> invalidated.contains(match.id()) && match.score() != null);
         if (completedDescendant && !allowDownstreamReset) {
@@ -53,6 +59,14 @@ public record EliminationBracket(UUID id, int size, List<EliminationMatch> match
     public boolean hasCompletedDescendant(UUID matchId) {
         Set<UUID> descendants = descendantsOf(matchId);
         return matches.stream().anyMatch(match -> descendants.contains(match.id()) && match.score() != null);
+    }
+    /** A reset is only required when the corrected score changes the advancing fencer. */
+    public boolean changingWinnerWouldInvalidateCompletedDescendant(UUID matchId, BoutScore score, int scoreLimit) {
+        EliminationMatch match = matches.get(indexOf(matches, matchId));
+        if (!match.isResolved() || match.score() == null) throw new IllegalStateException("Only completed fenced bouts can be edited.");
+        validateScore(matchId, score, scoreLimit);
+        UUID correctedWinner = score.firstFencerWon() ? match.firstSlot().fencerId() : match.secondSlot().fencerId();
+        return !correctedWinner.equals(match.winnerId()) && hasCompletedDescendant(matchId);
     }
     private Set<UUID> descendantsOf(UUID matchId) {
         if (matchId == null) throw new IllegalArgumentException("Match ID must not be null.");

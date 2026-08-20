@@ -9,12 +9,16 @@ import edu.nus.cs3227.fencingtournament.domain.elimination.EliminationBracket;
 import edu.nus.cs3227.fencingtournament.domain.pool.Pool;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.AtomicMoveNotSupportedException;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -28,6 +32,8 @@ public final class JsonTournamentRepository implements TournamentRepository {
 
     public JsonTournamentRepository() {
         objectMapper = new ObjectMapper()
+                .setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE)
+                .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
                 .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
     }
 
@@ -86,9 +92,18 @@ public final class JsonTournamentRepository implements TournamentRepository {
                 tournament.pools(),
                 tournament.eliminationBracket());
         String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(persisted);
-        Files.writeString(path, json, StandardCharsets.UTF_8,
-                StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING,
-                StandardOpenOption.WRITE);
+        Path temporary = Files.createTempFile(parent, path.getFileName().toString(), ".tmp");
+        try {
+            Files.writeString(temporary, json, StandardCharsets.UTF_8,
+                    StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+            try {
+                Files.move(temporary, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException exception) {
+                Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } finally {
+            Files.deleteIfExists(temporary);
+        }
     }
 
     private static void requirePath(Path path) {

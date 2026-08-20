@@ -56,11 +56,10 @@ class TournamentServiceTest {
     }
 
     @Test
-    void serviceRequiresActiveTournamentForRegistrationAndSaving() {
+    void serviceRequiresActiveTournamentForRegistration() {
         TournamentService service = new TournamentService(new InMemoryRepository());
 
         assertThrows(IllegalStateException.class, () -> service.addFencer("Alex Tan"));
-        assertThrows(IllegalStateException.class, () -> service.saveTournament(Path.of("unused.json")));
     }
 
     @Test
