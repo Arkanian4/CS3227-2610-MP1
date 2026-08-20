@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -83,6 +84,40 @@ class TournamentServiceTest {
 
         assertEquals(4, bracket.size());
         assertEquals(TournamentPhase.ELIMINATION_PHASE, service.currentPhase());
+    }
+
+    @Test
+    void completingTheFinalProducesFinalStandingsAndRetainsTournamentData() {
+        TournamentService service = new TournamentService(new InMemoryRepository());
+        service.createTournament("Internal Open");
+        List<Fencer> fencers = java.util.stream.IntStream.range(0, 4)
+                .mapToObj(index -> service.addFencer("Fencer " + (index + 1))).toList();
+        service.seedFencers(fencers.stream().map(Fencer::id).toList());
+        service.generatePools();
+        var pool = service.pools().getFirst();
+        pool.bouts().forEach(bout -> service.recordPoolBoutResult(pool.id(), bout.id(), new BoutScore(5, 0)));
+        service.generateEliminationBracket();
+
+        while (service.currentPhase() != TournamentPhase.COMPLETE) {
+            var ready = service.currentTournament().orElseThrow().eliminationBracket().matches().stream()
+                    .filter(match -> match.isReady()).findFirst().orElseThrow();
+            service.recordEliminationBoutResult(ready.id(), new BoutScore(15, 0));
+        }
+
+        var tournament = service.currentTournament().orElseThrow();
+        var finalMatch = tournament.eliminationBracket().matches().stream()
+                .filter(match -> match.nextMatchId() == null).findFirst().orElseThrow();
+        var finalResults = service.finalStandings();
+        UUID runnerUp = finalMatch.score().firstFencerWon() ? finalMatch.secondSlot().fencerId() : finalMatch.firstSlot().fencerId();
+
+        assertEquals(TournamentPhase.COMPLETE, service.currentPhase());
+        assertEquals(finalMatch.winnerId(), finalResults.getFirst().fencerId());
+        assertEquals(runnerUp, finalResults.get(1).fencerId());
+        assertEquals("Champion", finalResults.getFirst().directEliminationFinish());
+        assertEquals("Runner-up", finalResults.get(1).directEliminationFinish());
+        assertNotNull(tournament.eliminationBracket());
+        assertEquals(1, tournament.pools().size());
+        assertThrows(IllegalStateException.class, () -> service.recordEliminationBoutResult(finalMatch.id(), new BoutScore(15, 0)));
     }
 
     private static final class InMemoryRepository implements TournamentRepository {

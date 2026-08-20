@@ -11,6 +11,7 @@ import edu.nus.cs3227.fencingtournament.domain.pool.PoolBout;
 import edu.nus.cs3227.fencingtournament.domain.elimination.EliminationBracket;
 import edu.nus.cs3227.fencingtournament.domain.elimination.EliminationMatch;
 import edu.nus.cs3227.fencingtournament.domain.standings.OverallStanding;
+import edu.nus.cs3227.fencingtournament.domain.standings.FinalStanding;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.stage.FileChooser;
@@ -227,7 +228,13 @@ public final class TournamentController {
             service.recordEliminationBoutResult(selectedEliminationMatch.matchId(), new BoutScore(
                     Integer.parseInt(view.eliminationFirstScoreField().getText().trim()),
                     Integer.parseInt(view.eliminationSecondScoreField().getText().trim())));
-            refreshWorkspace(); view.showStatus("DE result recorded.");
+            refreshWorkspace();
+            if (service.currentPhase() == TournamentPhase.COMPLETE) {
+                view.tabs().getSelectionModel().select(view.finalResultsTab());
+                view.showStatus("Tournament complete. Final results are ready.");
+            } else {
+                view.showStatus("DE result recorded.");
+            }
         } catch (NumberFormatException exception) { view.showStatus("Scores must be whole numbers.");
         } catch (IllegalArgumentException | IllegalStateException exception) { showError(exception); }
     }
@@ -272,6 +279,9 @@ public final class TournamentController {
                     .filter(match -> match.id().equals(selectedEliminationMatch.matchId())).findFirst()
                     .map(this::eliminationRow).orElse(null);
             view.showSelectedEliminationMatch(selectedEliminationMatch);
+        }
+        if (phase == TournamentPhase.COMPLETE) {
+            view.renderFinalResults(service.finalStandings().stream().map(this::finalResultsRow).toList());
         }
         view.setPhaseControls(phase, true, poolResultsFinalized, tournament.eliminationBracket() != null);
     }
@@ -322,22 +332,31 @@ public final class TournamentController {
                 standing.touchesReceived(), standing.indicator(), standing.seed());
     }
 
-    private EliminationMatchRow eliminationRow(EliminationMatch match) {
-        String first = eliminationName(match.firstSlot().fencerId());
-        String second = eliminationName(match.secondSlot().fencerId());
-        String firstScore = match.score() == null ? "" : Integer.toString(match.score().firstScore());
-        String secondScore = match.score() == null ? "" : Integer.toString(match.score().secondScore());
-        String status = match.isBye() ? "Bye" : match.isResolved() ? "Completed" : match.isReady() ? "Pending" : "Waiting";
-        boolean firstWinner = match.winnerId() != null && match.winnerId().equals(match.firstSlot().fencerId());
-        boolean secondWinner = match.winnerId() != null && match.winnerId().equals(match.secondSlot().fencerId());
-        return new EliminationMatchRow(match.id(), match.round(), match.position(), first, second,
-                firstScore, secondScore, status, match.isReady(), match.isResolved(), firstWinner, secondWinner);
+    private FinalResultsRow finalResultsRow(FinalStanding standing) {
+        return new FinalResultsRow(standing.place(), fencerName(standing.fencerId()), standing.poolSeed(),
+                standing.poolVictories(), standing.poolBoutsFenced(), standing.indicator(),
+                standing.directEliminationFinish());
     }
 
-    private String eliminationName(UUID fencerId) {
-        if (fencerId == null) return "Bye";
-        return service.currentTournament().flatMap(tournament -> tournament.findFencer(fencerId))
-                .map(fencer -> "#" + seedOf(fencerId) + " " + fencer.name()).orElse("TBD");
+    private EliminationMatchRow eliminationRow(EliminationMatch match) {
+        return new EliminationMatchRow(match.id(), match.round(), match.position(),
+                eliminationParticipant(match, true), eliminationParticipant(match, false),
+                match.isReady(), match.isResolved(), match.isBye());
+    }
+
+    private EliminationParticipant eliminationParticipant(EliminationMatch match, boolean first) {
+        var slot = first ? match.firstSlot() : match.secondSlot();
+        UUID fencerId = slot.fencerId();
+        if (fencerId == null) {
+            String placeholder = slot.resolved() ? "BYE" : "Awaiting opponent";
+            return new EliminationParticipant(0, placeholder, "", false, slot.resolved(), !slot.resolved());
+        }
+        String score = match.score() == null ? "" : Integer.toString(first
+                ? match.score().firstScore() : match.score().secondScore());
+        boolean winner = fencerId.equals(match.winnerId());
+        String name = service.currentTournament().flatMap(tournament -> tournament.findFencer(fencerId))
+                .map(Fencer::name).orElse("Unknown fencer");
+        return new EliminationParticipant(seedOf(fencerId), name, score, winner, false, false);
     }
 
     private int seedOf(UUID fencerId) {

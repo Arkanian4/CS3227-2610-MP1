@@ -9,8 +9,10 @@ import edu.nus.cs3227.fencingtournament.domain.pool.Pool;
 import edu.nus.cs3227.fencingtournament.domain.rules.PoolGenerator;
 import edu.nus.cs3227.fencingtournament.domain.rules.BracketGenerator;
 import edu.nus.cs3227.fencingtournament.domain.rules.StandingsCalculator;
+import edu.nus.cs3227.fencingtournament.domain.rules.FinalStandingsCalculator;
 import edu.nus.cs3227.fencingtournament.domain.standings.PoolStanding;
 import edu.nus.cs3227.fencingtournament.domain.standings.OverallStanding;
+import edu.nus.cs3227.fencingtournament.domain.standings.FinalStanding;
 import edu.nus.cs3227.fencingtournament.domain.pool.BoutScore;
 import edu.nus.cs3227.fencingtournament.domain.elimination.EliminationBracket;
 import edu.nus.cs3227.fencingtournament.domain.standings.TieBreakCriterion;
@@ -28,6 +30,7 @@ public final class TournamentService {
     private final PoolGenerator poolGenerator = new PoolGenerator();
     private final BracketGenerator bracketGenerator = new BracketGenerator();
     private final StandingsCalculator standingsCalculator = new StandingsCalculator();
+    private final FinalStandingsCalculator finalStandingsCalculator = new FinalStandingsCalculator();
     private Tournament activeTournament;
 
     public TournamentService(TournamentRepository repository) {
@@ -120,6 +123,12 @@ public final class TournamentService {
 
     public void recordEliminationBoutResult(UUID matchId, BoutScore score) {
         requireActiveTournament().recordEliminationBoutResult(matchId, score);
+    }
+
+    /** Returns final placements only after the completed DE bracket determines a champion. */
+    public List<FinalStanding> finalStandings() {
+        Tournament tournament = requireActiveTournament();
+        return finalStandingsCalculator.calculate(overallStandings(), tournament.eliminationBracket());
     }
 
     public PoolProgress poolProgress() {
