@@ -287,7 +287,7 @@ public final class TournamentView extends BorderPane {
         showOnly(createTournamentSection, !hasTournament); showOnly(registrationSection, registration); showOnly(seedingSection, seeding);
         saveButton.setDisable(!hasTournament); fencerNameField.setDisable(!registration); addFencerButton.setDisable(!registration); removeFencerButton.setDisable(!registration); fencerList.setDisable(!registration);
         seedList.setDisable(!seeding); moveSeedUpButton.setDisable(!seeding); moveSeedDownButton.setDisable(!seeding); applySeedingButton.setDisable(!(registration || seeding));
-        confirmSeedingButton.setDisable(!registration); applySeedingButton.setText("Apply revised order"); generatePoolsButton.setDisable(!seeding); poolsTab.setDisable(!pools); standingsTab.setDisable(!poolResultsFinalized); eliminationTab.setDisable(!hasEliminationBracket); finalResultsTab.setDisable(phase != TournamentPhase.COMPLETE); generateEliminationButton.setDisable(!poolResultsFinalized || hasEliminationBracket);
+        confirmSeedingButton.setDisable(!registration || seedList.getItems().size() < 2); applySeedingButton.setText("Apply revised order"); generatePoolsButton.setDisable(!seeding || seedList.getItems().size() < 2); poolsTab.setDisable(!pools); standingsTab.setDisable(!poolResultsFinalized); eliminationTab.setDisable(!hasEliminationBracket); finalResultsTab.setDisable(phase != TournamentPhase.COMPLETE); generateEliminationButton.setDisable(!poolResultsFinalized || hasEliminationBracket);
     }
     public void setNoTournamentState() {
         tournamentNameLabel.setText("No tournament open"); phaseLabel.setText("Create a tournament or open an existing file"); progressLabel.setText("");
