@@ -41,6 +41,7 @@ public final class TournamentController {
         view.removeFencerButton().setOnAction(event -> removeFencer());
         view.moveSeedUpButton().setOnAction(event -> moveSeed(-1));
         view.moveSeedDownButton().setOnAction(event -> moveSeed(1));
+        view.confirmSeedingButton().setOnAction(event -> applySeeding());
         view.applySeedingButton().setOnAction(event -> applySeeding());
         view.generatePoolsButton().setOnAction(event -> generatePools());
         view.poolList().getSelectionModel().selectedItemProperty().addListener(

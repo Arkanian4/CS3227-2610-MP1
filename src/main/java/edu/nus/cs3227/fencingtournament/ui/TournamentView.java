@@ -34,6 +34,7 @@ public final class TournamentView extends BorderPane {
     private final ListView<Fencer> seedList = new ListView<>(FXCollections.observableArrayList());
     private final Button moveSeedUpButton = new Button("Move up");
     private final Button moveSeedDownButton = new Button("Move down");
+    private final Button confirmSeedingButton = new Button("Continue to seeding");
     private final Button applySeedingButton = new Button("Confirm seed order");
     private final Button generatePoolsButton = new Button("Generate pools");
 
@@ -101,6 +102,7 @@ public final class TournamentView extends BorderPane {
     public ListView<Fencer> seedList() { return seedList; }
     public Button moveSeedUpButton() { return moveSeedUpButton; }
     public Button moveSeedDownButton() { return moveSeedDownButton; }
+    public Button confirmSeedingButton() { return confirmSeedingButton; }
     public Button applySeedingButton() { return applySeedingButton; }
     public Button generatePoolsButton() { return generatePoolsButton; }
     public TabPane tabs() { return tabs; }
@@ -162,7 +164,7 @@ public final class TournamentView extends BorderPane {
         showOnly(createTournamentSection, !hasTournament); showOnly(registrationSection, registration); showOnly(seedingSection, seeding);
         saveButton.setDisable(!hasTournament); fencerNameField.setDisable(!registration); addFencerButton.setDisable(!registration); removeFencerButton.setDisable(!registration); fencerList.setDisable(!registration);
         seedList.setDisable(!seeding); moveSeedUpButton.setDisable(!seeding); moveSeedDownButton.setDisable(!seeding); applySeedingButton.setDisable(!(registration || seeding));
-        applySeedingButton.setText(registration ? "Confirm seed order" : "Apply seed order"); generatePoolsButton.setDisable(!seeding); poolsTab.setDisable(!pools); standingsTab.setDisable(!pools);
+        confirmSeedingButton.setDisable(!registration); applySeedingButton.setText("Apply revised order"); generatePoolsButton.setDisable(!seeding); poolsTab.setDisable(!pools); standingsTab.setDisable(!pools);
     }
     public void setNoTournamentState() {
         tournamentNameLabel.setText("No tournament open"); phaseLabel.setText("Create a tournament or open an existing file"); progressLabel.setText("");
@@ -181,8 +183,8 @@ public final class TournamentView extends BorderPane {
     private VBox buildSetupTab() {
         tournamentNameField.setPromptText("Tournament name, e.g. Friday Internal Open"); tournamentNameField.setOnAction(event -> createButton.fire()); createButton.getStyleClass().add("primary-action");
         createTournamentSection.getChildren().setAll(sectionTitle("Start a tournament", "Create a local tournament, or open one you saved earlier."), formRow(tournamentNameField, createButton)); createTournamentSection.getStyleClass().add("setup-empty-state");
-        fencerNameField.setPromptText("Enter a fencer display name"); fencerNameField.setOnAction(event -> addFencerButton.fire()); addFencerButton.getStyleClass().add("primary-action"); removeFencerButton.getStyleClass().add("quiet-danger-action"); fencerList.setPlaceholder(new Label("No fencers registered yet.")); VBox.setVgrow(fencerList, Priority.ALWAYS);
-        registrationSection.getChildren().setAll(sectionTitle("Registration", "Add the fencers competing in this tournament."), formRow(fencerNameField, addFencerButton), compactHeader("Registered fencers", removeFencerButton), fencerList, actionRow(applySeedingButton)); registrationSection.getStyleClass().add("setup-stage");
+        fencerNameField.setPromptText("Enter a fencer display name"); fencerNameField.setOnAction(event -> addFencerButton.fire()); addFencerButton.getStyleClass().add("primary-action"); confirmSeedingButton.getStyleClass().add("primary-action"); removeFencerButton.getStyleClass().add("quiet-danger-action"); fencerList.setPlaceholder(new Label("No fencers registered yet.")); fencerList.setPrefHeight(280); fencerList.setMinHeight(180); fencerList.setMaxHeight(320);
+        registrationSection.getChildren().setAll(sectionTitle("Registration", "Add the fencers competing in this tournament."), formRow(fencerNameField, addFencerButton), compactHeader("Registered fencers", removeFencerButton), fencerList, actionRow(confirmSeedingButton)); registrationSection.getStyleClass().add("setup-stage");
         seedList.setPlaceholder(new Label("No fencers registered yet.")); VBox.setVgrow(seedList, Priority.ALWAYS); HBox reorder = new HBox(8, moveSeedUpButton, moveSeedDownButton); reorder.getStyleClass().add("secondary-actions"); generatePoolsButton.getStyleClass().add("primary-action");
         seedingSection.getChildren().setAll(sectionTitle("Seed the field", "Set the order used to distribute fencers across pools."), seedList, reorder, actionRow(applySeedingButton, generatePoolsButton)); seedingSection.getStyleClass().add("setup-stage");
         VBox root = new VBox(createTournamentSection, registrationSection, seedingSection); root.getStyleClass().add("screen-content"); return root;
