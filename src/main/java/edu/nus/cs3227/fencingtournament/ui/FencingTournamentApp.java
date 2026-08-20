@@ -14,8 +14,8 @@ public final class FencingTournamentApp extends Application {
         new TournamentController(service, view);
 
         stage.setTitle("Fencing Tournament Manager");
-        stage.setMinWidth(620);
-        stage.setMinHeight(440);
+        stage.setMinWidth(960);
+        stage.setMinHeight(680);
         stage.setScene(view.scene());
         stage.show();
     }

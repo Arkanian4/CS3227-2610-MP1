@@ -24,6 +24,7 @@ public final class TournamentController {
     private final TournamentService service;
     private final TournamentView view;
     private Path currentFile;
+    private PoolBoutRow selectedBout;
 
     public TournamentController(TournamentService service, TournamentView view) {
         this.service = service;
@@ -44,8 +45,15 @@ public final class TournamentController {
         view.generatePoolsButton().setOnAction(event -> generatePools());
         view.poolList().getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldValue, newValue) -> renderSelectedPool(newValue));
-        view.boutTable().getSelectionModel().selectedItemProperty().addListener(
-                (observable, oldValue, newValue) -> view.showSelectedBout(newValue));
+        view.setMatrixCellHandler((rowId, opponentId) -> {
+            view.markSelectedMatrixCell(rowId, opponentId);
+            Pool selectedPool = view.poolList().getSelectionModel().getSelectedItem();
+            if (selectedPool == null) return;
+            selectedPool.bouts().stream().map(this::boutRow)
+                    .filter(bout -> samePair(bout, rowId, opponentId))
+                    .findFirst()
+                    .ifPresent(this::selectBout);
+        });
         view.standingsPoolSelector().setOnAction(event -> renderStandings(
                 view.standingsPoolSelector().getSelectionModel().getSelectedItem()));
         view.recordResultButton().setOnAction(event -> recordResult());
@@ -162,11 +170,15 @@ public final class TournamentController {
         if (pool == null) return;
         List<String> members = pool.memberIds().stream().map(this::fencerName).toList();
         List<PoolBoutRow> bouts = pool.bouts().stream().map(this::boutRow).toList();
-        view.renderSelectedPool(pool.name(), members, bouts);
+        view.renderSelectedPool(pool.name(), members, matrixRows(pool));
+        selectedBout = selectedBout == null ? null : bouts.stream()
+                .filter(bout -> bout.boutId().equals(selectedBout.boutId()))
+                .findFirst().orElse(null);
+        view.showSelectedBout(selectedBout);
     }
 
     private void recordResult() {
-        PoolBoutRow row = view.boutTable().getSelectionModel().getSelectedItem();
+        PoolBoutRow row = selectedBout;
         Pool pool = view.poolList().getSelectionModel().getSelectedItem();
         if (row == null || pool == null) {
             view.showStatus("Select a pending bout first.");
@@ -183,6 +195,11 @@ public final class TournamentController {
         } catch (IllegalArgumentException | IllegalStateException exception) {
             showError(exception);
         }
+    }
+
+    private void selectBout(PoolBoutRow bout) {
+        selectedBout = bout;
+        view.showSelectedBout(bout);
     }
 
     private void renderStandings(Pool pool) {
@@ -221,8 +238,42 @@ public final class TournamentController {
 
     private PoolBoutRow boutRow(PoolBout bout) {
         String score = bout.score() == null ? "—" : bout.score().firstScore() + " - " + bout.score().secondScore();
-        return new PoolBoutRow(bout.id(), fencerName(bout.firstFencerId()), fencerName(bout.secondFencerId()),
+        return new PoolBoutRow(bout.id(), bout.firstFencerId(), bout.secondFencerId(),
+                fencerName(bout.firstFencerId()), fencerName(bout.secondFencerId()),
                 score, bout.score() == null ? "Pending" : "Completed", bout.score() != null);
+    }
+
+    private List<PoolMatrixRow> matrixRows(Pool pool) {
+        return pool.memberIds().stream().map(rowFencerId -> {
+            java.util.Map<UUID, String> cells = new java.util.LinkedHashMap<>();
+            for (UUID columnFencerId : pool.memberIds()) {
+                if (rowFencerId.equals(columnFencerId)) {
+                    cells.put(columnFencerId, "—");
+                    continue;
+                }
+                PoolBout bout = pool.bouts().stream()
+                        .filter(candidate -> samePair(candidate, rowFencerId, columnFencerId))
+                        .findFirst().orElse(null);
+                if (bout == null || bout.score() == null) {
+                    cells.put(columnFencerId, "");
+                } else if (bout.firstFencerId().equals(rowFencerId)) {
+                    cells.put(columnFencerId, Integer.toString(bout.score().firstScore()));
+                } else {
+                    cells.put(columnFencerId, Integer.toString(bout.score().secondScore()));
+                }
+            }
+            return new PoolMatrixRow(rowFencerId, fencerName(rowFencerId), cells);
+        }).toList();
+    }
+
+    private static boolean samePair(PoolBout bout, UUID first, UUID second) {
+        return (bout.firstFencerId().equals(first) && bout.secondFencerId().equals(second))
+                || (bout.firstFencerId().equals(second) && bout.secondFencerId().equals(first));
+    }
+
+    private static boolean samePair(PoolBoutRow bout, UUID first, UUID second) {
+        return (bout.firstId().equals(first) && bout.secondId().equals(second))
+                || (bout.firstId().equals(second) && bout.secondId().equals(first));
     }
 
     private PoolStandingRow standingRow(PoolStanding standing) {
