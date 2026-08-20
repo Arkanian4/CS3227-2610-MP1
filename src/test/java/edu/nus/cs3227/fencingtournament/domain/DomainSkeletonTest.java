@@ -31,14 +31,14 @@ class DomainSkeletonTest {
     }
 
     @Test
-    void duplicateFencerNamesAreAllowedWhenIdsDiffer() {
+    void duplicateFencerNamesAreRejectedWhenIdsDiffer() {
         Fencer first = Fencer.create("Alex Tan");
         Fencer second = Fencer.create("Alex Tan");
         Tournament tournament = Tournament.create("Internal Open", testSettings());
 
         assertDoesNotThrow(() -> tournament.addFencer(first));
-        assertDoesNotThrow(() -> tournament.addFencer(second));
-        assertEquals(2, tournament.fencers().size());
+        assertThrows(IllegalArgumentException.class, () -> tournament.addFencer(second));
+        assertEquals(1, tournament.fencers().size());
     }
 
     @Test

@@ -51,7 +51,7 @@ class JsonTournamentRepositoryTest {
     @Test
     void multipleFencersAndTheirUuidsSurviveRoundTrip() throws IOException {
         Fencer first = Fencer.create("Alex Tan");
-        Fencer second = Fencer.create("Alex Tan");
+        Fencer second = Fencer.create("Alex Tan (2)");
         Fencer third = Fencer.create("Jamie Lim");
         Tournament original = Tournament.create("Internal Open", testSettings());
         original.addFencer(first);
@@ -64,7 +64,7 @@ class JsonTournamentRepositoryTest {
 
         assertEquals(List.of(first.id(), second.id(), third.id()),
                 loaded.fencers().stream().map(Fencer::id).toList());
-        assertEquals(List.of("Alex Tan", "Alex Tan", "Jamie Lim"),
+        assertEquals(List.of("Alex Tan", "Alex Tan (2)", "Jamie Lim"),
                 loaded.fencers().stream().map(Fencer::name).toList());
     }
 

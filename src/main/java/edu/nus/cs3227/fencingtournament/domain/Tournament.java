@@ -69,6 +69,9 @@ public final class Tournament {
         if (findFencer(fencer.id()).isPresent()) {
             throw new IllegalArgumentException("A fencer with this ID is already registered.");
         }
+        if (fencers.stream().anyMatch(existing -> existing.name().equals(fencer.name()))) {
+            throw new IllegalArgumentException("A fencer with this name is already registered.");
+        }
         fencers.add(fencer);
     }
 
@@ -213,12 +216,16 @@ public final class Tournament {
     private static void validateRoster(List<Fencer> fencers) {
         Objects.requireNonNull(fencers, "Fencer roster must not be null.");
         Set<UUID> fencerIds = new HashSet<>();
+        Set<String> fencerNames = new HashSet<>();
         for (Fencer fencer : fencers) {
             if (fencer == null) {
                 throw new IllegalArgumentException("Fencer roster must not contain null entries.");
             }
             if (!fencerIds.add(fencer.id())) {
                 throw new IllegalArgumentException("Fencer IDs must be unique within a tournament.");
+            }
+            if (!fencerNames.add(fencer.name())) {
+                throw new IllegalArgumentException("Fencer names must be unique within a tournament.");
             }
         }
     }
