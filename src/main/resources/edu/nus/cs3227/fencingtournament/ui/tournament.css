@@ -158,6 +158,23 @@
 .standing-status.is-final { -fx-text-fill: #17614f; }
 .standing-status.is-provisional { -fx-text-fill: #7b6234; }
 
+.bracket-rounds { -fx-padding: 12 0; -fx-alignment: TOP_LEFT; }
+.bracket-round { -fx-min-width: 190; -fx-spacing: 14; }
+.bracket-match {
+    -fx-min-width: 180;
+    -fx-padding: 9 10;
+    -fx-background-color: #ffffff;
+    -fx-border-color: #cfd8dc;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-cursor: hand;
+}
+.bracket-ready { -fx-border-color: #246a66; }
+.bracket-resolved { -fx-background-color: #edf5f1; }
+.bracket-pending { -fx-opacity: 0.72; }
+.match-status { -fx-font-size: 11px; -fx-font-weight: 700; -fx-text-fill: #637381; }
+.bracket-winner { -fx-font-weight: 700; -fx-text-fill: #17614f; }
+
 .status-bar {
     -fx-min-height: 32;
     -fx-padding: 7 24;

@@ -21,7 +21,7 @@ public final class Tournament {
     private final List<Fencer> fencers;
     private Seeding seeding;
     private final List<Pool> pools;
-    private final EliminationBracket eliminationBracket;
+    private EliminationBracket eliminationBracket;
 
     /** Creates a new tournament in the registration phase with an empty roster. */
     public Tournament(UUID id, String name, TournamentSettings settings) {
@@ -143,8 +143,7 @@ public final class Tournament {
 
     public TournamentPhase phase() {
         if (eliminationBracket != null) {
-            return eliminationBracket.matches().stream().anyMatch(match -> match.score() == null)
-                    ? TournamentPhase.ELIMINATION_PHASE : TournamentPhase.COMPLETE;
+            return eliminationBracket.isComplete() ? TournamentPhase.COMPLETE : TournamentPhase.ELIMINATION_PHASE;
         }
         if (!pools.isEmpty()) {
             return TournamentPhase.POOL_PHASE;
@@ -170,6 +169,21 @@ public final class Tournament {
 
     public EliminationBracket eliminationBracket() {
         return eliminationBracket;
+    }
+
+    public void installEliminationBracket(EliminationBracket bracket) {
+        if (bracket == null || eliminationBracket != null) {
+            throw new IllegalArgumentException("A new elimination bracket is required.");
+        }
+        if (pools.isEmpty() || pools.stream().anyMatch(pool -> !pool.isComplete())) {
+            throw new IllegalStateException("All pool bouts must be completed before direct elimination.");
+        }
+        eliminationBracket = bracket;
+    }
+
+    public void recordEliminationBoutResult(UUID matchId, BoutScore score) {
+        if (eliminationBracket == null) throw new IllegalStateException("Generate the elimination bracket first.");
+        eliminationBracket = eliminationBracket.recordResult(matchId, score, settings.eliminationBoutScoreLimit());
     }
 
     private void updatePool(UUID poolId, java.util.function.UnaryOperator<Pool> update) {

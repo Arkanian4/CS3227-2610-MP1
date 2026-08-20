@@ -7,10 +7,12 @@ import edu.nus.cs3227.fencingtournament.domain.Seeding;
 import edu.nus.cs3227.fencingtournament.domain.TournamentPhase;
 import edu.nus.cs3227.fencingtournament.domain.pool.Pool;
 import edu.nus.cs3227.fencingtournament.domain.rules.PoolGenerator;
+import edu.nus.cs3227.fencingtournament.domain.rules.BracketGenerator;
 import edu.nus.cs3227.fencingtournament.domain.rules.StandingsCalculator;
 import edu.nus.cs3227.fencingtournament.domain.standings.PoolStanding;
 import edu.nus.cs3227.fencingtournament.domain.standings.OverallStanding;
 import edu.nus.cs3227.fencingtournament.domain.pool.BoutScore;
+import edu.nus.cs3227.fencingtournament.domain.elimination.EliminationBracket;
 import edu.nus.cs3227.fencingtournament.domain.standings.TieBreakCriterion;
 import edu.nus.cs3227.fencingtournament.domain.standings.TieBreakPolicy;
 
@@ -24,6 +26,7 @@ import java.util.UUID;
 public final class TournamentService {
     private final TournamentRepository repository;
     private final PoolGenerator poolGenerator = new PoolGenerator();
+    private final BracketGenerator bracketGenerator = new BracketGenerator();
     private final StandingsCalculator standingsCalculator = new StandingsCalculator();
     private Tournament activeTournament;
 
@@ -101,6 +104,22 @@ public final class TournamentService {
         }
         return standingsCalculator.calculateOverallStandings(
                 tournamentPools, tournament.seeding(), tournament.settings().tieBreakPolicy());
+    }
+
+    public EliminationBracket generateEliminationBracket() {
+        Tournament tournament = requireActiveTournament();
+        if (tournament.eliminationBracket() != null) return tournament.eliminationBracket();
+        List<UUID> qualified = overallStandings().stream()
+                .sorted(java.util.Comparator.comparingInt(OverallStanding::rank))
+                .limit(tournament.settings().advancingFencerCount())
+                .map(OverallStanding::fencerId).toList();
+        EliminationBracket bracket = bracketGenerator.generate(qualified);
+        tournament.installEliminationBracket(bracket);
+        return bracket;
+    }
+
+    public void recordEliminationBoutResult(UUID matchId, BoutScore score) {
+        requireActiveTournament().recordEliminationBoutResult(matchId, score);
     }
 
     public PoolProgress poolProgress() {

@@ -8,6 +8,8 @@ import edu.nus.cs3227.fencingtournament.domain.TournamentPhase;
 import edu.nus.cs3227.fencingtournament.domain.pool.BoutScore;
 import edu.nus.cs3227.fencingtournament.domain.pool.Pool;
 import edu.nus.cs3227.fencingtournament.domain.pool.PoolBout;
+import edu.nus.cs3227.fencingtournament.domain.elimination.EliminationBracket;
+import edu.nus.cs3227.fencingtournament.domain.elimination.EliminationMatch;
 import edu.nus.cs3227.fencingtournament.domain.standings.OverallStanding;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
@@ -25,6 +27,7 @@ public final class TournamentController {
     private final TournamentView view;
     private Path currentFile;
     private PoolBoutRow selectedBout;
+    private EliminationMatchRow selectedEliminationMatch;
 
     public TournamentController(TournamentService service, TournamentView view) {
         this.service = service;
@@ -44,6 +47,7 @@ public final class TournamentController {
         view.confirmSeedingButton().setOnAction(event -> applySeeding());
         view.applySeedingButton().setOnAction(event -> applySeeding());
         view.generatePoolsButton().setOnAction(event -> generatePools());
+        view.generateEliminationButton().setOnAction(event -> generateEliminationBracket());
         view.poolList().getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldValue, newValue) -> renderSelectedPool(newValue));
         view.setMatrixCellHandler((rowId, opponentId) -> {
@@ -56,6 +60,8 @@ public final class TournamentController {
                     .ifPresent(this::selectBout);
         });
         view.recordResultButton().setOnAction(event -> recordResult());
+        view.setEliminationMatchHandler(this::selectEliminationMatch);
+        view.recordEliminationResultButton().setOnAction(event -> recordEliminationResult());
     }
 
     private void createTournament() {
@@ -196,6 +202,36 @@ public final class TournamentController {
         }
     }
 
+    private void generateEliminationBracket() {
+        try {
+            service.generateEliminationBracket();
+            refreshWorkspace();
+            view.tabs().getSelectionModel().select(view.eliminationTab());
+            view.showStatus("Direct elimination bracket generated.");
+        } catch (IllegalArgumentException | IllegalStateException exception) { showError(exception); }
+    }
+
+    private void selectEliminationMatch(UUID matchId) {
+        EliminationBracket bracket = service.currentTournament().map(Tournament::eliminationBracket).orElse(null);
+        if (bracket == null) return;
+        selectedEliminationMatch = bracket.matches().stream().filter(match -> match.id().equals(matchId))
+                .findFirst().map(this::eliminationRow).orElse(null);
+        view.showSelectedEliminationMatch(selectedEliminationMatch);
+    }
+
+    private void recordEliminationResult() {
+        if (selectedEliminationMatch == null || !selectedEliminationMatch.ready()) {
+            view.showStatus("Select a pending DE bout first."); return;
+        }
+        try {
+            service.recordEliminationBoutResult(selectedEliminationMatch.matchId(), new BoutScore(
+                    Integer.parseInt(view.eliminationFirstScoreField().getText().trim()),
+                    Integer.parseInt(view.eliminationSecondScoreField().getText().trim())));
+            refreshWorkspace(); view.showStatus("DE result recorded.");
+        } catch (NumberFormatException exception) { view.showStatus("Scores must be whole numbers.");
+        } catch (IllegalArgumentException | IllegalStateException exception) { showError(exception); }
+    }
+
     private void selectBout(PoolBoutRow bout) {
         selectedBout = bout;
         view.showSelectedBout(bout);
@@ -229,7 +265,15 @@ public final class TournamentController {
                 view.renderStandings(List.of(), false);
             }
         }
-        view.setPhaseControls(phase, true, poolResultsFinalized);
+        if (tournament.eliminationBracket() != null) {
+            EliminationBracket bracket = tournament.eliminationBracket();
+            view.renderEliminationBracket(bracket.matches().stream().map(this::eliminationRow).toList());
+            selectedEliminationMatch = selectedEliminationMatch == null ? null : bracket.matches().stream()
+                    .filter(match -> match.id().equals(selectedEliminationMatch.matchId())).findFirst()
+                    .map(this::eliminationRow).orElse(null);
+            view.showSelectedEliminationMatch(selectedEliminationMatch);
+        }
+        view.setPhaseControls(phase, true, poolResultsFinalized, tournament.eliminationBracket() != null);
     }
 
     private PoolBoutRow boutRow(PoolBout bout) {
@@ -276,6 +320,30 @@ public final class TournamentController {
         return new OverallSeedingRow(fencerName(standing.fencerId()), standing.rank(), standing.victories(),
                 standing.boutsFenced(), standing.victoryRatio(), standing.touchesScored(),
                 standing.touchesReceived(), standing.indicator(), standing.seed());
+    }
+
+    private EliminationMatchRow eliminationRow(EliminationMatch match) {
+        String first = eliminationName(match.firstSlot().fencerId());
+        String second = eliminationName(match.secondSlot().fencerId());
+        String firstScore = match.score() == null ? "" : Integer.toString(match.score().firstScore());
+        String secondScore = match.score() == null ? "" : Integer.toString(match.score().secondScore());
+        String status = match.isBye() ? "Bye" : match.isResolved() ? "Completed" : match.isReady() ? "Pending" : "Waiting";
+        boolean firstWinner = match.winnerId() != null && match.winnerId().equals(match.firstSlot().fencerId());
+        boolean secondWinner = match.winnerId() != null && match.winnerId().equals(match.secondSlot().fencerId());
+        return new EliminationMatchRow(match.id(), match.round(), match.position(), first, second,
+                firstScore, secondScore, status, match.isReady(), match.isResolved(), firstWinner, secondWinner);
+    }
+
+    private String eliminationName(UUID fencerId) {
+        if (fencerId == null) return "Bye";
+        return service.currentTournament().flatMap(tournament -> tournament.findFencer(fencerId))
+                .map(fencer -> "#" + seedOf(fencerId) + " " + fencer.name()).orElse("TBD");
+    }
+
+    private int seedOf(UUID fencerId) {
+        List<OverallStanding> standings = service.overallStandings();
+        return standings.stream().filter(standing -> standing.fencerId().equals(fencerId))
+                .mapToInt(OverallStanding::rank).findFirst().orElse(0);
     }
 
     private String fencerName(UUID id) {

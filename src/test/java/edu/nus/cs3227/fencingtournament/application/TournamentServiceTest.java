@@ -3,6 +3,7 @@ package edu.nus.cs3227.fencingtournament.application;
 import edu.nus.cs3227.fencingtournament.domain.Fencer;
 import edu.nus.cs3227.fencingtournament.domain.Tournament;
 import edu.nus.cs3227.fencingtournament.domain.TournamentPhase;
+import edu.nus.cs3227.fencingtournament.domain.pool.BoutScore;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -64,6 +65,24 @@ class TournamentServiceTest {
         assertEquals(0, service.poolProgress().completedBouts());
         assertEquals(10, service.poolProgress().totalBouts());
         assertEquals(5, service.standingsForPool(service.pools().get(0).id()).size());
+    }
+
+    @Test
+    void serviceGeneratesEliminationAfterEveryPoolBoutIsComplete() {
+        TournamentService service = new TournamentService(new InMemoryRepository());
+        service.createTournament("Internal Open");
+        List<Fencer> fencers = java.util.stream.IntStream.range(0, 4)
+                .mapToObj(index -> service.addFencer("Fencer " + (index + 1))).toList();
+        service.seedFencers(fencers.stream().map(Fencer::id).toList());
+        service.generatePools();
+        var pool = service.pools().getFirst();
+        assertThrows(IllegalStateException.class, service::generateEliminationBracket);
+        for (var bout : pool.bouts()) service.recordPoolBoutResult(pool.id(), bout.id(), new BoutScore(5, 0));
+
+        var bracket = service.generateEliminationBracket();
+
+        assertEquals(4, bracket.size());
+        assertEquals(TournamentPhase.ELIMINATION_PHASE, service.currentPhase());
     }
 
     private static final class InMemoryRepository implements TournamentRepository {

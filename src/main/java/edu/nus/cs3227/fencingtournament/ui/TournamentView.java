@@ -8,6 +8,7 @@ import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.Comparator;
 import java.util.UUID;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /** Main JavaFX workspace. It renders presentation state and delegates user intent to its controller. */
 public final class TournamentView extends BorderPane {
@@ -43,6 +45,8 @@ public final class TournamentView extends BorderPane {
     private final Tab fencersTab = new Tab("Setup");
     private final Tab poolsTab = new Tab("Pools");
     private final Tab standingsTab = new Tab("Pool Result");
+    private final Tab eliminationTab = new Tab("Direct Elimination");
+    private final Button generateEliminationButton = new Button("Generate direct elimination");
     private final VBox createTournamentSection = new VBox();
     private final VBox registrationSection = new VBox();
     private final VBox seedingSection = new VBox();
@@ -63,6 +67,12 @@ public final class TournamentView extends BorderPane {
 
     private final TableView<OverallSeedingRow> standingsTable = new TableView<>(FXCollections.observableArrayList());
     private final Label standingsStatusLabel = new Label();
+    private final HBox bracketRounds = new HBox();
+    private final Label selectedEliminationMatchLabel = new Label("Select a pending bout in the bracket");
+    private final TextField eliminationFirstScoreField = new TextField();
+    private final TextField eliminationSecondScoreField = new TextField();
+    private final Button recordEliminationResultButton = new Button("Record result");
+    private Consumer<UUID> eliminationMatchHandler = ignored -> { };
     private BiConsumer<UUID, UUID> matrixCellHandler = (row, opponent) -> { };
     private UUID selectedMatrixRow;
     private UUID selectedMatrixOpponent;
@@ -75,8 +85,9 @@ public final class TournamentView extends BorderPane {
         fencersTab.setContent(buildSetupTab());
         poolsTab.setContent(buildPoolsTab());
         standingsTab.setContent(buildStandingsTab());
-        for (Tab tab : List.of(fencersTab, poolsTab, standingsTab)) tab.setClosable(false);
-        tabs.getTabs().addAll(fencersTab, poolsTab, standingsTab);
+        eliminationTab.setContent(buildEliminationTab());
+        for (Tab tab : List.of(fencersTab, poolsTab, standingsTab, eliminationTab)) tab.setClosable(false);
+        tabs.getTabs().addAll(fencersTab, poolsTab, standingsTab, eliminationTab);
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         tabs.getStyleClass().add("phase-navigation");
         configureListCells();
@@ -108,6 +119,11 @@ public final class TournamentView extends BorderPane {
     public TabPane tabs() { return tabs; }
     public Tab poolsTab() { return poolsTab; }
     public Tab standingsTab() { return standingsTab; }
+    public Tab eliminationTab() { return eliminationTab; }
+    public Button generateEliminationButton() { return generateEliminationButton; }
+    public TextField eliminationFirstScoreField() { return eliminationFirstScoreField; }
+    public TextField eliminationSecondScoreField() { return eliminationSecondScoreField; }
+    public Button recordEliminationResultButton() { return recordEliminationResultButton; }
     public ListView<Pool> poolList() { return poolList; }
     public TableView<PoolMatrixRow> poolMatrixTable() { return poolMatrixTable; }
     public TextField firstScoreField() { return firstScoreField; }
@@ -115,6 +131,7 @@ public final class TournamentView extends BorderPane {
     public Button recordResultButton() { return recordResultButton; }
     public void setMatrixCellHandler(BiConsumer<UUID, UUID> handler) { matrixCellHandler = handler == null ? (row, opponent) -> { } : handler; }
     public void markSelectedMatrixCell(UUID row, UUID opponent) { selectedMatrixRow = row; selectedMatrixOpponent = opponent; poolMatrixTable.refresh(); }
+    public void setEliminationMatchHandler(Consumer<UUID> handler) { eliminationMatchHandler = handler == null ? ignored -> { } : handler; }
 
     public void renderFencers(List<Fencer> fencers, List<Fencer> seedOrder) { fencerList.getItems().setAll(fencers); seedList.getItems().setAll(seedOrder); }
     public void renderPools(List<Pool> pools) {
@@ -143,6 +160,28 @@ public final class TournamentView extends BorderPane {
         standingsStatusLabel.setText("Final Pool Result");
         standingsStatusLabel.getStyleClass().setAll("standing-status", "is-final");
     }
+
+    public void renderEliminationBracket(List<EliminationMatchRow> matches) {
+        bracketRounds.getChildren().clear();
+        matches.stream().collect(java.util.stream.Collectors.groupingBy(EliminationMatchRow::round,
+                java.util.TreeMap::new, java.util.stream.Collectors.toList())).forEach((round, roundMatches) -> {
+            Label heading = new Label("Round " + round); heading.getStyleClass().add("section-kicker");
+            VBox column = new VBox(10, heading); column.getStyleClass().add("bracket-round");
+            roundMatches.stream().sorted(Comparator.comparingInt(EliminationMatchRow::position))
+                    .forEach(match -> column.getChildren().add(matchCard(match)));
+            bracketRounds.getChildren().add(column);
+        });
+    }
+
+    public void showSelectedEliminationMatch(EliminationMatchRow match) {
+        if (match == null) {
+            selectedEliminationMatchLabel.setText("Select a pending bout in the bracket");
+            eliminationFirstScoreField.clear(); eliminationSecondScoreField.clear(); recordEliminationResultButton.setDisable(true); return;
+        }
+        selectedEliminationMatchLabel.setText(match.first() + "  —  " + match.second() + " · " + match.status());
+        eliminationFirstScoreField.clear(); eliminationSecondScoreField.clear();
+        recordEliminationResultButton.setDisable(!match.ready());
+    }
     public void showSelectedBout(PoolBoutRow bout) {
         if (bout == null) {
             selectedBoutLabel.setText("Select an unfinished bout in the matrix"); firstFencerLabel.setText("—"); secondFencerLabel.setText("—"); resultStateLabel.setText("");
@@ -162,19 +201,19 @@ public final class TournamentView extends BorderPane {
         progressLabel.setText(progress == null || progress.totalBouts() == 0 ? "" : progress.completedBouts() + " of " + progress.totalBouts() + " pool bouts complete");
     }
     public void showStatus(String message) { statusLabel.setText(message == null ? "" : message); }
-    public void setPhaseControls(TournamentPhase phase, boolean hasTournament, boolean poolResultsFinalized) {
+    public void setPhaseControls(TournamentPhase phase, boolean hasTournament, boolean poolResultsFinalized, boolean hasEliminationBracket) {
         boolean registration = hasTournament && phase == TournamentPhase.REGISTRATION;
         boolean seeding = hasTournament && phase == TournamentPhase.SEEDING;
         boolean pools = hasTournament && (phase == TournamentPhase.POOL_PHASE || phase == TournamentPhase.ELIMINATION_PHASE || phase == TournamentPhase.COMPLETE);
         showOnly(createTournamentSection, !hasTournament); showOnly(registrationSection, registration); showOnly(seedingSection, seeding);
         saveButton.setDisable(!hasTournament); fencerNameField.setDisable(!registration); addFencerButton.setDisable(!registration); removeFencerButton.setDisable(!registration); fencerList.setDisable(!registration);
         seedList.setDisable(!seeding); moveSeedUpButton.setDisable(!seeding); moveSeedDownButton.setDisable(!seeding); applySeedingButton.setDisable(!(registration || seeding));
-        confirmSeedingButton.setDisable(!registration); applySeedingButton.setText("Apply revised order"); generatePoolsButton.setDisable(!seeding); poolsTab.setDisable(!pools); standingsTab.setDisable(!poolResultsFinalized);
+        confirmSeedingButton.setDisable(!registration); applySeedingButton.setText("Apply revised order"); generatePoolsButton.setDisable(!seeding); poolsTab.setDisable(!pools); standingsTab.setDisable(!poolResultsFinalized); eliminationTab.setDisable(!hasEliminationBracket); generateEliminationButton.setDisable(!poolResultsFinalized || hasEliminationBracket);
     }
     public void setNoTournamentState() {
         tournamentNameLabel.setText("No tournament open"); phaseLabel.setText("Create a tournament or open an existing file"); progressLabel.setText("");
         fencerList.getItems().clear(); seedList.getItems().clear(); poolList.getItems().clear(); poolMatrixTable.getItems().clear(); standingsTable.getItems().clear(); showSelectedBout(null);
-        setPhaseControls(TournamentPhase.REGISTRATION, false, false);
+        setPhaseControls(TournamentPhase.REGISTRATION, false, false, false);
     }
     public void showTournamentName(String name) { tournamentNameLabel.setText(name); }
 
@@ -208,8 +247,16 @@ public final class TournamentView extends BorderPane {
         HBox names = new HBox(40, firstFencerLabel, secondFencerLabel); names.setAlignment(Pos.CENTER); resultEntry.getChildren().setAll(title, selectedBoutLabel, names, resultStateLabel, scoreFields); resultEntry.setAlignment(Pos.CENTER); resultEntry.getStyleClass().add("result-entry");
     }
     private VBox buildStandingsTab() {
-        Label title = new Label("Pool Result"); title.getStyleClass().add("screen-title"); Label description = new Label("Overall placing after every pool bout has been finalized."); description.getStyleClass().add("screen-subtitle"); HBox status = new HBox(standingsStatusLabel); status.setAlignment(Pos.CENTER_LEFT);
+        Label title = new Label("Pool Result"); title.getStyleClass().add("screen-title"); Label description = new Label("Overall placing after every pool bout has been finalized."); description.getStyleClass().add("screen-subtitle"); HBox status = new HBox(standingsStatusLabel, generateEliminationButton); status.setSpacing(16); status.setAlignment(Pos.CENTER_LEFT); generateEliminationButton.getStyleClass().add("primary-action");
         VBox root = new VBox(6, title, description, status, standingsTable); root.getStyleClass().add("screen-content"); VBox.setVgrow(standingsTable, Priority.ALWAYS); return root;
+    }
+    private VBox buildEliminationTab() {
+        Label title = new Label("Direct Elimination"); title.getStyleClass().add("screen-title");
+        Label hint = new Label("Select a pending bracket bout to record its result."); hint.getStyleClass().add("screen-subtitle");
+        bracketRounds.setSpacing(24); bracketRounds.getStyleClass().add("bracket-rounds");
+        HBox scoreLine = new HBox(10, eliminationFirstScoreField, new Label("—"), eliminationSecondScoreField, recordEliminationResultButton); scoreLine.setAlignment(Pos.CENTER); eliminationFirstScoreField.setPrefWidth(70); eliminationSecondScoreField.setPrefWidth(70); recordEliminationResultButton.getStyleClass().add("primary-action");
+        VBox entry = new VBox(6, new Label("RECORD RESULT"), selectedEliminationMatchLabel, scoreLine); entry.setAlignment(Pos.CENTER); entry.getStyleClass().add("result-entry");
+        VBox root = new VBox(16, title, hint, bracketRounds, entry); root.getStyleClass().add("screen-content"); return root;
     }
     private HBox buildStatusBar() { statusLabel.getStyleClass().add("status-text"); HBox bar = new HBox(statusLabel); bar.getStyleClass().add("status-bar"); return bar; }
     private void configureListCells() {
@@ -248,6 +295,17 @@ public final class TournamentView extends BorderPane {
     private TableCell<PoolMatrixRow, String> matrixCell(UUID opponentId) { return new TableCell<>() { @Override protected void updateItem(String value, boolean empty) { super.updateItem(value, empty); getStyleClass().removeAll("matrix-diagonal", "matrix-pending", "matrix-win", "matrix-loss", "matrix-selected"); setText(empty ? null : value == null ? "" : value); setAlignment(Pos.CENTER); if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) { setOnMouseClicked(null); return; } PoolMatrixRow row = getTableView().getItems().get(getIndex()); setOnMouseClicked(event -> matrixCellHandler.accept(row.fencerId(), opponentId)); if ("—".equals(value)) getStyleClass().add("matrix-diagonal"); else if (value == null || value.isBlank()) getStyleClass().add("matrix-pending"); else getStyleClass().add(isWinner(row, opponentId, value) ? "matrix-win" : "matrix-loss"); if (row.fencerId().equals(selectedMatrixRow) && opponentId.equals(selectedMatrixOpponent)) getStyleClass().add("matrix-selected"); }}; }
     private boolean isWinner(PoolMatrixRow row, UUID opponentId, String score) { for (PoolMatrixRow opponent : poolMatrixTable.getItems()) if (opponent.fencerId().equals(opponentId)) return parse(score) > parse(opponent.cell(row.fencerId())); return false; }
     private static int parse(String value) { try { return Integer.parseInt(value); } catch (NumberFormatException ignored) { return -1; } }
+    private Node matchCard(EliminationMatchRow match) {
+        Label first = new Label(match.first() + (match.firstScore().isEmpty() ? "" : "   " + match.firstScore()));
+        Label second = new Label(match.second() + (match.secondScore().isEmpty() ? "" : "   " + match.secondScore()));
+        if (match.firstWinner()) first.getStyleClass().add("bracket-winner");
+        if (match.secondWinner()) second.getStyleClass().add("bracket-winner");
+        Label status = new Label(match.status()); status.getStyleClass().add("match-status");
+        VBox card = new VBox(4, first, second, status); card.getStyleClass().add("bracket-match");
+        if (match.resolved()) card.getStyleClass().add("bracket-resolved"); else if (match.ready()) card.getStyleClass().add("bracket-ready"); else card.getStyleClass().add("bracket-pending");
+        card.setOnMouseClicked(event -> eliminationMatchHandler.accept(match.matchId()));
+        return card;
+    }
     private static <T> TableColumn<T, String> textColumn(String title, java.util.function.Function<T, String> value, double width) { TableColumn<T, String> column = new TableColumn<>(title); column.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(value.apply(data.getValue()))); column.setPrefWidth(width); return column; }
     private static VBox sectionTitle(String title, String description) { Label heading = new Label(title); heading.getStyleClass().add("screen-title"); Label text = new Label(description); text.getStyleClass().add("screen-subtitle"); return new VBox(3, heading, text); }
     private static HBox formRow(TextField field, Button action) { HBox row = new HBox(10, field, action); row.getStyleClass().add("form-row"); HBox.setHgrow(field, Priority.ALWAYS); return row; }
