@@ -168,3 +168,11 @@ These entries are factual summaries for developer verification and later reflect
   after a refresh, rather than recreating it only in the bout's scheduled order.
 - **Outcome:** Result entry and later edits retain the row-versus-column order that the organiser
   clicked, while the domain score continues to be stored in scheduled-bout order.
+
+## Tournament Home scrollbar policy
+
+- **Task:** Remove a spurious Tournament Home scrollbar observed with exactly two tournaments.
+- **Decisions:** Disable horizontal scrolling for the compact Home list and disable vertical
+  scrolling for zero through two entries; larger lists retain normal vertical scrolling on demand.
+- **Outcome:** Small tournament collections no longer display an unnecessary scrollbar, while
+  longer histories remain scrollable.

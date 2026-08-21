@@ -145,6 +145,27 @@ class TournamentControllerTest {
     }
 
     @Test
+    void tournamentHomeSuppressesScrollbarsForTwoOrFewerTournaments() throws Exception {
+        onJavaFxThread(() -> {
+            TournamentService service = new TournamentService(new InMemoryRepository());
+            service.createTournament("Friday Open");
+            service.createTournament("Saturday Open");
+            TournamentView view = new TournamentView();
+            view.showHome();
+            view.renderTournamentList(service.listTournaments());
+            Scene scene = view.scene();
+            javafx.scene.control.ScrollPane scroll = (javafx.scene.control.ScrollPane) scene.getRoot().lookup(".home-tournament-scroll");
+
+            assertEquals(javafx.scene.control.ScrollPane.ScrollBarPolicy.NEVER, scroll.getHbarPolicy());
+            assertEquals(javafx.scene.control.ScrollPane.ScrollBarPolicy.NEVER, scroll.getVbarPolicy());
+
+            service.createTournament("Sunday Open");
+            view.renderTournamentList(service.listTournaments());
+            assertEquals(javafx.scene.control.ScrollPane.ScrollBarPolicy.AS_NEEDED, scroll.getVbarPolicy());
+        });
+    }
+
+    @Test
     void poolsDashboardRendersAllPoolPanelsTogether() throws Exception {
         onJavaFxThread(() -> {
             TournamentView view = new TournamentView();

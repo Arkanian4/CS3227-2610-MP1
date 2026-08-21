@@ -191,6 +191,9 @@ public final class TournamentView extends BorderPane {
     public void renderTournamentList(List<Tournament> tournaments) {
         List<Tournament> ongoing = tournaments.stream().filter(tournament -> tournament.phase() != TournamentPhase.COMPLETE).toList();
         List<Tournament> completed = tournaments.stream().filter(tournament -> tournament.phase() == TournamentPhase.COMPLETE).toList();
+        homeTournamentScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        homeTournamentScroll.setVbarPolicy(tournaments.size() <= 2
+                ? ScrollPane.ScrollBarPolicy.NEVER : ScrollPane.ScrollBarPolicy.AS_NEEDED);
         homeTournamentRows.getChildren().clear();
         if (tournaments.isEmpty()) {
             Label emptyTitle = new Label("No tournaments yet."); emptyTitle.getStyleClass().add("home-empty-title");
