@@ -54,10 +54,10 @@ public record Pool(UUID id, String name, List<UUID> memberIds, List<PoolBout> bo
 
     private static void validateScore(BoutScore score, int scoreLimit) {
         if (score.firstScore() > scoreLimit || score.secondScore() > scoreLimit) {
-            throw new IllegalArgumentException("Bout scores must not exceed the configured limit.");
+            throw new IllegalArgumentException("Pool scores must not exceed " + scoreLimit + ".");
         }
         if (Math.max(score.firstScore(), score.secondScore()) != scoreLimit) {
-            throw new IllegalArgumentException("The winning score must equal the configured limit.");
+            throw new IllegalArgumentException("The winning score must be " + scoreLimit + ".");
         }
     }
 }

@@ -138,6 +138,56 @@ class TournamentControllerTest {
     }
 
     @Test
+    void scoreValidationIsInlineAndClearsWhenTheInvalidFieldIsCorrected() throws Exception {
+        onJavaFxThread(() -> {
+            TournamentView view = new TournamentView();
+
+            view.showEliminationValidationError("DE scores must not exceed 15.", true, false);
+
+            assertTrue(view.eliminationValidationErrorLabel().isVisible());
+            assertEquals("DE scores must not exceed 15.", view.eliminationValidationErrorLabel().getText());
+            assertTrue(view.eliminationFirstScoreField().getStyleClass().contains("input-invalid"));
+            assertFalse(view.eliminationSecondScoreField().getStyleClass().contains("input-invalid"));
+
+            view.eliminationFirstScoreField().setText("15");
+
+            assertFalse(view.eliminationValidationErrorLabel().isManaged());
+            assertFalse(view.eliminationFirstScoreField().getStyleClass().contains("input-invalid"));
+        });
+    }
+
+    @Test
+    void tournamentAndFencerNameValidationIsShownInline() throws Exception {
+        onJavaFxThread(() -> {
+            TournamentService service = new TournamentService(new InMemoryRepository());
+            service.createTournament("Club Open");
+            TournamentView view = new TournamentView();
+            new TournamentController(service, view);
+
+            view.tournamentNameField().setText("   ");
+            view.createButton().fire();
+            assertEquals("Enter a tournament name.", view.tournamentNameValidationErrorLabel().getText());
+            assertTrue(view.tournamentNameValidationErrorLabel().isVisible());
+            assertTrue(view.tournamentNameField().getStyleClass().contains("input-invalid"));
+
+            view.tournamentNameField().setText("club open");
+            view.createButton().fire();
+            assertEquals("A tournament with this name already exists.", view.tournamentNameValidationErrorLabel().getText());
+
+            view.fencerNameField().setText(" ");
+            view.addFencerButton().fire();
+            assertEquals("Enter a fencer name.", view.fencerValidationErrorLabel().getText());
+            assertTrue(view.fencerNameField().getStyleClass().contains("input-invalid"));
+
+            view.fencerNameField().setText("Alice");
+            view.addFencerButton().fire();
+            view.fencerNameField().setText("Alice");
+            view.addFencerButton().fire();
+            assertEquals("A fencer with this name is already registered.", view.fencerValidationErrorLabel().getText());
+        });
+    }
+
+    @Test
     void viewingAnEarlierStageDoesNotChangeTheTournamentProgressMarker() throws Exception {
         onJavaFxThread(() -> {
             TournamentView view = new TournamentView();

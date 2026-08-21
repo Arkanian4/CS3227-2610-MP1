@@ -1,0 +1,25 @@
+{
+  "id" : "a7928275-f800-48ee-9232-913e764bc4af",
+  "name" : "lol..",
+  "settings" : {
+    "targetPoolSize" : 5,
+    "poolBoutScoreLimit" : 5,
+    "eliminationBoutScoreLimit" : 15,
+    "advancingFencerCount" : 16,
+    "tieBreakPolicy" : {
+      "criteria" : [ "VICTORY_RATIO", "INDICATOR", "TOUCHES_SCORED", "SEED" ]
+    }
+  },
+  "fencers" : [ {
+    "id" : "e51cad13-7c4f-489c-83ae-d078f3095d55",
+    "name" : "bobby"
+  }, {
+    "id" : "136fd0bf-da9a-43f4-a177-55c5eb77bdfc",
+    "name" : "bobb"
+  } ],
+  "seeding" : {
+    "fencerIds" : [ "136fd0bf-da9a-43f4-a177-55c5eb77bdfc", "e51cad13-7c4f-489c-83ae-d078f3095d55" ]
+  },
+  "pools" : [ ],
+  "eliminationBracket" : null
+}

@@ -82,10 +82,14 @@ public final class TournamentController {
     private void createTournament() {
         try {
             service.createTournament(view.tournamentNameField().getText());
+            view.clearTournamentNameValidationError();
             view.tournamentNameField().clear();
             refreshWorkspace();
             view.showStatus("Tournament created. Register fencers, then apply seeding.");
-        } catch (IllegalArgumentException | TournamentPersistenceException exception) {
+        } catch (IllegalArgumentException exception) {
+            String message = tournamentNameValidationMessage(exception);
+            if (message == null) showError(exception); else view.showTournamentNameValidationError(message);
+        } catch (TournamentPersistenceException exception) {
             showError(exception);
         }
     }
@@ -93,11 +97,15 @@ public final class TournamentController {
     private void createTournamentFromHome() {
         try {
             service.createTournament(view.homeTournamentNameField().getText());
+            view.clearHomeTournamentNameValidationError();
             view.homeTournamentNameField().clear();
             view.showNewTournamentForm(false);
             refreshWorkspace();
             view.showStatus("Tournament created.");
-        } catch (IllegalArgumentException | TournamentPersistenceException exception) { showError(exception); }
+        } catch (IllegalArgumentException exception) {
+            String message = tournamentNameValidationMessage(exception);
+            if (message == null) showError(exception); else view.showHomeTournamentNameValidationError(message);
+        } catch (TournamentPersistenceException exception) { showError(exception); }
     }
 
     private void openTournament(UUID tournamentId) {
@@ -162,10 +170,14 @@ public final class TournamentController {
     private void addFencer() {
         try {
             service.addFencer(view.fencerNameField().getText());
+            view.clearFencerValidationError();
             view.fencerNameField().clear();
             refreshWorkspace();
             view.showStatus("Fencer added.");
-        } catch (IllegalArgumentException | IllegalStateException | TournamentPersistenceException exception) {
+        } catch (IllegalArgumentException exception) {
+            String message = fencerValidationMessage(exception);
+            if (message == null) showError(exception); else view.showFencerValidationError(message, true);
+        } catch (IllegalStateException | TournamentPersistenceException exception) {
             showError(exception);
         }
     }
@@ -173,7 +185,7 @@ public final class TournamentController {
     private void removeFencer() {
         Fencer selected = view.fencerList().getSelectionModel().getSelectedItem();
         if (selected == null) {
-            view.showStatus("Select a fencer to remove.");
+            view.showFencerValidationError("Select a fencer to remove.", false);
             return;
         }
         Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION,
@@ -222,10 +234,11 @@ public final class TournamentController {
         try {
             Integer maximumPoolSize = view.maximumPoolSizeChoice().getValue();
             if (maximumPoolSize == null) {
-                view.showStatus("Choose the maximum number of fencers per pool first.");
+                view.showSeedingValidationError("Choose the maximum number of fencers per pool first.");
                 return;
             }
             service.generatePools(maximumPoolSize);
+            view.clearSeedingValidationError();
             refreshWorkspace();
             view.selectPoolsTab();
             view.showStatus("Pools generated. Select a pool to record results.");
@@ -254,24 +267,27 @@ public final class TournamentController {
         PoolBoutRow row = selectedBout;
         Pool pool = view.poolList().getSelectionModel().getSelectedItem();
         if (row == null || pool == null) {
-            view.showStatus("Select a pending bout first.");
+            view.showPoolValidationError("Select a pending bout first.", false, false);
             return;
         }
+        ScoreInput input = null;
         try {
-            int first = Integer.parseInt(view.firstScoreField().getText().trim());
-            int second = Integer.parseInt(view.secondScoreField().getText().trim());
-            BoutScore score = selectedPoolRowIsScheduledFirst ? new BoutScore(first, second) : new BoutScore(second, first);
+            input = readScoreInput(view.firstScoreField().getText(), view.secondScoreField().getText(), "Pool");
+            BoutScore score = selectedPoolRowIsScheduledFirst ? input.score() : new BoutScore(input.second(), input.first());
             if (editingPoolResult) {
                 boolean resetElimination = service.poolEditNeedsReset();
                 if (resetElimination && !confirmPoolReset()) return;
                 service.replacePoolBoutResult(pool.id(), row.boutId(), score, resetElimination);
                 editingPoolResult = false; view.endPoolResultEdit();
             } else service.recordPoolBoutResult(pool.id(), row.boutId(), score);
+            view.clearPoolValidationError();
             refreshWorkspace();
             view.showStatus("Result saved.");
-        } catch (NumberFormatException exception) {
-            view.showStatus("Scores must be whole numbers.");
-        } catch (IllegalArgumentException | IllegalStateException | TournamentPersistenceException exception) {
+        } catch (ScoreInputException exception) {
+            view.showPoolValidationError(exception.getMessage(), exception.firstFieldInvalid(), exception.secondFieldInvalid());
+        } catch (IllegalArgumentException exception) {
+            if (!showPoolScoreValidationError(exception, input)) showError(exception);
+        } catch (IllegalStateException | TournamentPersistenceException exception) {
             showError(exception);
         }
     }
@@ -321,12 +337,13 @@ public final class TournamentController {
 
     private void recordEliminationResult() {
         if (selectedEliminationMatch == null || (!selectedEliminationMatch.ready() && !editingEliminationResult)) {
-            view.showStatus("Select a pending DE bout first."); return;
+            view.showEliminationValidationError("Select a pending DE bout first.", false, false); return;
         }
+        ScoreInput input = null;
         try {
-            BoutScore score = new BoutScore(
-                    Integer.parseInt(view.eliminationFirstScoreField().getText().trim()),
-                    Integer.parseInt(view.eliminationSecondScoreField().getText().trim()));
+            input = readScoreInput(view.eliminationFirstScoreField().getText(),
+                    view.eliminationSecondScoreField().getText(), "DE");
+            BoutScore score = input.score();
             if (editingEliminationResult) {
                 boolean resetDownstream = service.eliminationEditNeedsReset(selectedEliminationMatch.matchId(), score);
                 if (resetDownstream && !confirmEliminationReset()) return;
@@ -336,6 +353,7 @@ public final class TournamentController {
             } else {
                 service.recordEliminationBoutResult(selectedEliminationMatch.matchId(), score);
             }
+            view.clearEliminationValidationError();
             refreshWorkspace();
             if (service.currentPhase() == TournamentPhase.COMPLETE) {
                 view.selectFinalResultsTab();
@@ -343,8 +361,11 @@ public final class TournamentController {
             } else {
                 view.showStatus("DE result recorded.");
             }
-        } catch (NumberFormatException exception) { view.showStatus("Scores must be whole numbers.");
-        } catch (IllegalArgumentException | IllegalStateException | TournamentPersistenceException exception) { showError(exception); }
+        } catch (ScoreInputException exception) {
+            view.showEliminationValidationError(exception.getMessage(), exception.firstFieldInvalid(), exception.secondFieldInvalid());
+        } catch (IllegalArgumentException exception) {
+            if (!showEliminationScoreValidationError(exception, input)) showError(exception);
+        } catch (IllegalStateException | TournamentPersistenceException exception) { showError(exception); }
     }
 
     private void beginEliminationResultEdit() {
@@ -555,6 +576,98 @@ public final class TournamentController {
         chooser.setTitle(title);
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Tournament JSON (*.json)", "*.json"));
         return chooser;
+    }
+
+    private static String tournamentNameValidationMessage(IllegalArgumentException exception) {
+        String message = exception.getMessage();
+        if ("Tournament name must not be blank.".equals(message)) return "Enter a tournament name.";
+        if (message != null && message.startsWith("A tournament with this name already exists")) {
+            return "A tournament with this name already exists.";
+        }
+        return null;
+    }
+
+    private static String fencerValidationMessage(IllegalArgumentException exception) {
+        String message = exception.getMessage();
+        if ("Fencer name must not be blank.".equals(message)) return "Enter a fencer name.";
+        if ("A fencer with this name is already registered.".equals(message)) {
+            return "A fencer with this name is already registered.";
+        }
+        return null;
+    }
+
+    private ScoreInput readScoreInput(String firstText, String secondText, String boutType) {
+        boolean firstBlank = firstText == null || firstText.isBlank();
+        boolean secondBlank = secondText == null || secondText.isBlank();
+        if (firstBlank || secondBlank) {
+            throw new ScoreInputException("Enter a score for both fencers.", firstBlank, secondBlank);
+        }
+
+        int first;
+        int second;
+        try {
+            first = Integer.parseInt(firstText.trim());
+        } catch (NumberFormatException exception) {
+            throw new ScoreInputException("Scores must be whole numbers.", true, false);
+        }
+        try {
+            second = Integer.parseInt(secondText.trim());
+        } catch (NumberFormatException exception) {
+            throw new ScoreInputException("Scores must be whole numbers.", false, true);
+        }
+        try {
+            return new ScoreInput(first, second, new BoutScore(first, second));
+        } catch (IllegalArgumentException exception) {
+            if (first < 0 || second < 0) {
+                throw new ScoreInputException("Scores cannot be negative.", first < 0, second < 0);
+            }
+            if (first == second) {
+                throw new ScoreInputException(boutType + " scores cannot be tied.", false, false);
+            }
+            throw exception;
+        }
+    }
+
+    private boolean showPoolScoreValidationError(IllegalArgumentException exception, ScoreInput input) {
+        if (input == null) return false;
+        int limit = service.currentTournament().orElseThrow().settings().poolBoutScoreLimit();
+        String message = exception.getMessage();
+        if (("Pool scores must not exceed " + limit + ".").equals(message)) {
+            view.showPoolValidationError(message, input.first() > limit, input.second() > limit);
+            return true;
+        }
+        if (("The winning score must be " + limit + ".").equals(message)) {
+            view.showPoolValidationError(message, false, false);
+            return true;
+        }
+        return false;
+    }
+
+    private boolean showEliminationScoreValidationError(IllegalArgumentException exception, ScoreInput input) {
+        if (input == null) return false;
+        int limit = service.currentTournament().orElseThrow().settings().eliminationBoutScoreLimit();
+        String message = exception.getMessage();
+        if (("DE scores must not exceed " + limit + ".").equals(message)) {
+            view.showEliminationValidationError(message, input.first() > limit, input.second() > limit);
+            return true;
+        }
+        return false;
+    }
+
+    private record ScoreInput(int first, int second, BoutScore score) { }
+
+    private static final class ScoreInputException extends IllegalArgumentException {
+        private final boolean firstFieldInvalid;
+        private final boolean secondFieldInvalid;
+
+        private ScoreInputException(String message, boolean firstFieldInvalid, boolean secondFieldInvalid) {
+            super(message);
+            this.firstFieldInvalid = firstFieldInvalid;
+            this.secondFieldInvalid = secondFieldInvalid;
+        }
+
+        private boolean firstFieldInvalid() { return firstFieldInvalid; }
+        private boolean secondFieldInvalid() { return secondFieldInvalid; }
     }
 
     private void showError(Exception exception) {

@@ -184,7 +184,7 @@
       "secondFencerId" : "6e92e124-0e33-4503-89d8-e6dc3f22f350",
       "score" : {
         "firstScore" : 5,
-        "secondScore" : 3
+        "secondScore" : 2
       }
     }, {
       "id" : "e1f0954f-7a98-4c79-b2c7-ac4f2fadaa3f",
@@ -536,11 +536,8 @@
         "fencerId" : "f53c4b7e-ea3e-4e8b-93d2-f30eedb06303",
         "resolved" : true
       },
-      "score" : {
-        "firstScore" : 15,
-        "secondScore" : 1
-      },
-      "winnerId" : "85ecaa9c-3a48-477b-9425-bf9eedb1a0de",
+      "score" : null,
+      "winnerId" : null,
       "nextMatchId" : "ba4311f2-bf9e-3892-b93e-b5b949f14bc9",
       "nextMatchSlot" : 0
     }, {
@@ -555,11 +552,8 @@
         "fencerId" : "9a585ba5-e38b-41f3-852d-ed4986a4b9e4",
         "resolved" : true
       },
-      "score" : {
-        "firstScore" : 3,
-        "secondScore" : 15
-      },
-      "winnerId" : "9a585ba5-e38b-41f3-852d-ed4986a4b9e4",
+      "score" : null,
+      "winnerId" : null,
       "nextMatchId" : "ba4311f2-bf9e-3892-b93e-b5b949f14bc9",
       "nextMatchSlot" : 1
     }, {
@@ -574,11 +568,8 @@
         "fencerId" : "7a8b3c4c-3e33-42f1-929b-1d2c01423178",
         "resolved" : true
       },
-      "score" : {
-        "firstScore" : 4,
-        "secondScore" : 3
-      },
-      "winnerId" : "ed7aa2be-4542-4e20-bf62-804fbd081dbd",
+      "score" : null,
+      "winnerId" : null,
       "nextMatchId" : "019e3c5a-ab71-3bdc-ab9c-e5608ed46087",
       "nextMatchSlot" : 0
     }, {
@@ -666,18 +657,15 @@
       "round" : 2,
       "position" : 0,
       "firstSlot" : {
-        "fencerId" : "85ecaa9c-3a48-477b-9425-bf9eedb1a0de",
-        "resolved" : true
+        "fencerId" : null,
+        "resolved" : false
       },
       "secondSlot" : {
-        "fencerId" : "9a585ba5-e38b-41f3-852d-ed4986a4b9e4",
-        "resolved" : true
+        "fencerId" : null,
+        "resolved" : false
       },
-      "score" : {
-        "firstScore" : 2,
-        "secondScore" : 3
-      },
-      "winnerId" : "9a585ba5-e38b-41f3-852d-ed4986a4b9e4",
+      "score" : null,
+      "winnerId" : null,
       "nextMatchId" : "00afbdcf-9cab-3c4d-9fe4-db243e7840ad",
       "nextMatchSlot" : 0
     }, {
@@ -685,8 +673,8 @@
       "round" : 2,
       "position" : 1,
       "firstSlot" : {
-        "fencerId" : "ed7aa2be-4542-4e20-bf62-804fbd081dbd",
-        "resolved" : true
+        "fencerId" : null,
+        "resolved" : false
       },
       "secondSlot" : {
         "fencerId" : null,
@@ -733,8 +721,8 @@
       "round" : 3,
       "position" : 0,
       "firstSlot" : {
-        "fencerId" : "9a585ba5-e38b-41f3-852d-ed4986a4b9e4",
-        "resolved" : true
+        "fencerId" : null,
+        "resolved" : false
       },
       "secondSlot" : {
         "fencerId" : null,

@@ -58,6 +58,16 @@ phase/controller state.
 records and routes interactions back to `TournamentService`; it does not calculate tournament
 rules.
 
+Score form feedback is local to `TournamentView` result-entry panels. The controller only parses
+the textual score fields and translates known domain validation outcomes into concrete messages;
+`BoutScore`, `Pool`, and `EliminationBracket` remain the sources of score-rule validation. Global
+status feedback remains reserved for persistence, file, and other application-wide outcomes.
+
+The same `inline-validation-error` and `input-invalid` presentation pattern is reused for
+tournament-name creation, fencer registration, roster selection, and the pool-size selector.
+Controllers classify expected form errors before rendering them beside the initiating control;
+autosave and file/persistence failures remain global.
+
 The shell gives each category of information one visual home: the top bar holds application identity,
 an optional current-tournament context, global file import, and the open tournament's stage
 tracker; the sidebar holds Home; pages own their titles and stage-specific actions.

@@ -20,6 +20,9 @@ permanently removes that tournament, including its fencers, pool results, Direct
 results, and final standings. It cannot be undone. Deleting one tournament does not change any
 other tournament.
 
+Tournament names must be non-blank and unique. Any name error is shown directly below the name
+field, while the entered text remains available for correction.
+
 Choose **+ New Tournament**, enter a name, and choose **Create**. Names are trimmed and unique
 without regard to letter case. For example, `Club Open` and ` club open ` cannot both be created.
 
@@ -43,6 +46,8 @@ reopened.
 Add fencers by display name using the compact **Fencer name** entry row. Names must be non-blank
 and unique within the tournament. The roster is numbered in registration order; select a row and
 choose **Remove selected** to remove that fencer after confirmation.
+Name and roster-selection mistakes are shown next to the relevant registration controls, without
+clearing a name that needs correction.
 
 With at least two fencers, choose **Continue to seeding** at the bottom of the registration
 workspace. Drag a fencer to a new position, or use **Move up** and **Move down**, to reorder the
@@ -66,6 +71,9 @@ area to dismiss score entry without changing a score.
 Pool bouts are to 5: scores cannot be negative or tied, one score must be 5, and neither score can
 exceed 5. Select a completed bout and choose **Edit result** to correct it. If a DE tableau already
 exists, confirmation is required because the dependent tableau and results will be reset.
+
+Score-entry validation appears directly beneath the active Pool or Direct Elimination result form.
+Entered scores remain visible for correction, and an invalid score field receives a subtle red outline.
 
 After every pool bout is complete, **Pool Result** displays overall place, wins, bouts fenced, win
 ratio, touches scored/received, indicator, and advancement status. Placing uses win ratio,

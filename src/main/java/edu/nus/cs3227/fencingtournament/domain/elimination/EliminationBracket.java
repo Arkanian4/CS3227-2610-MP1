@@ -80,7 +80,7 @@ public record EliminationBracket(UUID id, int size, List<EliminationMatch> match
     private static void validateScore(UUID matchId, BoutScore score, int scoreLimit) {
         if (matchId == null || score == null || scoreLimit <= 0
                 || score.firstScore() > scoreLimit || score.secondScore() > scoreLimit) {
-            throw new IllegalArgumentException("DE scores must not exceed the configured maximum.");
+            throw new IllegalArgumentException("DE scores must not exceed " + scoreLimit + ".");
         }
     }
     private static void resolveByes(List<EliminationMatch> matches) {

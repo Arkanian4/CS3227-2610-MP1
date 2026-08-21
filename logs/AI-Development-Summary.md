@@ -297,3 +297,26 @@ These entries are factual summaries for developer verification and later reflect
   rather than applying inline colours to individual rows.
 - **Outcome:** `Advanced` and `Eliminated` reliably use their independent success/danger tokens;
   a JavaFX test verifies the rendered foreground paints remain distinct.
+
+## Inline score-validation feedback
+
+- **Task:** Make result-entry validation visible beside the relevant score fields instead of only
+  in the global status bar, and replace implementation wording with concrete score messages.
+- **Decisions:** Keep validation rules in `BoutScore`, `Pool`, and `EliminationBracket`. The
+  controller maps their known score errors to local result-entry messages and uses the active
+  tournament settings to display the real score limit. The view owns the inline error label,
+  per-field error styling, focus, and clearing behaviour.
+- **Outcome:** Pool and DE entry/edit panels preserve entered values after an invalid submission,
+  display a theme-safe muted-red message beneath the controls, and mark only the relevant field
+  where one is identifiable. Global status messages remain for persistence and file operations.
+
+## Inline validation audit
+
+- **Task:** Extend local validation feedback beyond scores and stop routing routine form mistakes
+  solely to the bottom status bar.
+- **Decisions:** Classify blank/duplicate tournament names, blank/duplicate fencer names, missing
+  roster selection, and missing maximum-pool-size selection as local form failures. Keep import,
+  persistence, autosave, malformed-file, and unexpected workflow failures global.
+- **Outcome:** Tournament Home, initial tournament creation, registration, and seeding reuse the
+  existing inline error label and subtle invalid-control border. Text edits, successful actions,
+  selection changes, and cancelled creation clear stale feedback.

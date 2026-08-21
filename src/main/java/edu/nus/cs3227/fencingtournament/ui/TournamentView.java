@@ -43,6 +43,7 @@ public final class TournamentView extends BorderPane {
     private final Label statusLabel = new Label();
     private final TextField tournamentNameField = new TextField();
     private final Button createButton = new Button("Create tournament");
+    private final Label tournamentNameValidationErrorLabel = new Label();
     private final Button loadButton = new Button("Open");
     private final Button homeButton = new Button("Tournament Home");
     private final TextField homeTournamentNameField = new TextField();
@@ -50,6 +51,7 @@ public final class TournamentView extends BorderPane {
     private final Button homeCreateButton = new Button("Create");
     private final Button homeCancelButton = new Button("Cancel");
     private final VBox homeCreateForm = new VBox();
+    private final Label homeTournamentNameValidationErrorLabel = new Label();
     private final VBox homeTournamentRows = new VBox();
     private final ScrollPane homeTournamentScroll = new ScrollPane(homeTournamentRows);
     private final VBox homeScreen = new VBox();
@@ -61,6 +63,7 @@ public final class TournamentView extends BorderPane {
 
     private final TextField fencerNameField = new TextField();
     private final Button addFencerButton = new Button("Add fencer");
+    private final Label fencerValidationErrorLabel = new Label();
     private final Button removeFencerButton = new Button("Remove selected");
     private final ListView<Fencer> fencerList = new ListView<>(FXCollections.observableArrayList());
     private final Label registeredFencerCountLabel = new Label("0 registered");
@@ -70,6 +73,7 @@ public final class TournamentView extends BorderPane {
     private final Button confirmSeedingButton = new Button("Continue to seeding");
     private final Button generatePoolsButton = new Button("Generate pools");
     private final ComboBox<Integer> maximumPoolSizeChoice = new ComboBox<>();
+    private final Label seedingValidationErrorLabel = new Label();
 
     private final TabPane tabs = new TabPane();
     private final Tab fencersTab = new Tab("Setup");
@@ -110,6 +114,7 @@ public final class TournamentView extends BorderPane {
     private final VBox resultEntry = new VBox();
     private final VBox poolResultHeading = new VBox();
     private final HBox poolResultNames = new HBox();
+    private final Label poolValidationErrorLabel = new Label();
 
     private final GridPane standingsGrid = new GridPane();
     private final Label standingsStatusLabel = new Label();
@@ -126,6 +131,7 @@ public final class TournamentView extends BorderPane {
     private final Button cancelEliminationEditButton = new Button("Cancel");
     private final Label eliminationFirstNameLabel = new Label("—");
     private final Label eliminationSecondNameLabel = new Label("—");
+    private final Label eliminationValidationErrorLabel = new Label();
     private List<EliminationMatchRow> renderedEliminationMatches = List.of();
     private UUID selectedEliminationMatchId;
     private int activeEliminationRound = 1;
@@ -161,6 +167,7 @@ public final class TournamentView extends BorderPane {
         tabs.setVisible(false);
         tabs.setManaged(false);
         configureListCells();
+        configureScoreValidationFeedback();
         setNoTournamentState();
     }
 
@@ -172,12 +179,14 @@ public final class TournamentView extends BorderPane {
 
     public TextField tournamentNameField() { return tournamentNameField; }
     public Button createButton() { return createButton; }
+    public Label tournamentNameValidationErrorLabel() { return tournamentNameValidationErrorLabel; }
     public Button loadButton() { return loadButton; }
     public Button homeButton() { return homeButton; }
     public TextField homeTournamentNameField() { return homeTournamentNameField; }
     public Button homeNewButton() { return homeNewButton; }
     public Button homeCreateButton() { return homeCreateButton; }
     public Button homeCancelButton() { return homeCancelButton; }
+    public Label homeTournamentNameValidationErrorLabel() { return homeTournamentNameValidationErrorLabel; }
     public void showWorkspace() {
         if (activeStage == null) selectStage(fencersTab);
     }
@@ -209,7 +218,12 @@ public final class TournamentView extends BorderPane {
     }
     public void setTournamentOpenHandler(Consumer<UUID> handler) { tournamentOpenHandler = handler == null ? ignored -> { } : handler; }
     public void setTournamentDeleteHandler(Consumer<UUID> handler) { tournamentDeleteHandler = handler == null ? ignored -> { } : handler; }
-    public void showNewTournamentForm(boolean show) { homeCreateForm.setVisible(show); homeCreateForm.setManaged(show); if (show) homeTournamentNameField.requestFocus(); }
+    public void showNewTournamentForm(boolean show) {
+        homeCreateForm.setVisible(show);
+        homeCreateForm.setManaged(show);
+        if (!show) clearHomeTournamentNameValidationError();
+        if (show) homeTournamentNameField.requestFocus();
+    }
     public void renderTournamentList(List<Tournament> tournaments) {
         List<Tournament> ongoing = tournaments.stream().filter(tournament -> tournament.phase() != TournamentPhase.COMPLETE).toList();
         List<Tournament> completed = tournaments.stream().filter(tournament -> tournament.phase() == TournamentPhase.COMPLETE).toList();
@@ -228,6 +242,7 @@ public final class TournamentView extends BorderPane {
     }
     public TextField fencerNameField() { return fencerNameField; }
     public Button addFencerButton() { return addFencerButton; }
+    public Label fencerValidationErrorLabel() { return fencerValidationErrorLabel; }
     public Button removeFencerButton() { return removeFencerButton; }
     public ListView<Fencer> fencerList() { return fencerList; }
     public ListView<Fencer> seedList() { return seedList; }
@@ -236,6 +251,7 @@ public final class TournamentView extends BorderPane {
     public Button confirmSeedingButton() { return confirmSeedingButton; }
     public Button generatePoolsButton() { return generatePoolsButton; }
     public ComboBox<Integer> maximumPoolSizeChoice() { return maximumPoolSizeChoice; }
+    public Label seedingValidationErrorLabel() { return seedingValidationErrorLabel; }
     public TabPane tabs() { return tabs; }
     public Tab poolsTab() { return poolsTab; }
     public Tab standingsTab() { return standingsTab; }
@@ -252,6 +268,8 @@ public final class TournamentView extends BorderPane {
     public TextField secondScoreField() { return secondScoreField; }
     public Button recordResultButton() { return recordResultButton; }
     public Button editPoolResultButton() { return editPoolResultButton; }
+    public Label poolValidationErrorLabel() { return poolValidationErrorLabel; }
+    public Label eliminationValidationErrorLabel() { return eliminationValidationErrorLabel; }
     public FlowPane poolDashboard() { return poolDashboard; }
     public void setMatrixCellHandler(Consumer<PoolMatrixSelection> handler) { matrixCellHandler = handler == null ? ignored -> { } : handler; }
     public void setSeedMoveHandler(BiConsumer<UUID, Integer> handler) { seedMoveHandler = handler == null ? (fencerId, targetIndex) -> { } : handler; }
@@ -391,6 +409,7 @@ public final class TournamentView extends BorderPane {
 
     public void showSelectedEliminationMatch(EliminationMatchRow match) {
         endEliminationResultEdit();
+        clearEliminationValidationError();
         if (match == null) {
             selectedEliminationMatchId = null;
             selectedEliminationMatchLabel.setText("Select a pending bout in the bracket"); eliminationFirstNameLabel.setText("—"); eliminationSecondNameLabel.setText("—");
@@ -412,6 +431,7 @@ public final class TournamentView extends BorderPane {
         }
     }
     public void beginEliminationResultEdit(EliminationMatchRow match) {
+        clearEliminationValidationError();
         eliminationFirstScoreField.setText(match.first().score()); eliminationSecondScoreField.setText(match.second().score());
         eliminationFirstScoreField.setDisable(false); eliminationSecondScoreField.setDisable(false);
         recordEliminationResultButton.setText("Save changes"); recordEliminationResultButton.setDisable(false);
@@ -422,8 +442,10 @@ public final class TournamentView extends BorderPane {
     public void endEliminationResultEdit() {
         recordEliminationResultButton.setText("Record result");
         cancelEliminationEditButton.setVisible(false); cancelEliminationEditButton.setManaged(false);
+        clearEliminationValidationError();
     }
     public void showSelectedBout(PoolBoutRow bout) {
+        clearPoolValidationError();
         if (bout == null) {
             firstFencerLabel.setText("—"); secondFencerLabel.setText("—"); resultStateLabel.setText("Select an unfinished bout in the matrix");
             scoreFields.setVisible(false); scoreFields.setManaged(false); recordResultButton.setDisable(true); editPoolResultButton.setVisible(false); editPoolResultButton.setManaged(false); collapsePoolResultEntry(); return;
@@ -439,19 +461,111 @@ public final class TournamentView extends BorderPane {
         }
     }
     public void beginPoolResultEdit(PoolBoutRow bout) {
+        clearPoolValidationError();
         String[] scores = bout.scoreText().split("\\s*-\\s*");
         firstScoreField.setText(scores[0]); secondScoreField.setText(scores[1]); scoreFields.setVisible(true); scoreFields.setManaged(true);
         recordResultButton.setText("Save correction"); recordResultButton.setDisable(false); editPoolResultButton.setVisible(false); editPoolResultButton.setManaged(false);
         resultStateLabel.setText("Editing recorded result"); resultStateLabel.getStyleClass().setAll("result-state", "is-pending");
     }
-    public void endPoolResultEdit() { recordResultButton.setText("Record result"); }
+    public void endPoolResultEdit() {
+        recordResultButton.setText("Record result");
+        clearPoolValidationError();
+    }
+    public void showPoolValidationError(String message, boolean firstFieldInvalid, boolean secondFieldInvalid) {
+        showScoreValidationError(poolValidationErrorLabel, firstScoreField, secondScoreField,
+                message, firstFieldInvalid, secondFieldInvalid);
+    }
+    public void showEliminationValidationError(String message, boolean firstFieldInvalid, boolean secondFieldInvalid) {
+        showScoreValidationError(eliminationValidationErrorLabel, eliminationFirstScoreField, eliminationSecondScoreField,
+                message, firstFieldInvalid, secondFieldInvalid);
+    }
+    public void clearPoolValidationError() {
+        clearScoreValidationError(poolValidationErrorLabel, firstScoreField, secondScoreField);
+    }
+    public void clearEliminationValidationError() {
+        clearScoreValidationError(eliminationValidationErrorLabel, eliminationFirstScoreField, eliminationSecondScoreField);
+    }
+    public void showTournamentNameValidationError(String message) {
+        showFieldValidationError(tournamentNameValidationErrorLabel, tournamentNameField, message);
+    }
+    public void clearTournamentNameValidationError() {
+        clearFieldValidationError(tournamentNameValidationErrorLabel, tournamentNameField);
+    }
+    public void showHomeTournamentNameValidationError(String message) {
+        showFieldValidationError(homeTournamentNameValidationErrorLabel, homeTournamentNameField, message);
+    }
+    public void clearHomeTournamentNameValidationError() {
+        clearFieldValidationError(homeTournamentNameValidationErrorLabel, homeTournamentNameField);
+    }
+    public void showFencerValidationError(String message, boolean markNameField) {
+        showFieldValidationError(fencerValidationErrorLabel, markNameField ? fencerNameField : null, message);
+    }
+    public void clearFencerValidationError() {
+        clearFieldValidationError(fencerValidationErrorLabel, fencerNameField);
+    }
+    public void showSeedingValidationError(String message) {
+        seedingValidationErrorLabel.setText(message);
+        seedingValidationErrorLabel.setVisible(true);
+        seedingValidationErrorLabel.setManaged(true);
+        if (!maximumPoolSizeChoice.getStyleClass().contains("input-invalid")) {
+            maximumPoolSizeChoice.getStyleClass().add("input-invalid");
+        }
+        maximumPoolSizeChoice.requestFocus();
+    }
+    public void clearSeedingValidationError() {
+        seedingValidationErrorLabel.setText("");
+        seedingValidationErrorLabel.setVisible(false);
+        seedingValidationErrorLabel.setManaged(false);
+        maximumPoolSizeChoice.getStyleClass().remove("input-invalid");
+    }
+    private static void showFieldValidationError(Label errorLabel, TextField field, String message) {
+        errorLabel.setText(message);
+        errorLabel.setVisible(true);
+        errorLabel.setManaged(true);
+        if (field != null) {
+            markInputInvalid(field, true);
+            field.requestFocus();
+        }
+    }
+    private static void clearFieldValidationError(Label errorLabel, TextField field) {
+        errorLabel.setText("");
+        errorLabel.setVisible(false);
+        errorLabel.setManaged(false);
+        if (field != null) markInputInvalid(field, false);
+    }
+    private static void showScoreValidationError(Label errorLabel, TextField firstField, TextField secondField,
+            String message, boolean firstFieldInvalid, boolean secondFieldInvalid) {
+        errorLabel.setText(message);
+        errorLabel.setVisible(true);
+        errorLabel.setManaged(true);
+        markScoreFieldInvalid(firstField, firstFieldInvalid);
+        markScoreFieldInvalid(secondField, secondFieldInvalid);
+        if (firstFieldInvalid) firstField.requestFocus();
+        else if (secondFieldInvalid) secondField.requestFocus();
+    }
+    private static void clearScoreValidationError(Label errorLabel, TextField firstField, TextField secondField) {
+        errorLabel.setText("");
+        errorLabel.setVisible(false);
+        errorLabel.setManaged(false);
+        markScoreFieldInvalid(firstField, false);
+        markScoreFieldInvalid(secondField, false);
+    }
+    private static void markScoreFieldInvalid(TextField field, boolean invalid) {
+        markInputInvalid(field, invalid);
+    }
+    private static void markInputInvalid(TextField field, boolean invalid) {
+        if (invalid) {
+            if (!field.getStyleClass().contains("input-invalid")) field.getStyleClass().add("input-invalid");
+        } else field.getStyleClass().remove("input-invalid");
+    }
     private void collapsePoolResultEntry() {
         resultEntry.getChildren().setAll(resultStateLabel);
         resultEntry.setAlignment(Pos.CENTER_LEFT);
         resultEntry.getStyleClass().add("result-entry-compact");
     }
     private void expandPoolResultEntry() {
-        resultEntry.getChildren().setAll(poolResultHeading, poolResultNames, resultStateLabel, scoreFields, editPoolResultButton);
+        resultEntry.getChildren().setAll(poolResultHeading, poolResultNames, resultStateLabel, scoreFields,
+                editPoolResultButton, poolValidationErrorLabel);
         resultEntry.setAlignment(Pos.CENTER);
         resultEntry.getStyleClass().remove("result-entry-compact");
     }
@@ -704,7 +818,8 @@ public final class TournamentView extends BorderPane {
         HBox heading = new HBox(title, homeNewButton); heading.setAlignment(Pos.CENTER_LEFT); heading.setSpacing(20); heading.setMaxWidth(Double.MAX_VALUE); heading.getStyleClass().add("page-title-row"); HBox.setHgrow(title, Priority.ALWAYS);
         homeTournamentNameField.setPromptText("Tournament name"); homeTournamentNameField.setOnAction(event -> homeCreateButton.fire());
         HBox formActions = new HBox(8, homeCreateButton, homeCancelButton); HBox form = new HBox(10, homeTournamentNameField, formActions); HBox.setHgrow(homeTournamentNameField, Priority.ALWAYS);
-        homeCreateForm.getChildren().setAll(form); homeCreateForm.getStyleClass().add("home-create-form");
+        configureInlineValidationLabel(homeTournamentNameValidationErrorLabel, 520);
+        homeCreateForm.getChildren().setAll(form, homeTournamentNameValidationErrorLabel); homeCreateForm.getStyleClass().add("home-create-form");
         homeTournamentRows.setSpacing(6); homeTournamentScroll.setFitToWidth(true); homeTournamentScroll.setFitToHeight(false); homeTournamentScroll.setPannable(true); homeTournamentScroll.getStyleClass().add("home-tournament-scroll");
         VBox content = new VBox(8, heading, subtitle, homeCreateForm, homeTournamentScroll); content.getStyleClass().add("home-content"); VBox.setVgrow(homeTournamentScroll, Priority.ALWAYS);
         homeScreen.getChildren().setAll(content); homeScreen.setAlignment(Pos.TOP_CENTER); homeScreen.getStyleClass().add("home-screen"); showNewTournamentForm(false); return homeScreen;
@@ -728,20 +843,25 @@ public final class TournamentView extends BorderPane {
     }
     private VBox buildSetupTab() {
         tournamentNameField.setPromptText("Tournament name, e.g. Friday Internal Open"); tournamentNameField.setOnAction(event -> createButton.fire()); createButton.getStyleClass().add("primary-action");
-        createTournamentSection.getChildren().setAll(sectionTitle("Start a tournament", "Create a local tournament, or open one you saved earlier."), formRow(tournamentNameField, createButton)); createTournamentSection.getStyleClass().add("setup-empty-state");
+        configureInlineValidationLabel(tournamentNameValidationErrorLabel, 520);
+        createTournamentSection.getChildren().setAll(sectionTitle("Start a tournament", "Create a local tournament, or open one you saved earlier."), formRow(tournamentNameField, createButton), tournamentNameValidationErrorLabel); createTournamentSection.getStyleClass().add("setup-empty-state");
         fencerNameField.setPromptText("Fencer name"); fencerNameField.setOnAction(event -> addFencerButton.fire()); addFencerButton.getStyleClass().add("primary-action"); confirmSeedingButton.getStyleClass().add("primary-action"); removeFencerButton.getStyleClass().add("quiet-danger-action"); fencerList.setPlaceholder(new Label("Add the first fencer to start the field.")); fencerList.setFixedCellSize(40); fencerList.setMinHeight(52); fencerList.setMaxHeight(242);
         Label addLabel = new Label("FENCER NAME"); addLabel.getStyleClass().add("field-label");
         HBox addForm = new HBox(10, addLabel, fencerNameField, addFencerButton); addForm.getStyleClass().add("registration-add-form"); HBox.setHgrow(fencerNameField, Priority.ALWAYS);
+        configureInlineValidationLabel(fencerValidationErrorLabel, 620);
+        VBox addFencerForm = new VBox(4, addForm, fencerValidationErrorLabel);
         Label rosterTitle = new Label("REGISTERED FENCERS"); rosterTitle.getStyleClass().add("section-kicker"); registeredFencerCountLabel.getStyleClass().add("registration-count");
         HBox rosterHeading = new HBox(10, rosterTitle, registeredFencerCountLabel, removeFencerButton); rosterHeading.setAlignment(Pos.CENTER_LEFT); HBox.setHgrow(registeredFencerCountLabel, Priority.ALWAYS);
         VBox roster = new VBox(6, rosterHeading, fencerList); roster.getStyleClass().add("registration-roster");
         Label progressionHint = new Label("Set the seed order after the field is complete."); progressionHint.getStyleClass().add("screen-subtitle");
         HBox progression = new HBox(12, progressionHint, confirmSeedingButton); progression.setAlignment(Pos.CENTER_RIGHT); HBox.setHgrow(progressionHint, Priority.ALWAYS); progression.getStyleClass().add("registration-progression");
-        registrationSection.getChildren().setAll(sectionTitle("Registration", "Build the tournament field before setting the seed order."), addForm, roster, progression); registrationSection.getStyleClass().addAll("setup-stage", "registration-layout"); registrationSection.setMaxWidth(900);
+        registrationSection.getChildren().setAll(sectionTitle("Registration", "Build the tournament field before setting the seed order."), addFencerForm, roster, progression); registrationSection.getStyleClass().addAll("setup-stage", "registration-layout"); registrationSection.setMaxWidth(900);
         seedList.setPlaceholder(new Label("No fencers registered yet.")); seedList.getStyleClass().add("seed-list"); VBox.setVgrow(seedList, Priority.ALWAYS); HBox reorder = new HBox(8, moveSeedUpButton, moveSeedDownButton); reorder.getStyleClass().add("secondary-actions"); generatePoolsButton.getStyleClass().add("primary-action");
         maximumPoolSizeChoice.getItems().setAll(5, 6, 7, 8); maximumPoolSizeChoice.getSelectionModel().select(Integer.valueOf(5)); maximumPoolSizeChoice.setPrefWidth(90);
         HBox poolOptions = new HBox(8, new Label("Maximum fencers per pool"), maximumPoolSizeChoice); poolOptions.setAlignment(Pos.CENTER_LEFT); poolOptions.getStyleClass().add("pool-options");
-        VBox seedingActions = new VBox(12, new Label("Drag a fencer or adjust the selected seed"), reorder, poolOptions, actionRow(generatePoolsButton));
+        configureInlineValidationLabel(seedingValidationErrorLabel, 280);
+        VBox seedingActions = new VBox(12, new Label("Drag a fencer or adjust the selected seed"), reorder, poolOptions,
+                seedingValidationErrorLabel, actionRow(generatePoolsButton));
         seedingActions.getStyleClass().add("setup-actions");
         VBox seedOrder = new VBox(8, new Label("SEED ORDER"), seedList);
         seedOrder.getStyleClass().add("setup-roster");
@@ -782,6 +902,10 @@ public final class TournamentView extends BorderPane {
     private void buildResultEntry() {
         Label title = new Label("RECORD RESULT"); title.getStyleClass().add("section-kicker"); selectedPoolLabel.getStyleClass().add("result-pool-context"); firstFencerLabel.getStyleClass().add("result-fencer"); secondFencerLabel.getStyleClass().add("result-fencer");
         firstScoreField.setPromptText("Score"); secondScoreField.setPromptText("Score"); firstScoreField.getStyleClass().add("score-field"); secondScoreField.getStyleClass().add("score-field"); firstScoreField.setPrefWidth(110); secondScoreField.setPrefWidth(110); recordResultButton.getStyleClass().add("primary-action");
+        poolValidationErrorLabel.getStyleClass().add("inline-validation-error");
+        poolValidationErrorLabel.setWrapText(true);
+        poolValidationErrorLabel.setMaxWidth(420);
+        poolValidationErrorLabel.setVisible(false); poolValidationErrorLabel.setManaged(false);
         Label dash = new Label("—"); dash.getStyleClass().add("score-dash"); dash.setMinWidth(23); dash.setPrefWidth(23); dash.setMaxWidth(23); dash.setAlignment(Pos.CENTER);
         Label versus = new Label("vs"); versus.getStyleClass().add("result-versus"); versus.setMinWidth(23); versus.setPrefWidth(23); versus.setMaxWidth(23); versus.setAlignment(Pos.CENTER);
         poolResultNames.getChildren().setAll(firstFencerLabel, versus, secondFencerLabel); poolResultNames.setSpacing(14); poolResultNames.setAlignment(Pos.CENTER);
@@ -801,10 +925,15 @@ public final class TournamentView extends BorderPane {
         Label hint = new Label("Select a pending bracket bout to record its result."); hint.getStyleClass().add("screen-subtitle");
         bracketBoard.getStyleClass().add("bracket-board"); bracketCanvas.getStyleClass().add("bracket-canvas"); bracketCanvas.setAlignment(Pos.TOP_LEFT); bracketScroll.setFitToHeight(false); bracketScroll.setFitToWidth(false); bracketScroll.setPannable(true); bracketScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED); bracketScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER); bracketScroll.getStyleClass().add("bracket-scroll");
         eliminationFirstScoreField.setPrefWidth(64); eliminationSecondScoreField.setPrefWidth(64); recordEliminationResultButton.getStyleClass().add("primary-action"); editEliminationResultButton.getStyleClass().add("secondary-action"); cancelEliminationEditButton.getStyleClass().add("secondary-action"); endEliminationResultEdit();
+        eliminationValidationErrorLabel.getStyleClass().add("inline-validation-error");
+        eliminationValidationErrorLabel.setWrapText(true);
+        eliminationValidationErrorLabel.setMaxWidth(256);
+        eliminationValidationErrorLabel.setVisible(false); eliminationValidationErrorLabel.setManaged(false);
         HBox firstRow = new HBox(12, eliminationFirstNameLabel, eliminationFirstScoreField); HBox.setHgrow(eliminationFirstNameLabel, Priority.ALWAYS); firstRow.getStyleClass().add("de-result-row");
         HBox secondRow = new HBox(12, eliminationSecondNameLabel, eliminationSecondScoreField); HBox.setHgrow(eliminationSecondNameLabel, Priority.ALWAYS); secondRow.getStyleClass().add("de-result-row");
         HBox actions = new HBox(8, recordEliminationResultButton, cancelEliminationEditButton);
-        VBox entry = new VBox(7, new Label("RECORD RESULT"), selectedEliminationMatchLabel, firstRow, secondRow, actions, editEliminationResultButton); entry.setAlignment(Pos.CENTER_LEFT); entry.getStyleClass().add("de-result-entry");
+        VBox entry = new VBox(7, new Label("RECORD RESULT"), selectedEliminationMatchLabel, firstRow, secondRow,
+                actions, editEliminationResultButton, eliminationValidationErrorLabel); entry.setAlignment(Pos.CENTER_LEFT); entry.getStyleClass().add("de-result-entry");
         eliminationWorkspace.getChildren().setAll(bracketScroll, entry); eliminationWorkspace.setSpacing(14); eliminationWorkspace.getStyleClass().add("elimination-workspace"); HBox.setHgrow(bracketScroll, Priority.ALWAYS); VBox.setVgrow(eliminationWorkspace, Priority.ALWAYS);
         eliminationWorkspace.heightProperty().addListener((ignored, previous, current) -> requestEliminationRelayout());
         VBox root = new VBox(6, title, hint, eliminationWorkspace); root.getStyleClass().addAll("screen-content", "elimination-content"); return root;
@@ -819,6 +948,26 @@ public final class TournamentView extends BorderPane {
         ScrollPane scroll = new ScrollPane(grid); scroll.setFitToWidth(true); scroll.setFitToHeight(false); scroll.setPannable(true); scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED); scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED); scroll.getStyleClass().add("results-scroll"); return scroll;
     }
     private HBox buildStatusBar() { statusLabel.getStyleClass().add("status-text"); HBox bar = new HBox(statusLabel); bar.getStyleClass().add("status-bar"); return bar; }
+    private static void configureInlineValidationLabel(Label label, double maxWidth) {
+        label.getStyleClass().add("inline-validation-error");
+        label.setWrapText(true);
+        label.setMaxWidth(maxWidth);
+        label.setVisible(false);
+        label.setManaged(false);
+    }
+    private void configureScoreValidationFeedback() {
+        firstScoreField.textProperty().addListener((observable, oldValue, newValue) -> clearPoolValidationError());
+        secondScoreField.textProperty().addListener((observable, oldValue, newValue) -> clearPoolValidationError());
+        eliminationFirstScoreField.textProperty().addListener((observable, oldValue, newValue) -> clearEliminationValidationError());
+        eliminationSecondScoreField.textProperty().addListener((observable, oldValue, newValue) -> clearEliminationValidationError());
+        tournamentNameField.textProperty().addListener((observable, oldValue, newValue) -> clearTournamentNameValidationError());
+        homeTournamentNameField.textProperty().addListener((observable, oldValue, newValue) -> clearHomeTournamentNameValidationError());
+        fencerNameField.textProperty().addListener((observable, oldValue, newValue) -> clearFencerValidationError());
+        fencerList.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) clearFencerValidationError();
+        });
+        maximumPoolSizeChoice.valueProperty().addListener((observable, oldValue, newValue) -> clearSeedingValidationError());
+    }
     private void configureListCells() {
         fencerList.setCellFactory(ignored -> fencerCell()); seedList.setCellFactory(ignored -> seedCell());
         poolList.setCellFactory(ignored -> poolCell());

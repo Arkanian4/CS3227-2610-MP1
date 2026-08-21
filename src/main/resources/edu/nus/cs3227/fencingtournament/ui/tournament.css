@@ -523,6 +523,17 @@
 .workspace .is-completed, .workspace .standing-status.is-final, .workspace .completion-status { -fx-text-fill: -ft-success-text; }
 .is-pending, .standing-status.is-provisional { -fx-text-fill: -ft-warning; }
 .score-field { -fx-font-size: 19px; -fx-font-weight: 800; -fx-alignment: CENTER; }
+.text-field.input-invalid, .combo-box-base.input-invalid {
+    -fx-border-color: -ft-danger;
+    -fx-border-width: 1.5;
+    -fx-border-radius: 4;
+    -fx-background-color: -ft-surface;
+}
+.workspace .inline-validation-error {
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+    -fx-text-fill: -ft-danger-text;
+}
 .score-dash { -fx-font-size: 23px; -fx-text-fill: -ft-text-muted; }
 
 .bracket-scroll { -fx-background-color: -ft-surface; -fx-border-color: -ft-border; -fx-border-radius: 5; -fx-background-radius: 5; }

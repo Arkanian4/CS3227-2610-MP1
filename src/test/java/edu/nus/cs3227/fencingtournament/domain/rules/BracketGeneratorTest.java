@@ -134,9 +134,10 @@ class BracketGeneratorTest {
         EliminationBracket bracket = completedFourFencerBracket();
         EliminationMatch finalMatch = finalMatch(bracket);
 
-        assertThrows(IllegalArgumentException.class,
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
                 () -> bracket.replaceResult(finalMatch.id(), new BoutScore(16, 10), 15, false));
 
+        assertEquals("DE scores must not exceed 15.", exception.getMessage());
         assertEquals(new BoutScore(15, 11), finalMatch(bracket).score());
         assertTrue(bracket.isComplete());
     }
