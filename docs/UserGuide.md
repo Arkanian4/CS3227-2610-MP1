@@ -29,6 +29,15 @@ stage uses a larger filled teal circle with an accent ring, and unavailable late
 circles. The header shows the current
 tournament and phase; **Tournament Home** remains available in the sidebar.
 
+At the bottom of the sidebar, choose a circular swatch under **Colour theme** to switch between
+Emerald & Teal, Deep Navy & Electric Blue, Royal Purple & Violet, and Ice Blue & Cerulean. The
+choice applies immediately and is remembered when the application is reopened. Tournament
+results and win/loss colours are unaffected.
+
+Use the compact **Light/Dark** switch above the colour swatches to set the neutral appearance
+independently. The selected appearance changes immediately and is remembered when the app is
+reopened.
+
 ## Registration and seeding
 
 Add fencers by display name using the compact **Fencer name** entry row. Names must be non-blank
@@ -73,6 +82,10 @@ may exceed 15.
 Completed non-bye DE bouts can be corrected with **Edit result**. Scores are prefilled. Choose
 **Save changes** or **Cancel**. If a changed winner would invalidate a completed later bout, the
 app asks for confirmation and clears only the affected downstream path.
+
+Any pending DE bout becomes selectable as soon as both competitors are known. Other unfinished
+bouts elsewhere in an earlier round do not prevent that matchup from being fenced; an
+`Awaiting opponent` slot remains unavailable.
 
 When the final is recorded, **Final Results** lists final place and fencer. The champion is first,
 the final loser second, and same-round eliminations use Pool Result place as the tie-breaker.

@@ -60,6 +60,20 @@ class BracketGeneratorTest {
     }
 
     @Test
+    void laterRoundBecomesReadyAsSoonAsItsTwoFeederWinnersAreKnown() {
+        EliminationBracket bracket = generator.generate(ids(8));
+        List<EliminationMatch> opening = openingMatches(bracket);
+
+        bracket = bracket.recordResult(opening.get(0).id(), new BoutScore(15, 8), 15);
+        bracket = bracket.recordResult(opening.get(1).id(), new BoutScore(15, 9), 15);
+
+        EliminationMatch firstQuarterFinal = bracket.matches().stream()
+                .filter(match -> match.round() == 2 && match.position() == 0).findFirst().orElseThrow();
+        assertTrue(firstQuarterFinal.isReady());
+        assertFalse(match(bracket, opening.get(2).id()).isResolved());
+    }
+
+    @Test
     void editingSemiFinalReplaysThePendingFinalWithTheCorrectedWinner() {
         List<UUID> fencers = ids(4);
         EliminationBracket bracket = generator.generate(fencers);

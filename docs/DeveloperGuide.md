@@ -33,10 +33,16 @@ persisted data must satisfy domain invariants.
 
 ## Visual theme architecture
 
-`ui/tournament.css` defines the Emerald & Teal theme through looked-up semantic tokens on the
-`theme-emerald-teal` root class. Component rules consume tokens such as app background, surface,
-primary text, border, accent, focus, success, danger, and unavailable state rather than repeating
-raw component colours. A future theme should define the same tokens under a different root class.
+`ui/tournament.css` combines two independent token layers: Light/Dark appearance classes define
+neutral surfaces, text, borders, disabled states, and readable semantic states; four colour-theme
+classes define accent, accent-hover, accent-subtle, and focus values for Emerald & Teal, Deep Navy
+& Electric Blue, Royal Purple & Violet, and Ice Blue & Cerulean. Component rules consume tokens
+rather than repeating raw component colours. `UiTheme` persists both selections through Java's
+local preference store, independently of tournament JSON files. The appearance layer defines
+primary, secondary, muted, disabled, on-accent, success, success-text, danger, and danger-text
+tokens; theme families do not replace the success/danger meanings. Shared Label, input, tooltip,
+button, and menu rules consume these tokens so Dark mode does not depend on JavaFX's
+light-oriented default text paint.
 
 `UiTheme` applies the selected root class and stylesheet to both the main JavaFX scene and dialog
 panes, so confirmation dialogs remain visually consistent with the workspace.

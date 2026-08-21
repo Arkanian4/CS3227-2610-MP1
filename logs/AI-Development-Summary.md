@@ -240,3 +240,60 @@ These entries are factual summaries for developer verification and later reflect
   When an organiser navigates back to a completed page, that page receives a label underline rather
   than a second current-stage ring; a regression test covers the Direct Elimination / Pool Result
   case.
+
+## Sidebar theme selection
+
+- **Task:** Add lightweight, persistent appearance customisation without coupling it to tournament
+  data or autosave.
+- **Decisions:** Extend the existing looked-up-token stylesheet with four root classes and keep
+  semantic win/loss/disabled tokens stable across them. `UiTheme` stores the selected enum value in
+  the local Java preference store and applies it to both the workspace and future dialogs.
+- **Outcome:** The bottom of the sidebar contains an `APPEARANCE` section with four accessible,
+  tooltip-equipped swatches. Switching is immediate, selected state is ringed, and the chosen theme
+  restores on the next launch without touching tournament JSON.
+
+## Independent Light and Dark appearance
+
+- **Task:** Add Light, Dark, and System appearance without multiplying the four colour themes.
+- **Decisions:** Split CSS into appearance tokens (surfaces, text, borders, disabled and semantic
+  states) and colour-family tokens (accent/focus). Persist appearance independently with the
+  existing local preference mechanism. JavaFX provides no dependable cross-platform OS appearance
+  API, so the persisted `System` choice currently resolves safely to Light.
+- **Outcome:** The sidebar now contains a compact Light/Dark/System segmented control above the
+  colour swatches. Dark mode uses charcoal surfaces and brighter controlled accent variants while
+  preserving distinct win/loss/unavailable colours.
+
+## Dark-mode text contrast audit
+
+- **Task:** Correct dark-on-dark text in result-entry panels and other controls after introducing
+  Dark appearance.
+- **Decisions:** Define primary, secondary, muted, disabled, and on-accent text tokens on each
+  appearance root. Use shared CSS defaults for Labels, inputs, ComboBoxes, list cells, tooltips,
+  buttons, and menu items rather than patching individual result labels.
+- **Outcome:** Dark mode now resolves all default and specialised body text to readable light
+  neutral tones, while semantic green/red states remain distinct and fields retain readable text,
+  prompt text, focus, and disabled states.
+
+## DE availability and appearance-toggle refinement
+
+- **Task:** Make a Direct Elimination bout available as soon as both entrants are known, simplify
+  appearance selection to Light/Dark, and prevent colour themes from changing competition-state
+  meanings.
+- **Decisions:** Retain `EliminationMatch.isReady()` as the domain rule, but have the tableau derive
+  its selectable card state explicitly from two known non-bye participants rather than applying an
+  earliest-ready-round highlight. Replace the three-option appearance selector with a persisted,
+  keyboard-accessible Light/Dark switch. Keep accent tokens in colour families and success/danger
+  plus their foreground-text tokens in appearance layers.
+- **Outcome:** A Quarter-final, Semi-final, or Final can be selected as soon as its two feeder
+  winners are present, regardless of unrelated pending earlier bouts. The sidebar now offers only
+  a Light/Dark switch, and Advanced/Eliminated and win/loss states retain their semantic colours
+  across every colour family and appearance.
+
+## Pool-result semantic-colour regression fix
+
+- **Task:** Restore green/red Pool Result statuses after the shared dark-mode text rule masked
+  their semantic foreground colours.
+- **Decision:** Increase the semantic status selectors' specificity through the workspace root,
+  rather than applying inline colours to individual rows.
+- **Outcome:** `Advanced` and `Eliminated` reliably use their independent success/danger tokens;
+  a JavaFX test verifies the rendered foreground paints remain distinct.

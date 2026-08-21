@@ -52,7 +52,10 @@
       "id" : "622ba1b5-17cd-497a-b744-d4b6830e565c",
       "firstFencerId" : "7e702898-918f-41d7-8ba3-f6ec869f1975",
       "secondFencerId" : "89c2fbdc-d8db-4af5-8ea7-36eb80c507dc",
-      "score" : null
+      "score" : {
+        "firstScore" : 5,
+        "secondScore" : 1
+      }
     }, {
       "id" : "c276d358-0429-4c15-9f53-402a976c8443",
       "firstFencerId" : "7e702898-918f-41d7-8ba3-f6ec869f1975",

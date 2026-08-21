@@ -7,6 +7,7 @@ import edu.nus.cs3227.fencingtournament.domain.TournamentPhase;
 import edu.nus.cs3227.fencingtournament.domain.pool.Pool;
 import javafx.collections.FXCollections;
 import javafx.application.Platform;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.Node;
@@ -52,6 +53,11 @@ public final class TournamentView extends BorderPane {
     private final VBox homeTournamentRows = new VBox();
     private final ScrollPane homeTournamentScroll = new ScrollPane(homeTournamentRows);
     private final VBox homeScreen = new VBox();
+    private final HBox themeSwatches = new HBox(6);
+    private final List<Button> themeSwatchButtons = new java.util.ArrayList<>();
+    private final HBox appearanceToggle = new HBox(7);
+    private final ToggleButton darkAppearanceToggle = new ToggleButton();
+    private final Region appearanceToggleThumb = new Region();
 
     private final TextField fencerNameField = new TextField();
     private final Button addFencerButton = new Button("Add fencer");
@@ -138,7 +144,7 @@ public final class TournamentView extends BorderPane {
 
     public TournamentView() {
         getStyleClass().add("workspace");
-        getStyleClass().add(UiTheme.EMERALD_TEAL);
+        UiTheme.apply(this);
         setTop(buildHeader());
         setLeft(buildSidebar());
         setCenter(stageContent);
@@ -182,8 +188,10 @@ public final class TournamentView extends BorderPane {
     }
     public void selectSetupTab() { selectStage(fencersTab); }
     public void selectPoolsTab() { selectStage(poolsTab); }
+    public void selectPoolResultTab() { selectStage(standingsTab); }
     public void selectEliminationTab() { selectStage(eliminationTab); }
     public void selectFinalResultsTab() { selectStage(finalResultsTab); }
+    public Button setupNavigationButton() { return setupNavigationButton; }
     public Button poolsNavigationButton() { return poolsNavigationButton; }
     /** Selects the first workspace tab relevant to the opened tournament's current phase. */
     public void selectTabForPhase(TournamentPhase phase) {
@@ -393,7 +401,7 @@ public final class TournamentView extends BorderPane {
         int matchCount = (int) renderedEliminationMatches.stream().filter(candidate -> candidate.round() == match.round()).count();
         selectedEliminationMatchLabel.setText(roundName(matchCount) + " · selected bout");
         eliminationFirstNameLabel.setText(participantText(match.first())); eliminationSecondNameLabel.setText(participantText(match.second()));
-        if (match.ready()) {
+        if (isAvailableEliminationBout(match)) {
             eliminationFirstScoreField.clear(); eliminationSecondScoreField.clear();
             eliminationFirstScoreField.setDisable(false); eliminationSecondScoreField.setDisable(false); recordEliminationResultButton.setDisable(false); editEliminationResultButton.setVisible(false); editEliminationResultButton.setManaged(false);
         } else {
@@ -491,8 +499,87 @@ public final class TournamentView extends BorderPane {
         Label homeLabel = new Label("WORKSPACE"); homeLabel.getStyleClass().add("sidebar-label");
         homeButton.getStyleClass().setAll("sidebar-nav-button");
         VBox navigation = new VBox(4, homeLabel, homeButton);
-        navigation.getStyleClass().add("sidebar");
-        return navigation;
+        Region spacer = new Region(); VBox.setVgrow(spacer, Priority.ALWAYS);
+        VBox sidebarSettings = new VBox(14, buildAppearanceSelector(), buildThemeSelector());
+        sidebarSettings.getStyleClass().add("sidebar-settings");
+        VBox sidebar = new VBox(4, navigation, spacer, sidebarSettings);
+        sidebar.getStyleClass().add("sidebar");
+        return sidebar;
+    }
+    private VBox buildAppearanceSelector() {
+        Label label = new Label("APPEARANCE");
+        label.getStyleClass().add("sidebar-label");
+        Label lightLabel = new Label("Light");
+        Label darkLabel = new Label("Dark");
+        lightLabel.getStyleClass().add("appearance-toggle-label");
+        darkLabel.getStyleClass().add("appearance-toggle-label");
+        darkAppearanceToggle.setAccessibleText("Toggle dark appearance");
+        darkAppearanceToggle.setTooltip(new Tooltip("Switch between Light and Dark appearance"));
+        darkAppearanceToggle.getStyleClass().add("appearance-switch-control");
+        appearanceToggleThumb.getStyleClass().add("appearance-switch-thumb");
+        appearanceToggleThumb.setMouseTransparent(true);
+        StackPane switchTrack = new StackPane(darkAppearanceToggle, appearanceToggleThumb);
+        switchTrack.getStyleClass().add("appearance-switch");
+        StackPane.setMargin(appearanceToggleThumb, new Insets(3));
+        darkAppearanceToggle.setOnAction(event -> {
+            UiTheme.selectAppearance(darkAppearanceToggle.isSelected()
+                    ? UiTheme.Appearance.DARK : UiTheme.Appearance.LIGHT);
+            UiTheme.apply(this);
+            refreshAppearanceToggle();
+        });
+        appearanceToggle.setAlignment(Pos.CENTER_LEFT);
+        appearanceToggle.getStyleClass().add("appearance-toggle");
+        appearanceToggle.getChildren().setAll(lightLabel, switchTrack, darkLabel);
+        refreshAppearanceToggle();
+        return new VBox(7, label, appearanceToggle);
+    }
+    private VBox buildThemeSelector() {
+        Label label = new Label("COLOUR THEME");
+        label.getStyleClass().add("sidebar-label");
+        themeSwatches.getChildren().clear();
+        themeSwatchButtons.clear();
+        for (UiTheme.Theme theme : UiTheme.Theme.values()) {
+            Button swatch = new Button();
+            swatch.setAccessibleText(theme.displayName());
+            swatch.setTooltip(new Tooltip(theme.displayName()));
+            swatch.getStyleClass().addAll("theme-swatch", "theme-swatch-" + theme.name().toLowerCase().replace('_', '-'));
+            swatch.setOnAction(event -> {
+                UiTheme.selectTheme(theme);
+                UiTheme.apply(this);
+                refreshThemeSwatches();
+            });
+            themeSwatchButtons.add(swatch);
+            themeSwatches.getChildren().add(swatch);
+        }
+        themeSwatches.getStyleClass().add("theme-swatches");
+        refreshThemeSwatches();
+        VBox appearance = new VBox(7, label, themeSwatches);
+        appearance.getStyleClass().add("sidebar-appearance");
+        return appearance;
+    }
+    private void refreshThemeSwatches() {
+        for (int index = 0; index < themeSwatchButtons.size(); index++) {
+            Button swatch = themeSwatchButtons.get(index);
+            UiTheme.Theme theme = UiTheme.Theme.values()[index];
+            if (theme == UiTheme.selectedTheme()) {
+                if (!swatch.getStyleClass().contains("theme-swatch-selected")) swatch.getStyleClass().add("theme-swatch-selected");
+            } else {
+                swatch.getStyleClass().remove("theme-swatch-selected");
+            }
+        }
+    }
+    private void refreshAppearanceToggle() {
+        boolean dark = UiTheme.selectedAppearance() == UiTheme.Appearance.DARK;
+        darkAppearanceToggle.setSelected(dark);
+        StackPane.setAlignment(appearanceToggleThumb, dark ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
+        appearanceToggle.lookupAll(".appearance-toggle-label").forEach(node -> {
+            node.getStyleClass().remove("appearance-toggle-label-selected");
+        });
+        String selectedLabel = dark ? "Dark" : "Light";
+        appearanceToggle.lookupAll(".appearance-toggle-label").stream()
+                .filter(Label.class::isInstance).map(Label.class::cast)
+                .filter(candidate -> candidate.getText().equals(selectedLabel))
+                .findFirst().ifPresent(candidate -> candidate.getStyleClass().add("appearance-toggle-label-selected"));
     }
     private void buildStageProgress() {
         List<Button> buttons = List.of(setupNavigationButton, poolsNavigationButton, standingsNavigationButton,
@@ -958,13 +1045,13 @@ public final class TournamentView extends BorderPane {
         Pane card = new Pane();
         card.setPrefSize(TABLEAU_CARD_WIDTH, TABLEAU_CARD_HEIGHT);
         card.getStyleClass().add("fencing-bout-card");
+        boolean available = isAvailableEliminationBout(match);
         if (match.bye()) card.getStyleClass().add("fencing-bye-card");
         else if (match.resolved()) card.getStyleClass().add("fencing-resolved-card");
-        else if (match.ready()) card.getStyleClass().add("fencing-ready-card");
+        else if (available) card.getStyleClass().add("fencing-ready-card");
         else card.getStyleClass().add("fencing-future-card");
-        if (match.round() == activeEliminationRound) card.getStyleClass().add("fencing-active-round-card");
         if (finalRound) card.getStyleClass().add("fencing-final-card");
-        if ((match.ready() || (match.resolved() && !match.bye())) && match.matchId().equals(selectedEliminationMatchId)) card.getStyleClass().add("fencing-selected-card");
+        if ((available || (match.resolved() && !match.bye())) && match.matchId().equals(selectedEliminationMatchId)) card.getStyleClass().add("fencing-selected-card");
 
         Pane firstRow = participantCardRow(match.first());
         Pane secondRow = participantCardRow(match.second());
@@ -977,7 +1064,7 @@ public final class TournamentView extends BorderPane {
         }
         firstRow.relocate(0, 0); secondRow.relocate(0, TABLEAU_ROW_HEIGHT);
         card.getChildren().addAll(firstRow, secondRow);
-        if (match.ready() || (match.resolved() && !match.bye())) card.setOnMouseClicked(event -> eliminationMatchHandler.accept(match.matchId()));
+        if (available || (match.resolved() && !match.bye())) card.setOnMouseClicked(event -> eliminationMatchHandler.accept(match.matchId()));
         card.relocate(boardX(match.round()), geometry.centreY() - TABLEAU_CARD_HEIGHT / 2);
         bracketBoard.getChildren().add(card);
     }
@@ -997,6 +1084,12 @@ public final class TournamentView extends BorderPane {
 
     private static String participantText(EliminationParticipant participant) {
         return participant.seed() == 0 ? participant.name() : participant.name() + " (" + participant.seed() + ")";
+    }
+    /** A DE bout is selectable as soon as both real competitors are known, independent of its round. */
+    static boolean isAvailableEliminationBout(EliminationMatchRow match) {
+        return match != null && !match.resolved() && !match.bye()
+                && !match.first().unresolved() && !match.second().unresolved()
+                && !match.first().bye() && !match.second().bye();
     }
     private static Line connector(double startX, double startY, double endX, double endY) {
         Line line = new Line(startX, startY, endX, endY); line.getStyleClass().add("bracket-connector"); return line;

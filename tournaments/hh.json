@@ -1,0 +1,61 @@
+{
+  "id" : "c0d7920b-985d-40f7-a948-2bd544a9864f",
+  "name" : "hh",
+  "settings" : {
+    "targetPoolSize" : 5,
+    "poolBoutScoreLimit" : 5,
+    "eliminationBoutScoreLimit" : 15,
+    "advancingFencerCount" : 16,
+    "tieBreakPolicy" : {
+      "criteria" : [ "VICTORY_RATIO", "INDICATOR", "TOUCHES_SCORED", "SEED" ]
+    }
+  },
+  "fencers" : [ {
+    "id" : "6fb5e764-bf52-4b34-93e0-ec41fe2be016",
+    "name" : "f"
+  }, {
+    "id" : "13187c31-5a91-4fac-8867-ad4647fec585",
+    "name" : "fd"
+  } ],
+  "seeding" : {
+    "fencerIds" : [ "6fb5e764-bf52-4b34-93e0-ec41fe2be016", "13187c31-5a91-4fac-8867-ad4647fec585" ]
+  },
+  "pools" : [ {
+    "id" : "0759512a-760e-4156-9027-28ac9a848081",
+    "name" : "POOL #1",
+    "memberIds" : [ "6fb5e764-bf52-4b34-93e0-ec41fe2be016", "13187c31-5a91-4fac-8867-ad4647fec585" ],
+    "bouts" : [ {
+      "id" : "bc23af13-95ab-4543-979f-bdee2e88479d",
+      "firstFencerId" : "6fb5e764-bf52-4b34-93e0-ec41fe2be016",
+      "secondFencerId" : "13187c31-5a91-4fac-8867-ad4647fec585",
+      "score" : {
+        "firstScore" : 1,
+        "secondScore" : 5
+      }
+    } ]
+  } ],
+  "eliminationBracket" : {
+    "id" : "b189ac10-3358-333f-9b93-e5580af09cd3",
+    "size" : 2,
+    "matches" : [ {
+      "id" : "020d72ce-223d-3e38-b3be-6e57b4c0af53",
+      "round" : 1,
+      "position" : 0,
+      "firstSlot" : {
+        "fencerId" : "13187c31-5a91-4fac-8867-ad4647fec585",
+        "resolved" : true
+      },
+      "secondSlot" : {
+        "fencerId" : "6fb5e764-bf52-4b34-93e0-ec41fe2be016",
+        "resolved" : true
+      },
+      "score" : {
+        "firstScore" : 1,
+        "secondScore" : 4
+      },
+      "winnerId" : "6fb5e764-bf52-4b34-93e0-ec41fe2be016",
+      "nextMatchId" : null,
+      "nextMatchSlot" : null
+    } ]
+  }
+}

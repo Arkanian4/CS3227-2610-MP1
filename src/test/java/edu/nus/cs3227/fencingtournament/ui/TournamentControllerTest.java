@@ -173,13 +173,93 @@ class TournamentControllerTest {
     }
 
     @Test
-    void workspaceAttachesTheEmeraldTealThemeToItsScene() throws Exception {
+    void workspaceAttachesTheSelectedThemeToItsScene() throws Exception {
         onJavaFxThread(() -> {
             TournamentView view = new TournamentView();
             Scene scene = view.scene();
 
-            assertTrue(view.getStyleClass().contains(UiTheme.EMERALD_TEAL));
+            assertTrue(view.getStyleClass().contains(UiTheme.selectedTheme().styleClass()));
             assertTrue(scene.getStylesheets().stream().anyMatch(stylesheet -> stylesheet.endsWith("tournament.css")));
+        });
+    }
+
+    @Test
+    void sidebarThemeSwatchesApplyAndRememberTheSelectedTheme() throws Exception {
+        onJavaFxThread(() -> {
+            UiTheme.Theme originalTheme = UiTheme.selectedTheme();
+            try {
+                TournamentView view = new TournamentView();
+                Scene scene = view.scene();
+                scene.getRoot().applyCss();
+
+                List<Button> swatches = view.lookupAll(".theme-swatch").stream().map(Button.class::cast).toList();
+                assertEquals(UiTheme.Theme.values().length, swatches.size());
+                swatches.get(2).fire();
+
+                assertEquals(UiTheme.Theme.ROYAL_PURPLE_VIOLET, UiTheme.selectedTheme());
+                assertTrue(view.getStyleClass().contains(UiTheme.Theme.ROYAL_PURPLE_VIOLET.styleClass()));
+                assertEquals(1, view.lookupAll(".theme-swatch-selected").size());
+            } finally {
+                UiTheme.selectTheme(originalTheme);
+            }
+        });
+    }
+
+    @Test
+    void appearanceSwitchesIndependentlyFromTheColourTheme() throws Exception {
+        onJavaFxThread(() -> {
+            UiTheme.Appearance originalAppearance = UiTheme.selectedAppearance();
+            try {
+                TournamentView view = new TournamentView();
+                javafx.scene.control.ToggleButton toggle = (javafx.scene.control.ToggleButton) view.lookup(".appearance-switch-control");
+                assertNotNull(toggle);
+                assertEquals(2, UiTheme.Appearance.values().length);
+
+                if (toggle.isSelected()) toggle.fire();
+                toggle.fire();
+                assertEquals(UiTheme.Appearance.DARK, UiTheme.selectedAppearance());
+                assertTrue(view.getStyleClass().contains(UiTheme.Appearance.DARK.styleClass()));
+
+                toggle.fire();
+                assertEquals(UiTheme.Appearance.LIGHT, UiTheme.selectedAppearance());
+                assertTrue(view.getStyleClass().contains(UiTheme.Appearance.LIGHT.styleClass()));
+            } finally {
+                UiTheme.selectAppearance(originalAppearance);
+            }
+        });
+    }
+
+    @Test
+    void laterEliminationRoundIsAvailableWhenBothCompetitorsAreKnown() {
+        EliminationMatchRow availableQuarterFinal = new EliminationMatchRow(UUID.randomUUID(), 2, 0,
+                new EliminationParticipant(1, "Jee Ken", "", false, false, false),
+                new EliminationParticipant(8, "Tom", "", false, false, false),
+                false, false, false);
+        EliminationMatchRow unresolvedQuarterFinal = new EliminationMatchRow(UUID.randomUUID(), 2, 1,
+                new EliminationParticipant(0, "Awaiting opponent", "", false, false, true),
+                new EliminationParticipant(5, "Alex", "", false, false, false),
+                false, false, false);
+
+        assertTrue(TournamentView.isAvailableEliminationBout(availableQuarterFinal));
+        assertFalse(TournamentView.isAvailableEliminationBout(unresolvedQuarterFinal));
+    }
+
+    @Test
+    void poolResultStatusesRetainDistinctSuccessAndDangerColours() throws Exception {
+        onJavaFxThread(() -> {
+            TournamentView view = new TournamentView();
+            view.renderOverallSeeding(List.of(
+                    new OverallSeedingRow("Advanced fencer", 1, 4, 4, 1.0, 20, 4, 16, 1),
+                    new OverallSeedingRow("Eliminated fencer", 17, 1, 4, 0.25, 8, 18, -10, 17)));
+            view.selectPoolResultTab();
+            Scene scene = view.scene();
+            scene.getRoot().applyCss();
+
+            Label advanced = (Label) scene.getRoot().lookup(".pool-status-advanced");
+            Label eliminated = (Label) scene.getRoot().lookup(".pool-status-eliminated");
+            assertNotNull(advanced);
+            assertNotNull(eliminated);
+            assertFalse(advanced.getTextFill().equals(eliminated.getTextFill()));
         });
     }
 
