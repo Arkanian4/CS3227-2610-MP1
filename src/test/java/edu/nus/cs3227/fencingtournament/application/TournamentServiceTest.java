@@ -156,5 +156,10 @@ class TournamentServiceTest {
         public void save(Tournament tournament, Path path) {
             stored = tournament;
         }
+
+        @Override
+        public void delete(Path path) {
+            stored = null;
+        }
     }
 }

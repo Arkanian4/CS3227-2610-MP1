@@ -106,6 +106,12 @@ public final class JsonTournamentRepository implements TournamentRepository {
         }
     }
 
+    @Override
+    public void delete(Path path) throws IOException {
+        requirePath(path);
+        Files.deleteIfExists(path);
+    }
+
     private static void requirePath(Path path) {
         if (path == null) {
             throw new IllegalArgumentException("Persistence path must not be null.");

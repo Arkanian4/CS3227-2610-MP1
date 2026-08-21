@@ -28,6 +28,7 @@
     -ft-unavailable-text: #8b9995;
     -ft-table-header: #eaf2ef;
     -ft-hover: #e8f5f0;
+    -ft-menu-hover: #d5e2df;
     -ft-connector: #b9ccc5;
     -ft-gold: #ffe066;
     -ft-gold-text: #5b4300;
@@ -131,6 +132,8 @@
     -fx-border-color: -ft-danger;
 }
 .quiet-danger-action:hover { -fx-background-color: -ft-danger-subtle; }
+.danger-action { -fx-background-color: -ft-danger; -fx-text-fill: -ft-surface; }
+.danger-action:hover { -fx-background-color: derive(-ft-danger, -12%); }
 
 .phase-navigation { -fx-tab-min-height: 42; -fx-background-color: -ft-surface; }
 .phase-navigation > .tab-header-area { -fx-padding: 0 24 0 24; }
@@ -180,6 +183,29 @@
 .home-status-ongoing { -fx-text-fill: -ft-accent-strong; -fx-background-color: -ft-accent-subtle; }
 .home-status-complete { -fx-text-fill: -ft-text-secondary; -fx-background-color: -ft-unavailable; }
 .home-view-action { -fx-background-color: -ft-surface; -fx-text-fill: -ft-text-secondary; -fx-border-color: -ft-border-strong; }
+.home-overflow-menu {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: -ft-text-primary;
+    -fx-font-size: 20px;
+    -fx-font-weight: 600;
+    -fx-min-width: 30px;
+    -fx-pref-width: 30px;
+    -fx-min-height: 30px;
+    -fx-pref-height: 30px;
+    -fx-padding: 0 2 4 2;
+}
+.home-overflow-menu:hover { -fx-background-color: -ft-menu-hover; -fx-text-fill: -ft-text-primary; }
+.home-overflow-menu:focused { -fx-background-color: transparent; -fx-text-fill: -ft-text-primary; }
+.home-overflow-menu-popup { -fx-padding: 3; -fx-min-width: 0; -fx-pref-width: 92px; }
+.home-overflow-menu-popup .menu-item {
+    -fx-padding: 4 9;
+    -fx-font-size: 12px;
+    -fx-background-color: -ft-surface;
+}
+.home-overflow-menu-popup .menu-item:hover,
+.home-overflow-menu-popup .menu-item:focused { -fx-background-color: -ft-menu-hover; }
+.menu-item.menu-danger-action > .label { -fx-text-fill: -ft-danger; }
 .home-empty-title { -fx-font-size: 15px; -fx-font-weight: 700; -fx-text-fill: -ft-text-primary; }
 
 .setup-empty-state { -fx-max-width: 680; -fx-padding: 48 0 0 0; -fx-spacing: 20; }

@@ -11,5 +11,7 @@ public interface TournamentRepository {
     Optional<Tournament> load(Path path) throws IOException;
 
     void save(Tournament tournament, Path path) throws IOException;
-}
 
+    /** Removes one persisted tournament aggregate, if it exists. */
+    void delete(Path path) throws IOException;
+}

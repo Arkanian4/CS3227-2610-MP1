@@ -109,6 +109,37 @@ public final class TournamentService {
                 .map(item -> openTournament(item.id())).orElseThrow(() -> new IllegalArgumentException("Tournament does not exist."));
     }
 
+    /**
+     * Removes one tournament from the local collection and its autosave file.
+     * Returns false without persisting when the identifier is not present.
+     */
+    public boolean deleteTournament(UUID tournamentId) {
+        Tournament tournament = tournaments.get(tournamentId);
+        if (tournament == null) return false;
+
+        if (autoSaveDirectory != null) {
+            Path file = autoSaveDirectory.resolve(safeFileName(tournament.name()) + ".json");
+            try {
+                repository.delete(file);
+            } catch (IOException exception) {
+                throw new TournamentPersistenceException("Tournament was not deleted because local storage could not be updated.", exception);
+            }
+        }
+
+        tournaments.remove(tournamentId);
+        tournamentNameKeys.remove(nameKey(tournament.name()));
+        if (tournament == activeTournament) activeTournament = null;
+
+        if (autoSaveDirectory != null) {
+            try {
+                saveAll(autoSaveDirectory);
+            } catch (IOException exception) {
+                throw new TournamentPersistenceException("Tournament was deleted, but automatic saving failed.", exception);
+            }
+        }
+        return true;
+    }
+
     public void returnToTournamentHome() { activeTournament = null; }
 
     public List<Tournament> loadAll(Path directory) throws IOException {

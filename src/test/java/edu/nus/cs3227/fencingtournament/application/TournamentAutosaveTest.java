@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
@@ -125,6 +126,56 @@ class TournamentAutosaveTest {
         assertTrue(service.currentTournament().isPresent());
     }
 
+    @Test
+    void deletingOneTournamentAutosavesWithoutAffectingAnotherTournament() throws IOException {
+        Path autosaveDirectory = temporaryDirectory.resolve("tournaments");
+        TournamentService service = new TournamentService(new JsonTournamentRepository(), autosaveDirectory);
+        Tournament first = service.createTournament("Friday Open");
+        service.addFencer("Alice");
+        Tournament second = service.createTournament("Saturday Open");
+        service.addFencer("Ben");
+
+        service.openTournament(first.id());
+        assertTrue(service.deleteTournament(first.id()));
+        assertTrue(service.currentTournament().isEmpty());
+        assertFalse(Files.exists(autosaveDirectory.resolve("Friday_Open.json")));
+        assertEquals(List.of(second.id()), service.listTournaments().stream().map(Tournament::id).toList());
+
+        TournamentService reloaded = new TournamentService(new JsonTournamentRepository(), autosaveDirectory);
+        reloaded.loadAll(autosaveDirectory);
+        assertEquals(List.of("Saturday Open"), reloaded.listTournaments().stream().map(Tournament::name).toList());
+        reloaded.openTournament(second.id());
+        assertEquals(List.of("Ben"), reloaded.registeredFencers().stream().map(Fencer::name).toList());
+    }
+
+    @Test
+    void completedTournamentCanBeDeletedAndDoesNotReappearAfterReload() throws IOException {
+        Path autosaveDirectory = temporaryDirectory.resolve("tournaments");
+        TournamentService service = completedFourFencerTournament(autosaveDirectory);
+        Tournament completed = service.currentTournament().orElseThrow();
+        assertEquals(TournamentPhase.COMPLETE, completed.phase());
+
+        assertTrue(service.deleteTournament(completed.id()));
+
+        TournamentService reloaded = new TournamentService(new JsonTournamentRepository(), autosaveDirectory);
+        reloaded.loadAll(autosaveDirectory);
+        assertTrue(reloaded.listTournaments().isEmpty());
+    }
+
+    @Test
+    void deletingMissingTournamentDoesNotMutateOrPersist() {
+        CountingRepository repository = new CountingRepository();
+        TournamentService service = new TournamentService(repository, temporaryDirectory);
+        Tournament existing = service.createTournament("Friday Open");
+        int savesBeforeDeletionAttempt = repository.saveCount;
+
+        assertFalse(service.deleteTournament(UUID.randomUUID()));
+
+        assertEquals(savesBeforeDeletionAttempt, repository.saveCount);
+        assertEquals(0, repository.deleteCount);
+        assertEquals(existing.id(), service.currentTournament().orElseThrow().id());
+    }
+
     private TournamentService completedFourFencerTournament(Path autosaveDirectory) {
         TournamentService service = poolPhaseTournament(autosaveDirectory);
         var pool = service.pools().getFirst();
@@ -158,12 +209,16 @@ class TournamentAutosaveTest {
 
     private static final class CountingRepository implements TournamentRepository {
         private int saveCount;
+        private int deleteCount;
 
         @Override
         public Optional<Tournament> load(Path path) { return Optional.empty(); }
 
         @Override
         public void save(Tournament tournament, Path path) { saveCount++; }
+
+        @Override
+        public void delete(Path path) { deleteCount++; }
     }
 
     private static final class FailingRepository implements TournamentRepository {
@@ -172,5 +227,8 @@ class TournamentAutosaveTest {
 
         @Override
         public void save(Tournament tournament, Path path) throws IOException { throw new IOException("Disk unavailable"); }
+
+        @Override
+        public void delete(Path path) throws IOException { throw new IOException("Disk unavailable"); }
     }
 }

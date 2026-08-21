@@ -124,6 +124,27 @@ class TournamentControllerTest {
     }
 
     @Test
+    void tournamentHomeUsesOverflowMenusForLowEmphasisDeletion() throws Exception {
+        onJavaFxThread(() -> {
+            TournamentService service = new TournamentService(new InMemoryRepository());
+            service.createTournament("Friday Open");
+            service.createTournament("Saturday Open");
+            TournamentView view = new TournamentView();
+            view.showHome();
+            view.renderTournamentList(service.listTournaments());
+            Scene scene = view.scene();
+            scene.getRoot().applyCss();
+            scene.getRoot().layout();
+
+            List<Node> menus = scene.getRoot().lookupAll(".home-overflow-menu").stream().toList();
+            assertEquals(2, menus.size());
+            javafx.scene.control.Button firstMenu = (javafx.scene.control.Button) menus.getFirst();
+            assertEquals("…", firstMenu.getText());
+            assertEquals("More actions", firstMenu.getAccessibleText());
+        });
+    }
+
+    @Test
     void poolsDashboardRendersAllPoolPanelsTogether() throws Exception {
         onJavaFxThread(() -> {
             TournamentView view = new TournamentView();
@@ -275,5 +296,8 @@ class TournamentControllerTest {
 
         @Override
         public void save(Tournament tournament, Path path) throws IOException { }
+
+        @Override
+        public void delete(Path path) throws IOException { }
     }
 }

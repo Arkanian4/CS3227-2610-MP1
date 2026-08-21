@@ -113,6 +113,7 @@ public final class TournamentView extends BorderPane {
     private UUID selectedEliminationMatchId;
     private Consumer<UUID> eliminationMatchHandler = ignored -> { };
     private Consumer<UUID> tournamentOpenHandler = ignored -> { };
+    private Consumer<UUID> tournamentDeleteHandler = ignored -> { };
     private Consumer<PoolMatrixSelection> matrixCellHandler = ignored -> { };
     private Runnable poolSelectionDismissHandler = () -> { };
     private UUID selectedMatrixRow;
@@ -185,6 +186,7 @@ public final class TournamentView extends BorderPane {
         selectedMatrixPool = null; renderedPoolPanels = List.of(); showSelectedBout(null);
     }
     public void setTournamentOpenHandler(Consumer<UUID> handler) { tournamentOpenHandler = handler == null ? ignored -> { } : handler; }
+    public void setTournamentDeleteHandler(Consumer<UUID> handler) { tournamentDeleteHandler = handler == null ? ignored -> { } : handler; }
     public void showNewTournamentForm(boolean show) { homeCreateForm.setVisible(show); homeCreateForm.setManaged(show); if (show) homeTournamentNameField.requestFocus(); }
     public void renderTournamentList(List<Tournament> tournaments) {
         List<Tournament> ongoing = tournaments.stream().filter(tournament -> tournament.phase() != TournamentPhase.COMPLETE).toList();
@@ -527,7 +529,11 @@ public final class TournamentView extends BorderPane {
         HBox details = new HBox(10, status, metadata); details.setAlignment(Pos.CENTER_LEFT);
         VBox summary = new VBox(4, name, details); HBox.setHgrow(summary, Priority.ALWAYS);
         Button open = new Button(tournament.phase() == TournamentPhase.COMPLETE ? "View Results" : "Open"); open.getStyleClass().add(tournament.phase() == TournamentPhase.COMPLETE ? "home-view-action" : "primary-action"); open.setOnAction(event -> tournamentOpenHandler.accept(tournament.id()));
-        HBox row = new HBox(18, summary, open); row.setAlignment(Pos.CENTER_LEFT); row.getStyleClass().add(tournament.phase() == TournamentPhase.COMPLETE ? "home-tournament-row-complete" : "home-tournament-row"); return row;
+        MenuItem delete = new MenuItem("Delete"); delete.getStyleClass().add("menu-danger-action"); delete.setOnAction(event -> tournamentDeleteHandler.accept(tournament.id()));
+        ContextMenu overflowMenu = new ContextMenu(delete); overflowMenu.getStyleClass().add("home-overflow-menu-popup");
+        Button overflow = new Button("…"); overflow.getStyleClass().add("home-overflow-menu"); overflow.setAccessibleText("More actions");
+        overflow.setOnAction(event -> overflowMenu.show(overflow, javafx.geometry.Side.BOTTOM, 0, 0));
+        HBox row = new HBox(10, summary, open, overflow); row.setAlignment(Pos.CENTER_LEFT); row.getStyleClass().add(tournament.phase() == TournamentPhase.COMPLETE ? "home-tournament-row-complete" : "home-tournament-row"); return row;
     }
     private VBox buildSetupTab() {
         tournamentNameField.setPromptText("Tournament name, e.g. Friday Internal Open"); tournamentNameField.setOnAction(event -> createButton.fire()); createButton.getStyleClass().add("primary-action");

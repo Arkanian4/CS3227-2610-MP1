@@ -140,3 +140,22 @@ These entries are factual summaries for developer verification and later reflect
   application is rendering exactly two pools.
 - **Notable issue:** JavaFX regression tests cover both the explicit two-column row and the
   viewport-derived wrapping width used by the multi-pool fallback.
+
+## Safe tournament deletion
+
+- **Task:** Allow an organiser to remove an accidental ongoing or completed tournament from
+  Tournament Home.
+- **Decisions:** Keep confirmation and destructive styling in the UI, but make the UUID-based
+  collection mutation and JSON-file removal a `TournamentService`/`TournamentRepository`
+  responsibility. A missing identifier is a no-op and does not trigger persistence; deleting an
+  active tournament clears the active reference.
+- **Outcome:** Each Home row keeps Open/View Results primary and places Delete in a compact overflow
+  menu with a named, irreversible-action warning. Successful deletion immediately removes exactly
+  one JSON file and survives restart.
+- **Notable issue:** Per-tournament files require an explicit repository delete operation; merely
+  re-saving the remaining collection would otherwise leave the removed tournament on disk.
+- **UI refinement:** The initial JavaFX `MenuButton` rendered an unwanted dropdown arrow, so the
+  row action was changed to a plain icon-sized `…` button backed by a `ContextMenu`; the destructive
+  menu item remains labeled and muted red.
+- **Follow-up refinement:** The closed ellipsis now returns to a neutral background, and the
+  context menu uses the shorter `Delete` label with compact spacing and width.

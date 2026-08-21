@@ -15,6 +15,11 @@ Run the tests with `./gradlew.bat test`.
 Tournament Home lists ongoing tournaments before completed tournaments. Choose **Open** to
 continue an ongoing tournament or **View Results** to inspect a completed one.
 
+Each tournament row has a compact **⋯** menu containing the secondary **Delete** action. Deleting requires confirmation and
+permanently removes that tournament, including its fencers, pool results, Direct Elimination
+results, and final standings. It cannot be undone. Deleting one tournament does not change any
+other tournament.
+
 Choose **+ New Tournament**, enter a name, and choose **Create**. Names are trimmed and unique
 without regard to letter case. For example, `Club Open` and ` club open ` cannot both be created.
 
@@ -71,7 +76,7 @@ the final loser second, and same-round eliminations use Pool Result place as the
 
 ## Saving and opening tournaments
 
-Successful changes are automatically saved in `tournaments/`; no normal Save action is required.
+Successful changes, including deleting a tournament, are automatically saved in `tournaments/`; no normal Save action is required.
 Saved tournaments are restored to Tournament Home when the app starts. The header **Open File** action
 imports a tournament JSON file into this local autosaved collection. If autosaving fails, the app
 reports the error while retaining the in-memory tournament for the current session.

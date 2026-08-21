@@ -46,6 +46,7 @@ public final class TournamentController {
         view.homeNewButton().setOnAction(event -> view.showNewTournamentForm(true));
         view.homeCancelButton().setOnAction(event -> { view.homeTournamentNameField().clear(); view.showNewTournamentForm(false); });
         view.setTournamentOpenHandler(this::openTournament);
+        view.setTournamentDeleteHandler(this::deleteTournament);
         view.homeButton().setOnAction(event -> { service.returnToTournamentHome(); refreshWorkspace(); });
         view.loadButton().setOnAction(event -> loadTournament());
         view.addFencerButton().setOnAction(event -> addFencer());
@@ -102,6 +103,41 @@ public final class TournamentController {
     private void openTournament(UUID tournamentId) {
         try { service.openTournament(tournamentId); refreshWorkspace(); view.showStatus("Tournament opened."); }
         catch (IllegalArgumentException | TournamentPersistenceException exception) { showError(exception); }
+    }
+
+    private void deleteTournament(UUID tournamentId) {
+        Tournament tournament = service.listTournaments().stream()
+                .filter(candidate -> candidate.id().equals(tournamentId)).findFirst().orElse(null);
+        if (tournament == null) {
+            refreshWorkspace();
+            view.showStatus("That tournament no longer exists.");
+            return;
+        }
+        if (!confirmTournamentDeletion(tournament.name())) return;
+        try {
+            if (!service.deleteTournament(tournamentId)) {
+                refreshWorkspace();
+                view.showStatus("That tournament no longer exists.");
+                return;
+            }
+            refreshWorkspace();
+            view.showStatus("Tournament deleted.");
+        } catch (TournamentPersistenceException exception) {
+            refreshWorkspace();
+            showError("Could not delete tournament: " + exception.getMessage());
+        }
+    }
+
+    private boolean confirmTournamentDeletion(String tournamentName) {
+        ButtonType delete = new ButtonType("Delete tournament", ButtonBar.ButtonData.OK_DONE);
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
+                "This permanently removes the tournament and all of its fencers, pool results, Direct Elimination results, and final standings. This action cannot be undone.",
+                ButtonType.CANCEL, delete);
+        UiTheme.apply(alert.getDialogPane());
+        alert.setTitle("Delete tournament");
+        alert.setHeaderText("Delete \"" + tournamentName + "\"?");
+        alert.getDialogPane().lookupButton(delete).getStyleClass().add("danger-action");
+        return alert.showAndWait().orElse(ButtonType.CANCEL) == delete;
     }
 
     private void loadTournament() {

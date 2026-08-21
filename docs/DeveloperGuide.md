@@ -20,7 +20,9 @@ JsonTournamentRepository
 not calculate standings, bracket placement, or score validity.
 
 `application.TournamentService` coordinates workflows, owns the active tournament and tournament
-collection, invokes rule calculators, and autosaves after successful mutations.
+collection, invokes rule calculators, and autosaves after successful mutations. It also owns
+tournament deletion: it removes the UUID-keyed collection entry, clears a matching active reference,
+and delegates removal of the corresponding local JSON file to the repository.
 
 `domain.Tournament` is the aggregate root. It protects registration, seeding, pool, and DE phase
 invariants. `domain.rules` contains pool generation, standings, bracket generation, and final
@@ -91,8 +93,11 @@ places advance to a next-power-of-two DE bracket with automatic byes for higher 
 
 The application composition root configures `tournaments/` as the autosave directory.
 `TournamentService.mutate` performs the domain action first and saves the full local tournament
-collection only if the operation succeeds. Failed saves raise `TournamentPersistenceException` and
-are shown in the UI without discarding the in-memory state.
+collection only if the operation succeeds. `deleteTournament` is a deliberate exception: it first
+asks the repository to remove the targeted JSON file, then removes the tournament from the
+collection and re-saves any remaining tournaments. Failed persistence raises
+`TournamentPersistenceException`; the JavaFX controller refreshes Home and reports the error rather
+than claiming deletion succeeded.
 
 JSON writes use a temporary file followed by replacement. Editing a pool result may reset DE.
 Editing a DE result preserves later results when the winner is unchanged; otherwise only the
@@ -101,8 +106,8 @@ dependent downstream path is invalidated after confirmation.
 ## Testing
 
 JUnit 5 tests cover registration invariants, pools, score validation, standings tie-breaks,
-brackets/byes, final standings, JSON persistence, autosave/reload, corrections/invalidation, and
-selected JavaFX controller behavior. Run the suite with:
+brackets/byes, final standings, JSON persistence, autosave/reload, corrections/invalidation,
+tournament deletion, and selected JavaFX controller behavior. Run the suite with:
 
 ```powershell
 .\gradlew.bat test

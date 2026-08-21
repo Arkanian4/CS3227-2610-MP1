@@ -140,7 +140,10 @@
       "id" : "9eb42a53-287f-473b-9501-5c1b7243d1b5",
       "firstFencerId" : "6373a70e-3d32-4d67-ad3a-c27ef6857e42",
       "secondFencerId" : "85d3bda4-5174-408b-8bf5-bafc2c34d2f8",
-      "score" : null
+      "score" : {
+        "firstScore" : 5,
+        "secondScore" : 1
+      }
     }, {
       "id" : "dfed1902-e970-413a-983b-9a46311fde37",
       "firstFencerId" : "386440ce-415d-416b-8752-e2b95000dd83",
