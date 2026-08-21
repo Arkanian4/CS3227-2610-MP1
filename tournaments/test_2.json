@@ -49,8 +49,11 @@
         "fencerId" : "b0a5ddf9-b86a-4d30-9a2b-394ed03d5176",
         "resolved" : true
       },
-      "score" : null,
-      "winnerId" : null,
+      "score" : {
+        "firstScore" : 5,
+        "secondScore" : 15
+      },
+      "winnerId" : "b0a5ddf9-b86a-4d30-9a2b-394ed03d5176",
       "nextMatchId" : null,
       "nextMatchSlot" : null
     } ]

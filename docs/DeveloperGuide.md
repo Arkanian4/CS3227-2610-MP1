@@ -29,6 +29,39 @@ placement calculations.
 `persistence.JsonTournamentRepository` reconstructs a `Tournament` through its constructor so
 persisted data must satisfy domain invariants.
 
+## Visual theme architecture
+
+`ui/tournament.css` defines the Emerald & Teal theme through looked-up semantic tokens on the
+`theme-emerald-teal` root class. Component rules consume tokens such as app background, surface,
+primary text, border, accent, focus, success, danger, and unavailable state rather than repeating
+raw component colours. A future theme should define the same tokens under a different root class.
+
+`UiTheme` applies the selected root class and stylesheet to both the main JavaFX scene and dialog
+panes, so confirmation dialogs remain visually consistent with the workspace.
+
+## Workspace composition
+
+`TournamentView` owns reusable presentation patterns: a persistent tournament header and stage
+navigation, compact operational setup workspaces, grid-based result tables, a shared result-entry
+panel, and the Direct Elimination tableau. The visible stage navigation is a sidebar; the existing
+`TabPane` is retained only as a non-visible selection model for compatible phase/controller state.
+`TournamentController` maps domain state to small UI
+records and routes interactions back to `TournamentService`; it does not calculate tournament
+rules.
+
+The shell gives each category of information one visual home: the top bar holds application identity,
+an optional current-tournament context, and global file import; the sidebar holds Home and only the
+stage group relevant to an open tournament; pages own their titles and stage-specific actions.
+
+The Pools stage receives a `PoolDashboardPanel` per pool and renders the matrices together in a
+wrapping dashboard. A `PoolMatrixSelection` carries the pool ID as well as both fencer IDs, so a
+matrix cell can select the correct pool and scheduled bout without relying on a visible navigator.
+This preserves the existing service and domain APIs while making all pools scannable at once.
+
+Registration deliberately retains a JavaFX `ListView` because its selection model is used by the
+remove-fencer controller workflow. The view customises it into a numbered roster ledger and sets a
+compact preferred height from the current roster size, rather than reserving a large empty list.
+
 ## Key decisions
 
 Tournament names are unique case-insensitively after trimming. UUIDs remain internal identities for

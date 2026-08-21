@@ -58,12 +58,16 @@ public final class TournamentController {
         view.generateEliminationButton().setOnAction(event -> generateEliminationBracket());
         view.poolList().getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldValue, newValue) -> renderSelectedPool(newValue));
-        view.setMatrixCellHandler((rowId, opponentId) -> {
-            view.markSelectedMatrixCell(rowId, opponentId);
-            Pool selectedPool = view.poolList().getSelectionModel().getSelectedItem();
+        view.setMatrixCellHandler(selection -> {
+            Pool selectedPool = service.pools().stream()
+                    .filter(pool -> pool.id().equals(selection.poolId()))
+                    .findFirst().orElse(null);
             if (selectedPool == null) return;
-            selectedPool.bouts().stream().filter(bout -> samePair(bout, rowId, opponentId)).findFirst()
-                    .ifPresent(bout -> selectBout(orientedBoutRow(bout, rowId), bout.firstFencerId().equals(rowId)));
+            view.poolList().getSelectionModel().select(selectedPool);
+            view.markSelectedMatrixCell(selection.poolId(), selection.rowFencerId(), selection.opponentFencerId());
+            selectedPool.bouts().stream().filter(bout -> samePair(bout, selection.rowFencerId(), selection.opponentFencerId())).findFirst()
+                    .ifPresent(bout -> selectBout(orientedBoutRow(bout, selection.rowFencerId()),
+                            bout.firstFencerId().equals(selection.rowFencerId())));
         });
         view.recordResultButton().setOnAction(event -> recordResult());
         view.editPoolResultButton().setOnAction(event -> beginPoolResultEdit());
@@ -137,6 +141,7 @@ public final class TournamentController {
         }
         Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION,
                 "Remove " + selected.name() + " from this tournament?", ButtonType.CANCEL, ButtonType.OK);
+        UiTheme.apply(confirmation.getDialogPane());
         confirmation.setTitle("Remove fencer");
         confirmation.setHeaderText(null);
         if (confirmation.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) return;
@@ -178,7 +183,7 @@ public final class TournamentController {
             }
             service.generatePools(maximumPoolSize);
             refreshWorkspace();
-            view.tabs().getSelectionModel().select(view.poolsTab());
+            view.selectPoolsTab();
             view.showStatus("Pools generated. Select a pool to record results.");
         } catch (IllegalArgumentException | IllegalStateException | TournamentPersistenceException exception) {
             showError(exception);
@@ -234,6 +239,7 @@ public final class TournamentController {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
                 "Changing this pool result will invalidate the current Direct Elimination bracket, including all DE results. Continue?",
                 ButtonType.CANCEL, reset);
+        UiTheme.apply(alert.getDialogPane());
         alert.setTitle("Reset Direct Elimination"); alert.setHeaderText(null);
         return alert.showAndWait().orElse(ButtonType.CANCEL) == reset;
     }
@@ -242,7 +248,7 @@ public final class TournamentController {
         try {
             service.generateEliminationBracket();
             refreshWorkspace();
-            view.tabs().getSelectionModel().select(view.eliminationTab());
+            view.selectEliminationTab();
             view.showStatus("Direct elimination bracket generated.");
         } catch (IllegalArgumentException | IllegalStateException | TournamentPersistenceException exception) { showError(exception); }
     }
@@ -274,7 +280,7 @@ public final class TournamentController {
             }
             refreshWorkspace();
             if (service.currentPhase() == TournamentPhase.COMPLETE) {
-                view.tabs().getSelectionModel().select(view.finalResultsTab());
+                view.selectFinalResultsTab();
                 view.showStatus("Tournament complete. Final results are ready.");
             } else {
                 view.showStatus("DE result recorded.");
@@ -300,6 +306,7 @@ public final class TournamentController {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
                 "Changing this result changes the advancing fencer and will invalidate later Direct Elimination results that depend on it. Continue?",
                 ButtonType.CANCEL, reset);
+        UiTheme.apply(alert.getDialogPane());
         alert.setTitle("Reset later Direct Elimination results");
         alert.setHeaderText(null);
         return alert.showAndWait().orElse(ButtonType.CANCEL) == reset;
@@ -336,6 +343,7 @@ public final class TournamentController {
                 && tournament.pools().stream().allMatch(Pool::isComplete);
         if (!tournament.pools().isEmpty()) {
             view.renderPools(tournament.pools());
+            view.renderPoolDashboard(tournament.pools().stream().map(this::poolDashboardPanel).toList());
             renderSelectedPool(view.poolList().getSelectionModel().getSelectedItem());
             if (poolResultsFinalized) {
                 List<OverallSeedingRow> rows = service.overallStandings().stream()
@@ -400,6 +408,13 @@ public final class TournamentController {
             }
             return new PoolMatrixRow(rowFencerId, fencerName(rowFencerId), cells);
         }).toList();
+    }
+
+    private PoolDashboardPanel poolDashboardPanel(Pool pool) {
+        int poolNumber = service.pools().indexOf(pool) + 1;
+        int completed = (int) pool.bouts().stream().filter(bout -> bout.score() != null).count();
+        return new PoolDashboardPanel(pool.id(), "POOL #" + poolNumber, pool.memberIds().size(),
+                completed, pool.bouts().size(), matrixRows(pool));
     }
 
     private static boolean samePair(PoolBout bout, UUID first, UUID second) {

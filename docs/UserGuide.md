@@ -18,12 +18,18 @@ continue an ongoing tournament or **View Results** to inspect a completed one.
 Choose **+ New Tournament**, enter a name, and choose **Create**. Names are trimmed and unique
 without regard to letter case. For example, `Club Open` and ` club open ` cannot both be created.
 
+When a tournament is open, use the left navigation to move between available competition stages.
+Unavailable later stages are muted until the required earlier stage is complete. The header shows
+the current tournament and phase; **Tournament Home** remains available in the sidebar.
+
 ## Registration and seeding
 
-Add fencers by display name. Names must be non-blank and unique within the tournament. During
-registration, select a fencer and choose **Remove selected** to remove them after confirmation.
+Add fencers by display name using the compact **Fencer name** entry row. Names must be non-blank
+and unique within the tournament. The roster is numbered in registration order; select a row and
+choose **Remove selected** to remove that fencer after confirmation.
 
-With at least two fencers, choose **Continue to seeding**. Use **Move up** and **Move down** to
+With at least two fencers, choose **Continue to seeding** at the bottom of the registration
+workspace. Use **Move up** and **Move down** to
 reorder the seed list, then choose **Confirm seed order**. The order distributes fencers across
 pools and is the final standings tie-breaker.
 
@@ -32,9 +38,11 @@ pools and is the final standings tie-breaker.
 Choose a maximum pool size of 5, 6, or 7 and select **Generate pools**. Pools are balanced
 round-robin groups labelled `POOL #1`, `POOL #2`, and so on.
 
-In the **Pools** tab, select a pool. In the score matrix, `V5` is a five-touch win for the row
+The **Pools** tab shows each generated pool as a separate matrix, so organisers can scan progress
+across all pools without changing pages. In a score matrix, `V5` is a five-touch win for the row
 fencer, a non-prefixed score is a loss, grey diagonal cells are self-matchups, and blank cells are
-uncompleted bouts. Select an unfinished cell, enter scores, and choose **Record result**.
+uncompleted bouts. Select an unfinished cell in any pool, enter scores in the associated result
+area, and choose **Record result**.
 
 Pool bouts are to 5: scores cannot be negative or tied, one score must be 5, and neither score can
 exceed 5. Select a completed bout and choose **Edit result** to correct it. If a DE tableau already
@@ -61,6 +69,6 @@ the final loser second, and same-round eliminations use Pool Result place as the
 ## Saving and opening tournaments
 
 Successful changes are automatically saved in `tournaments/`; no normal Save action is required.
-Saved tournaments are restored to Tournament Home when the app starts. The header **Open** action
+Saved tournaments are restored to Tournament Home when the app starts. The header **Open File** action
 imports a tournament JSON file into this local autosaved collection. If autosaving fails, the app
 reports the error while retaining the in-memory tournament for the current session.

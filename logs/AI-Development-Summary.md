@@ -51,3 +51,58 @@ These entries are factual summaries for developer verification and later reflect
   and persistence failures.
 - **Notable issue:** Derived JSON properties initially broke repeated saves after pool data existed;
   field-based Jackson visibility and reload tests corrected this.
+
+## Emerald & Teal visual theme
+
+- **Task:** Replace repeated component colours with a cohesive, extensible visual theme.
+- **Decisions:** Define semantic JavaFX CSS tokens on an Emerald & Teal root class, keep result
+  colours distinct from interaction accents, and apply the stylesheet to dialogs as well as the
+  main scene.
+- **Outcome:** The shared stylesheet now uses theme tokens across the shell, home, inputs, grids,
+  matrix, tableau, results, and dialogs.
+- **Notable issue:** The visual work intentionally did not change tournament workflow or scoring
+  rules.
+
+## Workspace UX composition
+
+- **Task:** Redesign the application composition around compact tournament operations rather than
+  isolated JavaFX forms.
+- **Decisions:** Keep stage navigation and the existing domain/service calls; introduce reusable
+  workspace, pool-panel, result-entry, and toolbar patterns in the shared view and token stylesheet.
+- **Outcome:** Registration and seeding use focused action-and-roster workspaces, Direct Elimination
+  keeps its editor beside the tableau, and the Pools stage renders all pool matrices in a responsive
+  dashboard. Matrix selections carry their pool identity so score entry still targets the correct bout.
+- **Notable issue:** The dashboard intentionally wraps and scrolls only when the number of pools
+  exceeds the available desktop viewport; matrices are not compressed into unreadable cells.
+
+## Registration workspace refinement
+
+- **Task:** Replace the visually oversized registration form/list composition with a genuine
+  operational workflow layout.
+- **Decisions:** Keep the existing `ListView` selection model for controller compatibility, but
+  render it as a numbered roster ledger and size it to its actual contents. Make adding a fencer a
+  one-line operation and put the progression action in a separate footer.
+- **Outcome:** Registration now has title, compact add control, contextual roster management, and
+  page-level progression without changing registration domain logic.
+- **Notable issue:** A JavaFX UI test verifies that a small roster does not retain the old oversized
+  list height.
+
+## Sidebar application shell
+
+- **Task:** Replace the horizontal stage-tab presentation with a compact tournament-workspace shell.
+- **Decisions:** Use a persistent sidebar for Tournament Home and phase-gated stages; retain the
+  existing `TabPane` only as a non-visible selection model to avoid changing controller or domain
+  workflow semantics.
+- **Outcome:** The header now focuses on tournament context and utilities, while the centre content
+  deck is dedicated to the active stage. Registration is the first migrated reference workspace.
+- **Notable issue:** A focused UI test verifies central stage selection remains synchronised with
+  the internal tab state.
+
+## Header and navigation hierarchy
+
+- **Task:** Remove duplicated Home, tournament-context, and creation hierarchy from the shell.
+- **Decisions:** Hide tournament context and competition-stage navigation when no tournament is
+  open; label the sole global import action as `Open File`; keep New Tournament only on Tournament Home.
+- **Outcome:** The top bar is now application identity, optional tournament context, and utility
+  action; page headers own page actions, including Direct Elimination generation on Pool Result.
+- **Notable issue:** A JavaFX regression test covers the header context visibility transition.
