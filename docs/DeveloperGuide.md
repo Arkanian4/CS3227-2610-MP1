@@ -58,6 +58,13 @@ wrapping dashboard. A `PoolMatrixSelection` carries the pool ID as well as both 
 matrix cell can select the correct pool and scheduled bout without relying on a visible navigator.
 This preserves the existing service and domain APIs while making all pools scannable at once.
 
+For exactly two pools, the dashboard uses one explicit equal-width `HBox` row rather than relying
+on `FlowPane` wrapping. This prevents JavaFX from choosing a narrow internal width and stacking two
+otherwise readable matrices. One pool and three or more pools use the `FlowPane`, whose preferred
+width and wrap length follow the visible scroll viewport. The two-pool format uses compact matrix
+dimensions and disables board scrolling; three or more pools retain normal wrapping and scroll only
+after readable panels no longer fit.
+
 Registration deliberately retains a JavaFX `ListView` because its selection model is used by the
 remove-fencer controller workflow. The view customises it into a numbered roster ledger and sets a
 compact preferred height from the current roster size, rather than reserving a large empty list.
@@ -74,8 +81,10 @@ The phase is derived from aggregate state rather than persisted separately:
 The UI selects the tab matching the opened tournament phase. This avoids retaining a previous
 tournament tab when switching from Tournament Home.
 
-Pool generation uses manual seed order, balanced snake distribution, and round-robin bouts. Overall
-placing uses victory ratio, indicator, touches scored, and original seed. The top 16 Pool Result
+Pool generation uses manual seed order, balanced snake distribution, and round-robin bouts. The
+existing 5--7 pool behavior is retained; selecting a maximum of 8 explicitly permits eight-person
+pools and lets sixteen fencers form two 8-person pools. Overall placing uses victory ratio,
+indicator, touches scored, and original seed. The top 16 Pool Result
 places advance to a next-power-of-two DE bracket with automatic byes for higher seeds.
 
 ## Autosave and correction

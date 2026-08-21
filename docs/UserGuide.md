@@ -35,14 +35,17 @@ pools and is the final standings tie-breaker.
 
 ## Pools and Pool Result
 
-Choose a maximum pool size of 5, 6, or 7 and select **Generate pools**. Pools are balanced
+Choose a maximum pool size of 5, 6, 7, or 8 and select **Generate pools**. Pools are balanced
 round-robin groups labelled `POOL #1`, `POOL #2`, and so on.
 
 The **Pools** tab shows each generated pool as a separate matrix, so organisers can scan progress
-across all pools without changing pages. In a score matrix, `V5` is a five-touch win for the row
+across all pools without changing pages. Two pools use a compact side-by-side board suitable for
+the club's common 8-fencer format; extra pools wrap and scroll instead of making a matrix unreadable.
+In a score matrix, `V5` is a five-touch win for the row
 fencer, a non-prefixed score is a loss, grey diagonal cells are self-matchups, and blank cells are
 uncompleted bouts. Select an unfinished cell in any pool, enter scores in the associated result
-area, and choose **Record result**.
+area, and choose **Record result**. Press **Escape** or click outside the selected matchup/result
+area to dismiss score entry without changing a score.
 
 Pool bouts are to 5: scores cannot be negative or tied, one score must be 5, and neither score can
 exceed 5. Select a completed bout and choose **Edit result** to correct it. If a DE tableau already

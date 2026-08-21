@@ -17,14 +17,14 @@ public final class PoolGenerator {
      *
      * <p>The target is preferred when selecting the number of pools. Pool sizes differ by at
      * most one. For fields that cannot produce only 5--7-person pools, the smallest number of
-     * pools whose maximum size is at most seven is used (for example, 8 becomes 4+4).</p>
+     * pools whose maximum size is at most the selected target is used.</p>
      */
     public List<Pool> generate(Seeding seeding, int targetPoolSize) {
         if (seeding == null) {
             throw new IllegalArgumentException("Seeding must not be null.");
         }
-        if (targetPoolSize < 5 || targetPoolSize > 7) {
-            throw new IllegalArgumentException("Target pool size must be between 5 and 7.");
+        if (targetPoolSize < 5 || targetPoolSize > 8) {
+            throw new IllegalArgumentException("Target pool size must be between 5 and 8.");
         }
 
         List<UUID> seededFencerIds = seeding.fencerIds();
@@ -54,11 +54,14 @@ public final class PoolGenerator {
         if (fencerCount < 2) {
             throw new IllegalArgumentException("At least two fencers are required to generate pools.");
         }
-        if (fencerCount <= 7) {
+        // Preserve the established single-pool handling through seven fencers; eight is a
+        // single pool only when the organiser explicitly selects the supported size of eight.
+        if (fencerCount <= Math.max(7, targetPoolSize)) {
             return 1;
         }
 
-        int minimumPoolsForMaximumSize = (fencerCount + 6) / 7;
+        int supportedMaximum = targetPoolSize == 8 ? 8 : 7;
+        int minimumPoolsForMaximumSize = (fencerCount + supportedMaximum - 1) / supportedMaximum;
         int maximumPoolsForMinimumSize = fencerCount / 5;
         if (minimumPoolsForMaximumSize > maximumPoolsForMinimumSize) {
             return minimumPoolsForMaximumSize;

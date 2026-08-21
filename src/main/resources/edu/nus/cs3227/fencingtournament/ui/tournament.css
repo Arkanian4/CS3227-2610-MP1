@@ -149,6 +149,9 @@
 .phase-navigation > .tab-content-area { -fx-background-color: -ft-app-background; }
 
 .screen-content, .pools-content { -fx-padding: 22 28; -fx-spacing: 14; }
+.pools-content { -fx-padding: 13 18 10 18; -fx-spacing: 8; }
+.pools-page-header { -fx-min-height: 25; }
+.pools-page-header .screen-title { -fx-font-size: 19px; }
 .home-screen { -fx-background-color: -ft-app-background; }
 .home-content { -fx-max-width: 820; -fx-pref-width: 820; -fx-padding: 30 24 24 24; -fx-spacing: 10; }
 .home-title, .screen-title { -fx-font-size: 23px; -fx-font-weight: 800; -fx-text-fill: -ft-text-primary; }
@@ -275,17 +278,18 @@
     -fx-padding: 0;
 }
 .pool-dashboard-scroll > .viewport { -fx-background-color: transparent; }
-.pool-dashboard { -fx-padding: 2 2 12 2; }
+.pool-dashboard { -fx-padding: 0 2 4 2; }
 .pool-panel {
     -fx-min-width: 520;
     -fx-pref-width: 520;
-    -fx-padding: 12;
-    -fx-background-color: -ft-surface;
-    -fx-border-color: -ft-border;
-    -fx-border-radius: 5;
-    -fx-background-radius: 5;
+    -fx-padding: 6;
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
 }
-.pool-panel:hover { -fx-border-color: -ft-border-strong; }
+.two-pool-dashboard .pool-panel { -fx-min-width: 506; -fx-pref-width: 506; }
+.two-pool-row { -fx-alignment: TOP_LEFT; }
+.one-pool-dashboard .pool-panel { -fx-min-width: 620; -fx-pref-width: 620; }
+.pool-panel-heading { -fx-padding: 1 2 4 2; }
 .pool-panel-title { -fx-font-size: 13px; -fx-font-weight: 800; -fx-text-fill: -ft-text-primary; }
 .pool-panel-progress { -fx-font-size: 11px; -fx-font-weight: 700; -fx-text-fill: -ft-text-secondary; }
 .matrix-area { -fx-spacing: 8; }
@@ -313,6 +317,8 @@
 .pool-status-advanced { -fx-text-fill: -ft-success; -fx-font-weight: 800; }
 .pool-status-eliminated { -fx-text-fill: -ft-danger; -fx-font-weight: 800; }
 .pool-score-grid .matrix-grid-cell { -fx-font-size: 14px; -fx-font-weight: 800; -fx-alignment: CENTER; -fx-padding: 0; }
+.two-pool-dashboard .pool-score-grid .matrix-grid-cell { -fx-font-size: 13px; }
+.two-pool-dashboard .pool-score-grid .compact-grid-header { -fx-font-size: 10px; -fx-padding: 2 4; }
 .pool-score-grid .matrix-pending { -fx-background-color: -ft-surface; -fx-text-fill: transparent; -fx-cursor: hand; }
 .pool-score-grid .matrix-pending:hover { -fx-background-color: -ft-hover; }
 .pool-score-grid .matrix-diagonal { -fx-background-color: -ft-unavailable; -fx-text-fill: transparent; }
@@ -329,6 +335,14 @@
     -fx-border-color: -ft-border transparent transparent transparent;
     -fx-border-width: 1 0 0 0;
 }
+.result-entry-compact {
+    -fx-max-width: Infinity;
+    -fx-padding: 7 0 0 0;
+    -fx-background-color: transparent;
+    -fx-border-color: -ft-border transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+}
+.result-entry-compact .result-state { -fx-font-weight: 600; -fx-text-fill: -ft-text-secondary; }
 .result-pool-context {
     -fx-padding: 2 6;
     -fx-background-color: -ft-accent-subtle;

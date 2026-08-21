@@ -106,3 +106,37 @@ These entries are factual summaries for developer verification and later reflect
 - **Outcome:** The top bar is now application identity, optional tournament context, and utility
   action; page headers own page actions, including Direct Elimination generation on Pool Result.
 - **Notable issue:** A JavaFX regression test covers the header context visibility transition.
+
+## Eight-fencer pool format and projected board
+
+- **Task:** Support the club's common two-pool, eight-fencer format and make both matrices visible
+  together for projected use.
+- **Decisions:** Extend the domain maximum to eight while retaining the previous 5--7 behavior;
+  use an explicit compact two-pool layout mode instead of hardcoding tournament data into the view.
+- **Outcome:** Sixteen fencers with maximum eight produce two balanced snake-seeded pools. The
+  two-pool board uses compact cells, ellipsised/tooltip names, no board scrolling, and a collapsed
+  result strip until a matchup is selected.
+- **Notable issue:** Pool generation tests initially exposed an unintended change to the existing
+  five-person target behavior; the pool-count ceiling is now conditional on selecting eight.
+
+## Pool-board responsiveness and dismissal
+
+- **Task:** Stop pool panels from stacking unnecessarily and make selected score entry dismissible.
+- **Decisions:** Bind the FlowPane wrapping width to the visible viewport; use title-and-metadata
+  pool headers; route click-outside and Escape dismissal to a controller-owned no-save cancellation path.
+- **Outcome:** Pools fill available columns where readable, headers have clear hierarchy, and the
+  result strip collapses when no bout is selected.
+- **Notable issue:** Escape handling is covered by a JavaFX regression test that confirms a cleared
+  selection is not dismissed repeatedly.
+
+## Pool-board viewport-width correction
+
+- **Task:** Correct a screenshot-confirmed case where two pools still stacked despite unused space.
+- **Decisions:** Set the FlowPane's actual preferred width as well as its wrap length from the
+  ScrollPane viewport. A subsequent screenshot revealed that JavaFX could still choose an
+  inconsistent internal FlowPane width, so the exact two-pool case now uses an explicit `HBox` row;
+  FlowPane remains the responsive fallback for one and three-or-more pools.
+- **Outcome:** Two readable pool panels cannot be vertically stacked by FlowPane wrapping when the
+  application is rendering exactly two pools.
+- **Notable issue:** JavaFX regression tests cover both the explicit two-column row and the
+  viewport-derived wrapping width used by the multi-pool fallback.

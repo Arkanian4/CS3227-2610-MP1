@@ -1,0 +1,288 @@
+{
+  "id" : "0b284b0d-c7a5-44a0-8c38-a09d1688cdc3",
+  "name" : "lol",
+  "settings" : {
+    "targetPoolSize" : 5,
+    "poolBoutScoreLimit" : 5,
+    "eliminationBoutScoreLimit" : 15,
+    "advancingFencerCount" : 16,
+    "tieBreakPolicy" : {
+      "criteria" : [ "VICTORY_RATIO", "INDICATOR", "TOUCHES_SCORED", "SEED" ]
+    }
+  },
+  "fencers" : [ {
+    "id" : "d458c58e-b683-4d81-8b39-e99bd24a50c6",
+    "name" : "alex"
+  }, {
+    "id" : "097dd616-146c-4019-a7a9-b693d3f849e2",
+    "name" : "jeff"
+  }, {
+    "id" : "ef50d05b-747a-4542-8a1b-fd6eb364557a",
+    "name" : "bob"
+  }, {
+    "id" : "964f9ed3-207e-4a92-8a72-8f912fb8999a",
+    "name" : "streven"
+  }, {
+    "id" : "f620ab1a-d595-41eb-a18b-d6aa81e8edd7",
+    "name" : "smaule"
+  }, {
+    "id" : "4b9b1002-0542-4c6c-b4a1-2f619b23778a",
+    "name" : "paul"
+  }, {
+    "id" : "5d52ab31-0d9c-4560-a230-7ddf130f1fc4",
+    "name" : "lina"
+  }, {
+    "id" : "d7ad9a94-bb3b-4ced-821c-fcfe18fea727",
+    "name" : "jake"
+  }, {
+    "id" : "834fb706-4694-4ee5-91b7-b88d94b3f04d",
+    "name" : "jared"
+  }, {
+    "id" : "59449648-6efd-4ed8-bca1-aaa4cdb8cb51",
+    "name" : "timothy"
+  }, {
+    "id" : "c1c4f125-8542-4e13-bf11-e7fb02f2f433",
+    "name" : "andrew"
+  }, {
+    "id" : "cd63a44f-336a-4625-8297-a3613f30776a",
+    "name" : "sebastian"
+  }, {
+    "id" : "00ef0908-b1ac-492b-96e2-8a52a1728a92",
+    "name" : "oliver"
+  }, {
+    "id" : "72f8186a-81ed-411f-8c90-df1320565c7d",
+    "name" : "twister"
+  }, {
+    "id" : "c105c850-fec8-498b-81f5-0a1cb4c1e292",
+    "name" : "pearl"
+  }, {
+    "id" : "087ea57c-1628-4c4d-8cd5-6d229c3e762d",
+    "name" : "quentin"
+  }, {
+    "id" : "bd2a9792-5cac-49bc-a936-69dd30811395",
+    "name" : "kino"
+  } ],
+  "seeding" : {
+    "fencerIds" : [ "d458c58e-b683-4d81-8b39-e99bd24a50c6", "097dd616-146c-4019-a7a9-b693d3f849e2", "ef50d05b-747a-4542-8a1b-fd6eb364557a", "964f9ed3-207e-4a92-8a72-8f912fb8999a", "f620ab1a-d595-41eb-a18b-d6aa81e8edd7", "4b9b1002-0542-4c6c-b4a1-2f619b23778a", "5d52ab31-0d9c-4560-a230-7ddf130f1fc4", "d7ad9a94-bb3b-4ced-821c-fcfe18fea727", "834fb706-4694-4ee5-91b7-b88d94b3f04d", "59449648-6efd-4ed8-bca1-aaa4cdb8cb51", "c1c4f125-8542-4e13-bf11-e7fb02f2f433", "cd63a44f-336a-4625-8297-a3613f30776a", "00ef0908-b1ac-492b-96e2-8a52a1728a92", "72f8186a-81ed-411f-8c90-df1320565c7d", "c105c850-fec8-498b-81f5-0a1cb4c1e292", "087ea57c-1628-4c4d-8cd5-6d229c3e762d", "bd2a9792-5cac-49bc-a936-69dd30811395" ]
+  },
+  "pools" : [ {
+    "id" : "e3dc0858-f3d4-45be-84e3-681ff7ea6d80",
+    "name" : "POOL #1",
+    "memberIds" : [ "d458c58e-b683-4d81-8b39-e99bd24a50c6", "4b9b1002-0542-4c6c-b4a1-2f619b23778a", "5d52ab31-0d9c-4560-a230-7ddf130f1fc4", "cd63a44f-336a-4625-8297-a3613f30776a", "00ef0908-b1ac-492b-96e2-8a52a1728a92" ],
+    "bouts" : [ {
+      "id" : "03541f3a-ea12-4097-833b-31aac4008c6c",
+      "firstFencerId" : "d458c58e-b683-4d81-8b39-e99bd24a50c6",
+      "secondFencerId" : "4b9b1002-0542-4c6c-b4a1-2f619b23778a",
+      "score" : null
+    }, {
+      "id" : "b71404ce-fdd3-45bc-9f71-9e67b4eafe4a",
+      "firstFencerId" : "d458c58e-b683-4d81-8b39-e99bd24a50c6",
+      "secondFencerId" : "5d52ab31-0d9c-4560-a230-7ddf130f1fc4",
+      "score" : null
+    }, {
+      "id" : "2ec6cfd4-1e3f-4309-9269-7df03d2c168f",
+      "firstFencerId" : "d458c58e-b683-4d81-8b39-e99bd24a50c6",
+      "secondFencerId" : "cd63a44f-336a-4625-8297-a3613f30776a",
+      "score" : null
+    }, {
+      "id" : "687fa619-343d-4946-8745-657546aa18cb",
+      "firstFencerId" : "d458c58e-b683-4d81-8b39-e99bd24a50c6",
+      "secondFencerId" : "00ef0908-b1ac-492b-96e2-8a52a1728a92",
+      "score" : null
+    }, {
+      "id" : "69fa89c6-d641-4fef-866d-d52704f879d4",
+      "firstFencerId" : "4b9b1002-0542-4c6c-b4a1-2f619b23778a",
+      "secondFencerId" : "5d52ab31-0d9c-4560-a230-7ddf130f1fc4",
+      "score" : null
+    }, {
+      "id" : "17ddce78-d75d-4d22-8933-75493573c684",
+      "firstFencerId" : "4b9b1002-0542-4c6c-b4a1-2f619b23778a",
+      "secondFencerId" : "cd63a44f-336a-4625-8297-a3613f30776a",
+      "score" : null
+    }, {
+      "id" : "ba7f369a-6af7-47c9-b2ac-4bdca5757cc8",
+      "firstFencerId" : "4b9b1002-0542-4c6c-b4a1-2f619b23778a",
+      "secondFencerId" : "00ef0908-b1ac-492b-96e2-8a52a1728a92",
+      "score" : null
+    }, {
+      "id" : "0de06594-311e-4c35-a273-bec1331c62c0",
+      "firstFencerId" : "5d52ab31-0d9c-4560-a230-7ddf130f1fc4",
+      "secondFencerId" : "cd63a44f-336a-4625-8297-a3613f30776a",
+      "score" : null
+    }, {
+      "id" : "058e3764-9ad3-4a67-930c-f111cfe7fd46",
+      "firstFencerId" : "5d52ab31-0d9c-4560-a230-7ddf130f1fc4",
+      "secondFencerId" : "00ef0908-b1ac-492b-96e2-8a52a1728a92",
+      "score" : null
+    }, {
+      "id" : "5338ab8a-9bf1-46d9-b066-d0b2fe64ff80",
+      "firstFencerId" : "cd63a44f-336a-4625-8297-a3613f30776a",
+      "secondFencerId" : "00ef0908-b1ac-492b-96e2-8a52a1728a92",
+      "score" : null
+    } ]
+  }, {
+    "id" : "060be357-8dff-481c-8b14-c5655b1eaa02",
+    "name" : "POOL #2",
+    "memberIds" : [ "097dd616-146c-4019-a7a9-b693d3f849e2", "f620ab1a-d595-41eb-a18b-d6aa81e8edd7", "d7ad9a94-bb3b-4ced-821c-fcfe18fea727", "c1c4f125-8542-4e13-bf11-e7fb02f2f433", "72f8186a-81ed-411f-8c90-df1320565c7d", "bd2a9792-5cac-49bc-a936-69dd30811395" ],
+    "bouts" : [ {
+      "id" : "69c5ddb4-5a27-4aaf-96fc-22858f4fb91c",
+      "firstFencerId" : "097dd616-146c-4019-a7a9-b693d3f849e2",
+      "secondFencerId" : "f620ab1a-d595-41eb-a18b-d6aa81e8edd7",
+      "score" : {
+        "firstScore" : 5,
+        "secondScore" : 1
+      }
+    }, {
+      "id" : "ca0de7be-fa81-4ce7-ab56-5786a2cb07df",
+      "firstFencerId" : "097dd616-146c-4019-a7a9-b693d3f849e2",
+      "secondFencerId" : "d7ad9a94-bb3b-4ced-821c-fcfe18fea727",
+      "score" : null
+    }, {
+      "id" : "b9ba9060-abb8-4fa3-9401-8984585ecfef",
+      "firstFencerId" : "097dd616-146c-4019-a7a9-b693d3f849e2",
+      "secondFencerId" : "c1c4f125-8542-4e13-bf11-e7fb02f2f433",
+      "score" : null
+    }, {
+      "id" : "10957f51-6e46-4b71-a954-0301adfaf968",
+      "firstFencerId" : "097dd616-146c-4019-a7a9-b693d3f849e2",
+      "secondFencerId" : "72f8186a-81ed-411f-8c90-df1320565c7d",
+      "score" : null
+    }, {
+      "id" : "95c9d8ef-8cf9-4b71-925d-18594137672f",
+      "firstFencerId" : "097dd616-146c-4019-a7a9-b693d3f849e2",
+      "secondFencerId" : "bd2a9792-5cac-49bc-a936-69dd30811395",
+      "score" : null
+    }, {
+      "id" : "a065c810-e1eb-42ba-9f33-a0b7d253edcb",
+      "firstFencerId" : "f620ab1a-d595-41eb-a18b-d6aa81e8edd7",
+      "secondFencerId" : "d7ad9a94-bb3b-4ced-821c-fcfe18fea727",
+      "score" : null
+    }, {
+      "id" : "4bbea28e-f006-40bf-99c5-4d2e1e114c7a",
+      "firstFencerId" : "f620ab1a-d595-41eb-a18b-d6aa81e8edd7",
+      "secondFencerId" : "c1c4f125-8542-4e13-bf11-e7fb02f2f433",
+      "score" : null
+    }, {
+      "id" : "81b8a72c-9488-4475-ae57-300d5309b82a",
+      "firstFencerId" : "f620ab1a-d595-41eb-a18b-d6aa81e8edd7",
+      "secondFencerId" : "72f8186a-81ed-411f-8c90-df1320565c7d",
+      "score" : null
+    }, {
+      "id" : "413effdc-41cb-46be-83d6-532908f293a7",
+      "firstFencerId" : "f620ab1a-d595-41eb-a18b-d6aa81e8edd7",
+      "secondFencerId" : "bd2a9792-5cac-49bc-a936-69dd30811395",
+      "score" : null
+    }, {
+      "id" : "cc33ec41-b536-44ca-ae97-d9cb53d0f1b0",
+      "firstFencerId" : "d7ad9a94-bb3b-4ced-821c-fcfe18fea727",
+      "secondFencerId" : "c1c4f125-8542-4e13-bf11-e7fb02f2f433",
+      "score" : null
+    }, {
+      "id" : "adacfb89-b045-44d1-aa94-f6d3b278c4f0",
+      "firstFencerId" : "d7ad9a94-bb3b-4ced-821c-fcfe18fea727",
+      "secondFencerId" : "72f8186a-81ed-411f-8c90-df1320565c7d",
+      "score" : null
+    }, {
+      "id" : "98186421-4a85-424a-880a-7433d0137969",
+      "firstFencerId" : "d7ad9a94-bb3b-4ced-821c-fcfe18fea727",
+      "secondFencerId" : "bd2a9792-5cac-49bc-a936-69dd30811395",
+      "score" : null
+    }, {
+      "id" : "862d3bc8-9c23-42f4-94b2-ee3d9c2c35eb",
+      "firstFencerId" : "c1c4f125-8542-4e13-bf11-e7fb02f2f433",
+      "secondFencerId" : "72f8186a-81ed-411f-8c90-df1320565c7d",
+      "score" : null
+    }, {
+      "id" : "f4c0ea08-4083-4611-b75d-19dbceee3aa1",
+      "firstFencerId" : "c1c4f125-8542-4e13-bf11-e7fb02f2f433",
+      "secondFencerId" : "bd2a9792-5cac-49bc-a936-69dd30811395",
+      "score" : null
+    }, {
+      "id" : "511d7281-a44e-4512-918a-ebdeac7bb206",
+      "firstFencerId" : "72f8186a-81ed-411f-8c90-df1320565c7d",
+      "secondFencerId" : "bd2a9792-5cac-49bc-a936-69dd30811395",
+      "score" : null
+    } ]
+  }, {
+    "id" : "55fe5a5f-b91c-4e9a-b2fb-58a25be6b876",
+    "name" : "POOL #3",
+    "memberIds" : [ "ef50d05b-747a-4542-8a1b-fd6eb364557a", "964f9ed3-207e-4a92-8a72-8f912fb8999a", "834fb706-4694-4ee5-91b7-b88d94b3f04d", "59449648-6efd-4ed8-bca1-aaa4cdb8cb51", "c105c850-fec8-498b-81f5-0a1cb4c1e292", "087ea57c-1628-4c4d-8cd5-6d229c3e762d" ],
+    "bouts" : [ {
+      "id" : "80a40644-99b7-48fe-9de2-5b8b55e0f824",
+      "firstFencerId" : "ef50d05b-747a-4542-8a1b-fd6eb364557a",
+      "secondFencerId" : "964f9ed3-207e-4a92-8a72-8f912fb8999a",
+      "score" : null
+    }, {
+      "id" : "663a127d-720a-4424-b7f3-ba211c9af7bf",
+      "firstFencerId" : "ef50d05b-747a-4542-8a1b-fd6eb364557a",
+      "secondFencerId" : "834fb706-4694-4ee5-91b7-b88d94b3f04d",
+      "score" : null
+    }, {
+      "id" : "72657c01-ec40-47f4-93d0-b5fe8fa04d06",
+      "firstFencerId" : "ef50d05b-747a-4542-8a1b-fd6eb364557a",
+      "secondFencerId" : "59449648-6efd-4ed8-bca1-aaa4cdb8cb51",
+      "score" : null
+    }, {
+      "id" : "5a911fde-b3bb-4889-a334-41a98ca485b4",
+      "firstFencerId" : "ef50d05b-747a-4542-8a1b-fd6eb364557a",
+      "secondFencerId" : "c105c850-fec8-498b-81f5-0a1cb4c1e292",
+      "score" : null
+    }, {
+      "id" : "5d24b1fa-dabc-422f-acd4-1867fa00d1d0",
+      "firstFencerId" : "ef50d05b-747a-4542-8a1b-fd6eb364557a",
+      "secondFencerId" : "087ea57c-1628-4c4d-8cd5-6d229c3e762d",
+      "score" : null
+    }, {
+      "id" : "b437c417-f994-4cc4-b0fa-2685549ae2c4",
+      "firstFencerId" : "964f9ed3-207e-4a92-8a72-8f912fb8999a",
+      "secondFencerId" : "834fb706-4694-4ee5-91b7-b88d94b3f04d",
+      "score" : null
+    }, {
+      "id" : "8a39acec-5e39-4f62-ab26-8601ea37ab50",
+      "firstFencerId" : "964f9ed3-207e-4a92-8a72-8f912fb8999a",
+      "secondFencerId" : "59449648-6efd-4ed8-bca1-aaa4cdb8cb51",
+      "score" : null
+    }, {
+      "id" : "cfea75b5-60b4-4d48-b6f1-586538589bc4",
+      "firstFencerId" : "964f9ed3-207e-4a92-8a72-8f912fb8999a",
+      "secondFencerId" : "c105c850-fec8-498b-81f5-0a1cb4c1e292",
+      "score" : null
+    }, {
+      "id" : "3a9b5717-9afd-4147-afb1-1468e311a5e0",
+      "firstFencerId" : "964f9ed3-207e-4a92-8a72-8f912fb8999a",
+      "secondFencerId" : "087ea57c-1628-4c4d-8cd5-6d229c3e762d",
+      "score" : null
+    }, {
+      "id" : "fe4f47f5-6971-4882-a00c-656221c21dd2",
+      "firstFencerId" : "834fb706-4694-4ee5-91b7-b88d94b3f04d",
+      "secondFencerId" : "59449648-6efd-4ed8-bca1-aaa4cdb8cb51",
+      "score" : null
+    }, {
+      "id" : "aacf8b6f-cc37-40b0-9325-aa86970aa1f4",
+      "firstFencerId" : "834fb706-4694-4ee5-91b7-b88d94b3f04d",
+      "secondFencerId" : "c105c850-fec8-498b-81f5-0a1cb4c1e292",
+      "score" : null
+    }, {
+      "id" : "74d33fa2-07d3-41a7-8fdf-e82efcec2a04",
+      "firstFencerId" : "834fb706-4694-4ee5-91b7-b88d94b3f04d",
+      "secondFencerId" : "087ea57c-1628-4c4d-8cd5-6d229c3e762d",
+      "score" : null
+    }, {
+      "id" : "8290668c-0321-4106-a48a-a43f909d261e",
+      "firstFencerId" : "59449648-6efd-4ed8-bca1-aaa4cdb8cb51",
+      "secondFencerId" : "c105c850-fec8-498b-81f5-0a1cb4c1e292",
+      "score" : null
+    }, {
+      "id" : "05f0ddb8-d4b1-4fa8-92be-b3b043b4dbfb",
+      "firstFencerId" : "59449648-6efd-4ed8-bca1-aaa4cdb8cb51",
+      "secondFencerId" : "087ea57c-1628-4c4d-8cd5-6d229c3e762d",
+      "score" : null
+    }, {
+      "id" : "9614dcc6-6d37-44d5-ad59-9d6e271d6d0e",
+      "firstFencerId" : "c105c850-fec8-498b-81f5-0a1cb4c1e292",
+      "secondFencerId" : "087ea57c-1628-4c4d-8cd5-6d229c3e762d",
+      "score" : null
+    } ]
+  } ],
+  "eliminationBracket" : null
+}

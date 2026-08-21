@@ -49,6 +49,21 @@ class PoolGeneratorTest {
     }
 
     @Test
+    void sixteenFencersWithMaximumSizeEightProduceTwoCompleteBalancedPools() {
+        List<UUID> seeds = fencerIds(16);
+
+        List<Pool> pools = generator.generate(new Seeding(seeds), 8);
+
+        assertEquals(2, pools.size());
+        assertEquals(List.of(8, 8), pools.stream().map(pool -> pool.memberIds().size()).sorted().toList());
+        assertEquals(List.of(1, 4, 5, 8, 9, 12, 13, 16), seedNumbers(pools.get(0), seeds));
+        assertEquals(List.of(2, 3, 6, 7, 10, 11, 14, 15), seedNumbers(pools.get(1), seeds));
+        List<UUID> distributed = pools.stream().flatMap(pool -> pool.memberIds().stream()).toList();
+        assertEquals(seeds.size(), distributed.size());
+        assertEquals(seeds.stream().sorted().toList(), distributed.stream().sorted().toList());
+    }
+
+    @Test
     void eachPoolContainsEveryRoundRobinPairExactlyOnce() {
         List<Pool> pools = generator.generate(new Seeding(fencerIds(11)), 6);
 
@@ -91,7 +106,7 @@ class PoolGeneratorTest {
         assertThrows(IllegalArgumentException.class,
                 () -> generator.generate(new Seeding(fencerIds(2)), 4));
         assertThrows(IllegalArgumentException.class,
-                () -> generator.generate(new Seeding(fencerIds(2)), 8));
+                () -> generator.generate(new Seeding(fencerIds(2)), 9));
         assertThrows(IllegalArgumentException.class,
                 () -> generator.generate(new Seeding(List.of(UUID.randomUUID())), 6));
 

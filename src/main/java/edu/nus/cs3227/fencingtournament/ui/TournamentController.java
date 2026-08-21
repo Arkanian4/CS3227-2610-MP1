@@ -69,6 +69,7 @@ public final class TournamentController {
                     .ifPresent(bout -> selectBout(orientedBoutRow(bout, selection.rowFencerId()),
                             bout.firstFencerId().equals(selection.rowFencerId())));
         });
+        view.setPoolSelectionDismissHandler(this::dismissSelectedPoolBout);
         view.recordResultButton().setOnAction(event -> recordResult());
         view.editPoolResultButton().setOnAction(event -> beginPoolResultEdit());
         view.setEliminationMatchHandler(this::selectEliminationMatch);
@@ -232,6 +233,16 @@ public final class TournamentController {
         if (selectedBout == null || !selectedBout.completed()) return;
         editingPoolResult = true;
         view.beginPoolResultEdit(selectedBout);
+    }
+
+    private void dismissSelectedPoolBout() {
+        if (selectedBout == null && !editingPoolResult) return;
+        selectedBout = null;
+        selectedPoolRowIsScheduledFirst = true;
+        editingPoolResult = false;
+        view.endPoolResultEdit();
+        view.clearSelectedMatrixCell();
+        view.showSelectedBout(null);
     }
 
     private boolean confirmPoolReset() {

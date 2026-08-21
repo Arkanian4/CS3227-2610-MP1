@@ -9,6 +9,8 @@ import javafx.collections.FXCollections;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.Node;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.shape.Line;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -90,6 +92,8 @@ public final class TournamentView extends BorderPane {
     private final Label resultStateLabel = new Label();
     private final VBox scoreFields = new VBox();
     private final VBox resultEntry = new VBox();
+    private final HBox poolResultTitleRow = new HBox();
+    private final HBox poolResultNames = new HBox();
 
     private final GridPane standingsGrid = new GridPane();
     private final Label standingsStatusLabel = new Label();
@@ -110,6 +114,7 @@ public final class TournamentView extends BorderPane {
     private Consumer<UUID> eliminationMatchHandler = ignored -> { };
     private Consumer<UUID> tournamentOpenHandler = ignored -> { };
     private Consumer<PoolMatrixSelection> matrixCellHandler = ignored -> { };
+    private Runnable poolSelectionDismissHandler = () -> { };
     private UUID selectedMatrixRow;
     private UUID selectedMatrixOpponent;
     private UUID selectedMatrixPool;
@@ -223,10 +228,17 @@ public final class TournamentView extends BorderPane {
     public Button editPoolResultButton() { return editPoolResultButton; }
     public FlowPane poolDashboard() { return poolDashboard; }
     public void setMatrixCellHandler(Consumer<PoolMatrixSelection> handler) { matrixCellHandler = handler == null ? ignored -> { } : handler; }
+    public void setPoolSelectionDismissHandler(Runnable handler) { poolSelectionDismissHandler = handler == null ? () -> { } : handler; }
     public void markSelectedMatrixCell(UUID poolId, UUID row, UUID opponent) {
         selectedMatrixPool = poolId;
         selectedMatrixRow = row;
         selectedMatrixOpponent = opponent;
+        renderPoolDashboard(renderedPoolPanels);
+    }
+    public void clearSelectedMatrixCell() {
+        selectedMatrixPool = null;
+        selectedMatrixRow = null;
+        selectedMatrixOpponent = null;
         renderPoolDashboard(renderedPoolPanels);
     }
     public void setEliminationMatchHandler(Consumer<UUID> handler) { eliminationMatchHandler = handler == null ? ignored -> { } : handler; }
@@ -250,10 +262,34 @@ public final class TournamentView extends BorderPane {
     public void renderPoolDashboard(List<PoolDashboardPanel> panels) {
         renderedPoolPanels = List.copyOf(panels);
         poolDashboard.getChildren().clear();
+        poolDashboard.getStyleClass().removeAll("one-pool-dashboard", "two-pool-dashboard", "multi-pool-dashboard");
+        poolDashboard.getStyleClass().add(panels.size() == 1 ? "one-pool-dashboard"
+                : panels.size() == 2 ? "two-pool-dashboard" : "multi-pool-dashboard");
+        poolDashboard.setHgap(panels.size() == 2 ? 12 : 18);
+        poolDashboard.setVgap(panels.size() == 2 ? 12 : 18);
+        updatePoolDashboardWidth(poolDashboardScroll.getViewportBounds().getWidth());
+        boolean boardFitsWithoutScrolling = panels.size() <= 2;
+        poolDashboardScroll.setHbarPolicy(boardFitsWithoutScrolling
+                ? ScrollPane.ScrollBarPolicy.NEVER : ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        poolDashboardScroll.setVbarPolicy(boardFitsWithoutScrolling
+                ? ScrollPane.ScrollBarPolicy.NEVER : ScrollPane.ScrollBarPolicy.AS_NEEDED);
         if (panels.isEmpty()) {
             Label empty = new Label("Pools will appear here after generation.");
             empty.getStyleClass().add("compact-grid-empty");
             poolDashboard.getChildren().add(empty);
+            return;
+        }
+        if (panels.size() == 2) {
+            VBox firstPool = poolPanel(panels.getFirst());
+            VBox secondPool = poolPanel(panels.get(1));
+            firstPool.setMaxWidth(Double.MAX_VALUE);
+            secondPool.setMaxWidth(Double.MAX_VALUE);
+            HBox.setHgrow(firstPool, Priority.ALWAYS);
+            HBox.setHgrow(secondPool, Priority.ALWAYS);
+            HBox twoPoolRow = new HBox(12, firstPool, secondPool);
+            twoPoolRow.setAlignment(Pos.TOP_LEFT);
+            twoPoolRow.getStyleClass().add("two-pool-row");
+            poolDashboard.getChildren().add(twoPoolRow);
             return;
         }
         panels.forEach(panel -> poolDashboard.getChildren().add(poolPanel(panel)));
@@ -359,8 +395,9 @@ public final class TournamentView extends BorderPane {
     public void showSelectedBout(PoolBoutRow bout) {
         if (bout == null) {
             firstFencerLabel.setText("—"); secondFencerLabel.setText("—"); resultStateLabel.setText("Select an unfinished bout in the matrix");
-            scoreFields.setVisible(false); scoreFields.setManaged(false); recordResultButton.setDisable(true); editPoolResultButton.setVisible(false); editPoolResultButton.setManaged(false); return;
+            scoreFields.setVisible(false); scoreFields.setManaged(false); recordResultButton.setDisable(true); editPoolResultButton.setVisible(false); editPoolResultButton.setManaged(false); collapsePoolResultEntry(); return;
         }
+        expandPoolResultEntry();
         firstFencerLabel.setText(bout.firstName()); secondFencerLabel.setText(bout.secondName());
         if (bout.completed()) {
             resultStateLabel.setText("Completed · " + bout.scoreText()); resultStateLabel.getStyleClass().setAll("result-state", "is-completed");
@@ -377,6 +414,16 @@ public final class TournamentView extends BorderPane {
         resultStateLabel.setText("Editing recorded result"); resultStateLabel.getStyleClass().setAll("result-state", "is-pending");
     }
     public void endPoolResultEdit() { recordResultButton.setText("Record result"); }
+    private void collapsePoolResultEntry() {
+        resultEntry.getChildren().setAll(resultStateLabel);
+        resultEntry.setAlignment(Pos.CENTER_LEFT);
+        resultEntry.getStyleClass().add("result-entry-compact");
+    }
+    private void expandPoolResultEntry() {
+        resultEntry.getChildren().setAll(poolResultTitleRow, poolResultNames, resultStateLabel, scoreFields, editPoolResultButton);
+        resultEntry.setAlignment(Pos.CENTER);
+        resultEntry.getStyleClass().remove("result-entry-compact");
+    }
     public void showPhase(TournamentPhase phase, PoolProgress progress) {
         phaseLabel.setText(phaseText(phase));
         progressLabel.setText(progress == null || progress.totalBouts() == 0 ? "" : progress.completedBouts() + " of " + progress.totalBouts() + " pool bouts complete");
@@ -495,7 +542,7 @@ public final class TournamentView extends BorderPane {
         HBox progression = new HBox(12, progressionHint, confirmSeedingButton); progression.setAlignment(Pos.CENTER_RIGHT); HBox.setHgrow(progressionHint, Priority.ALWAYS); progression.getStyleClass().add("registration-progression");
         registrationSection.getChildren().setAll(sectionTitle("Registration", "Build the tournament field before setting the seed order."), addForm, roster, progression); registrationSection.getStyleClass().addAll("setup-stage", "registration-layout"); registrationSection.setMaxWidth(900);
         seedList.setPlaceholder(new Label("No fencers registered yet.")); VBox.setVgrow(seedList, Priority.ALWAYS); HBox reorder = new HBox(8, moveSeedUpButton, moveSeedDownButton); reorder.getStyleClass().add("secondary-actions"); generatePoolsButton.getStyleClass().add("primary-action");
-        maximumPoolSizeChoice.getItems().setAll(5, 6, 7); maximumPoolSizeChoice.getSelectionModel().select(Integer.valueOf(5)); maximumPoolSizeChoice.setPrefWidth(90);
+        maximumPoolSizeChoice.getItems().setAll(5, 6, 7, 8); maximumPoolSizeChoice.getSelectionModel().select(Integer.valueOf(5)); maximumPoolSizeChoice.setPrefWidth(90);
         HBox poolOptions = new HBox(8, new Label("Maximum fencers per pool"), maximumPoolSizeChoice); poolOptions.setAlignment(Pos.CENTER_LEFT); poolOptions.getStyleClass().add("pool-options");
         VBox seedingActions = new VBox(12, new Label("Adjust the selected seed"), reorder, poolOptions, actionRow(applySeedingButton, generatePoolsButton));
         seedingActions.getStyleClass().add("setup-actions");
@@ -509,15 +556,30 @@ public final class TournamentView extends BorderPane {
     }
     private BorderPane buildPoolsTab() {
         Label title = new Label("Pools"); title.getStyleClass().add("screen-title");
-        Label description = new Label("Select any matchup below to record or correct its result."); description.getStyleClass().add("screen-subtitle");
-        Label overview = new Label("POOL OVERVIEW"); overview.getStyleClass().add("section-kicker");
+        Label description = new Label("Pool board · select a matchup to record or correct its result."); description.getStyleClass().add("screen-subtitle");
+        HBox header = new HBox(16, title, description); header.setAlignment(Pos.BASELINE_LEFT); header.getStyleClass().add("pools-page-header");
         poolList.setVisible(false); poolList.setManaged(false);
-        poolDashboard.setAlignment(Pos.TOP_LEFT); poolDashboard.getStyleClass().add("pool-dashboard");
+        poolDashboard.setAlignment(Pos.TOP_LEFT); poolDashboard.setMinWidth(0); poolDashboard.setMaxWidth(Double.MAX_VALUE); poolDashboard.getStyleClass().add("pool-dashboard");
         poolDashboardScroll.setFitToWidth(true); poolDashboardScroll.setFitToHeight(false); poolDashboardScroll.setPannable(true);
+        poolDashboardScroll.viewportBoundsProperty().addListener((observable, previous, current) ->
+                updatePoolDashboardWidth(current.getWidth()));
         poolDashboardScroll.getStyleClass().add("pool-dashboard-scroll");
         buildResultEntry();
-        VBox content = new VBox(10, title, description, overview, poolDashboardScroll, resultEntry);
-        content.getStyleClass().add("pools-content"); VBox.setVgrow(poolDashboardScroll, Priority.ALWAYS);
+        VBox content = new VBox(8, header, poolDashboardScroll, resultEntry);
+        content.setAlignment(Pos.TOP_CENTER); content.getStyleClass().add("pools-content"); VBox.setVgrow(poolDashboardScroll, Priority.ALWAYS);
+        content.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
+            if (event.getButton() != javafx.scene.input.MouseButton.PRIMARY || selectedMatrixRow == null) return;
+            Node target = event.getTarget() instanceof Node node ? node : null;
+            if (isInside(target, resultEntry) || hasStyleInHierarchy(target, "matrix-pending")
+                    || hasStyleInHierarchy(target, "matrix-win") || hasStyleInHierarchy(target, "matrix-loss")) return;
+            poolSelectionDismissHandler.run();
+        });
+        content.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, event -> {
+            if (event.getCode() == KeyCode.ESCAPE && selectedMatrixRow != null) {
+                poolSelectionDismissHandler.run();
+                event.consume();
+            }
+        });
         return new BorderPane(content);
     }
     private void buildResultEntry() {
@@ -525,11 +587,11 @@ public final class TournamentView extends BorderPane {
         firstScoreField.setPromptText("Score"); secondScoreField.setPromptText("Score"); firstScoreField.getStyleClass().add("score-field"); secondScoreField.getStyleClass().add("score-field"); firstScoreField.setPrefWidth(110); secondScoreField.setPrefWidth(110); recordResultButton.getStyleClass().add("primary-action");
         Label dash = new Label("—"); dash.getStyleClass().add("score-dash"); dash.setMinWidth(23); dash.setPrefWidth(23); dash.setMaxWidth(23); dash.setAlignment(Pos.CENTER);
         Label versus = new Label("vs"); versus.getStyleClass().add("result-versus"); versus.setMinWidth(23); versus.setPrefWidth(23); versus.setMaxWidth(23); versus.setAlignment(Pos.CENTER);
-        HBox names = new HBox(14, firstFencerLabel, versus, secondFencerLabel); names.setAlignment(Pos.CENTER);
+        poolResultNames.getChildren().setAll(firstFencerLabel, versus, secondFencerLabel); poolResultNames.setSpacing(14); poolResultNames.setAlignment(Pos.CENTER);
         HBox scoreLine = new HBox(14, firstScoreField, dash, secondScoreField); scoreLine.setAlignment(Pos.CENTER);
         scoreFields.getChildren().setAll(scoreLine, recordResultButton); scoreFields.setSpacing(8); scoreFields.setAlignment(Pos.CENTER); editPoolResultButton.getStyleClass().add("secondary-action");
-        HBox entryTitle = new HBox(title, selectedPoolLabel); entryTitle.setAlignment(Pos.CENTER); entryTitle.setSpacing(10);
-        resultEntry.getChildren().setAll(entryTitle, names, resultStateLabel, scoreFields, editPoolResultButton); resultEntry.setAlignment(Pos.CENTER); resultEntry.getStyleClass().add("result-entry");
+        poolResultTitleRow.getChildren().setAll(title, selectedPoolLabel); poolResultTitleRow.setAlignment(Pos.CENTER); poolResultTitleRow.setSpacing(10);
+        expandPoolResultEntry(); resultEntry.getStyleClass().add("result-entry");
     }
     private VBox buildStandingsTab() {
         Label title = new Label("Pool Result"); title.getStyleClass().add("screen-title"); Label description = new Label("Overall placing after every pool bout has been finalized."); description.getStyleClass().add("screen-subtitle"); generateEliminationButton.getStyleClass().add("primary-action");
@@ -586,10 +648,11 @@ public final class TournamentView extends BorderPane {
     }
     private VBox poolPanel(PoolDashboardPanel panel) {
         Label name = new Label(panel.poolName()); name.getStyleClass().add("pool-panel-title");
-        Label progress = new Label(panel.completedBouts() + " / " + panel.totalBouts() + " bouts"); progress.getStyleClass().add("pool-panel-progress");
-        HBox heading = new HBox(name, progress); HBox.setHgrow(name, Priority.ALWAYS); heading.setAlignment(Pos.CENTER_LEFT);
+        Label progress = new Label(panel.fencerCount() + " fencers · " + panel.completedBouts()
+                + " / " + panel.totalBouts() + " bouts"); progress.getStyleClass().add("pool-panel-progress");
+        VBox heading = new VBox(1, name, progress); heading.getStyleClass().add("pool-panel-heading");
         GridPane grid = new GridPane(); renderPoolMatrix(grid, panel.poolId(), panel.matrixRows());
-        VBox panelNode = new VBox(8, heading, grid); panelNode.getStyleClass().add("pool-panel");
+        VBox panelNode = new VBox(5, heading, grid); panelNode.getStyleClass().add("pool-panel");
         return panelNode;
     }
 
@@ -597,19 +660,26 @@ public final class TournamentView extends BorderPane {
         prepareGrid(grid, "pool-score-grid");
         if (rows.isEmpty()) { addGridCell(grid, "Pool data unavailable.", 0, 0, 280, "compact-grid-empty"); return; }
         List<UUID> opponents = new java.util.ArrayList<>(rows.getFirst().cells().keySet());
-        addGridCell(grid, "", 0, 0, 132, "compact-grid-header", "matrix-fencer-label");
+        boolean compactEightPersonMatrix = rows.size() >= 8;
+        double nameWidth = compactEightPersonMatrix ? 118 : 132;
+        double scoreWidth = compactEightPersonMatrix ? 46 : 52;
+        double rowHeight = compactEightPersonMatrix ? 30 : 34;
+        addGridCell(grid, "", 0, 0, nameWidth, rowHeight, "compact-grid-header", "matrix-fencer-label");
         for (int column = 0; column < opponents.size(); column++) {
-            addGridCell(grid, fencerNameForColumn(rows, opponents.get(column)), column + 1, 0, 52, "compact-grid-header", "matrix-fencer-label");
+            String name = fencerNameForColumn(rows, opponents.get(column));
+            Label header = addGridCell(grid, name, column + 1, 0, scoreWidth, rowHeight, "compact-grid-header", "matrix-fencer-label");
+            configureMatrixName(header, name);
         }
         for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
             PoolMatrixRow row = rows.get(rowIndex); int gridRow = rowIndex + 1;
-            addGridCell(grid, row.fencerName(), 0, gridRow, 132, "compact-grid-header", "matrix-fencer-label");
+            Label rowLabel = addGridCell(grid, row.fencerName(), 0, gridRow, nameWidth, rowHeight, "compact-grid-header", "matrix-fencer-label");
+            configureMatrixName(rowLabel, row.fencerName());
             for (int column = 0; column < opponents.size(); column++) {
                 UUID opponentId = opponents.get(column); String value = row.cell(opponentId);
                 boolean diagonal = "—".equals(value);
                 boolean winner = !diagonal && value != null && !value.isBlank() && isWinner(row, opponentId, value, rows);
                 String displayValue = diagonal || value == null ? "" : winner ? "V" + value : value;
-                Label cell = addGridCell(grid, displayValue, column + 1, gridRow, 52, "compact-grid-cell", "matrix-grid-cell");
+                Label cell = addGridCell(grid, displayValue, column + 1, gridRow, scoreWidth, rowHeight, "compact-grid-cell", "matrix-grid-cell");
                 if (diagonal) cell.getStyleClass().add("matrix-diagonal");
                 else if (value == null || value.isBlank()) cell.getStyleClass().add("matrix-pending");
                 else cell.getStyleClass().add(winner ? "matrix-win" : "matrix-loss");
@@ -653,7 +723,36 @@ public final class TournamentView extends BorderPane {
     }
 
     private static Label addGridCell(GridPane grid, String text, int column, int row, double width, String... styleClasses) {
-        Label cell = new Label(text); cell.setMinWidth(width); cell.setPrefWidth(width); cell.setMaxWidth(width); cell.setMinHeight(34); cell.setPrefHeight(34); cell.setAlignment(Pos.CENTER); cell.getStyleClass().addAll(styleClasses); grid.add(cell, column, row); return cell;
+        return addGridCell(grid, text, column, row, width, 34, styleClasses);
+    }
+
+    private static Label addGridCell(GridPane grid, String text, int column, int row, double width, double height, String... styleClasses) {
+        Label cell = new Label(text); cell.setMinWidth(width); cell.setPrefWidth(width); cell.setMaxWidth(width); cell.setMinHeight(height); cell.setPrefHeight(height); cell.setAlignment(Pos.CENTER); cell.getStyleClass().addAll(styleClasses); grid.add(cell, column, row); return cell;
+    }
+
+    private static void configureMatrixName(Label label, String fullName) {
+        label.setTextOverrun(OverrunStyle.ELLIPSIS);
+        label.setTooltip(new Tooltip(fullName));
+    }
+
+    private static boolean isInside(Node target, Node container) {
+        for (Node current = target; current != null; current = current.getParent()) {
+            if (current == container) return true;
+        }
+        return false;
+    }
+
+    private static boolean hasStyleInHierarchy(Node target, String styleClass) {
+        for (Node current = target; current != null; current = current.getParent()) {
+            if (current.getStyleClass().contains(styleClass)) return true;
+        }
+        return false;
+    }
+
+    private void updatePoolDashboardWidth(double viewportWidth) {
+        double contentWidth = Math.max(1, viewportWidth - 4);
+        poolDashboard.setPrefWidth(contentWidth);
+        poolDashboard.setPrefWrapLength(contentWidth);
     }
 
     private boolean isWinner(PoolMatrixRow row, UUID opponentId, String score, List<PoolMatrixRow> rows) { for (PoolMatrixRow opponent : rows) if (opponent.fencerId().equals(opponentId)) return parse(score) > parse(opponent.cell(row.fencerId())); return false; }
