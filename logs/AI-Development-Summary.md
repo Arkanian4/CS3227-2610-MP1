@@ -202,3 +202,15 @@ These entries are factual summaries for developer verification and later reflect
   by the application shell on an 800 px-high desktop. The tableau now reads its actual post-layout
   `ScrollPane` viewport height and recomputes opening-round spacing on resize instead of imposing a
   minimum viewport height.
+
+## Pool result hierarchy and shortened DE scores
+
+- **Task:** Separate the pool identifier from the result-entry heading and allow time-limited DE
+  bouts to finish below the standard 15-touch maximum.
+- **Decisions:** Stack the pool context above `RECORD RESULT` in the existing view-only component.
+  Keep DE validation in `EliminationBracket`, shared by recording and editing, and treat 15 as an
+  inclusive ceiling rather than a mandatory winning score.
+- **Outcome:** Pool context now reads as metadata, while results such as 10--7 and 5--4 advance the
+  higher-scoring fencer and continue to use existing downstream invalidation rules.
+- **Notable issue:** Existing tests encoded the old mandatory-15 assumption; they were updated to
+  distinguish scores above 15 from valid shorter winning scores.

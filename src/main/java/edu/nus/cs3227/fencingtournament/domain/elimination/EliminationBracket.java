@@ -13,8 +13,7 @@ public record EliminationBracket(UUID id, int size, List<EliminationMatch> match
     public EliminationBracket { matches = List.copyOf(matches); }
     public boolean isComplete() { return matches.stream().filter(match -> match.nextMatchId() == null).allMatch(EliminationMatch::isResolved); }
     public EliminationBracket recordResult(UUID matchId, BoutScore score, int scoreLimit) {
-        if (matchId == null || score == null || score.firstScore() > scoreLimit || score.secondScore() > scoreLimit
-                || Math.max(score.firstScore(), score.secondScore()) != scoreLimit) throw new IllegalArgumentException("DE result must use the configured winning score.");
+        validateScore(matchId, score, scoreLimit);
         List<EliminationMatch> updated = new ArrayList<>(matches); int index = indexOf(updated, matchId); EliminationMatch match = updated.get(index);
         if (!match.isReady()) throw new IllegalStateException("This DE bout is not ready for a result.");
         UUID winner = score.firstFencerWon() ? match.firstSlot().fencerId() : match.secondSlot().fencerId();
@@ -79,8 +78,10 @@ public record EliminationBracket(UUID id, int size, List<EliminationMatch> match
         return descendants;
     }
     private static void validateScore(UUID matchId, BoutScore score, int scoreLimit) {
-        if (matchId == null || score == null || score.firstScore() > scoreLimit || score.secondScore() > scoreLimit
-                || Math.max(score.firstScore(), score.secondScore()) != scoreLimit) throw new IllegalArgumentException("DE result must use the configured winning score.");
+        if (matchId == null || score == null || scoreLimit <= 0
+                || score.firstScore() > scoreLimit || score.secondScore() > scoreLimit) {
+            throw new IllegalArgumentException("DE scores must not exceed the configured maximum.");
+        }
     }
     private static void resolveByes(List<EliminationMatch> matches) {
         boolean changed;

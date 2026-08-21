@@ -378,6 +378,7 @@
     -fx-border-width: 1 0 0 0;
 }
 .result-entry-compact .result-state { -fx-font-weight: 600; -fx-text-fill: -ft-text-secondary; }
+.result-entry .section-kicker { -fx-padding: 0 0 2 0; }
 .result-pool-context {
     -fx-padding: 2 6;
     -fx-background-color: -ft-accent-subtle;

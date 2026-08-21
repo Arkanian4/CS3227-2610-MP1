@@ -97,7 +97,7 @@ public final class TournamentView extends BorderPane {
     private final Label resultStateLabel = new Label();
     private final VBox scoreFields = new VBox();
     private final VBox resultEntry = new VBox();
-    private final HBox poolResultTitleRow = new HBox();
+    private final VBox poolResultHeading = new VBox();
     private final HBox poolResultNames = new HBox();
 
     private final GridPane standingsGrid = new GridPane();
@@ -438,7 +438,7 @@ public final class TournamentView extends BorderPane {
         resultEntry.getStyleClass().add("result-entry-compact");
     }
     private void expandPoolResultEntry() {
-        resultEntry.getChildren().setAll(poolResultTitleRow, poolResultNames, resultStateLabel, scoreFields, editPoolResultButton);
+        resultEntry.getChildren().setAll(poolResultHeading, poolResultNames, resultStateLabel, scoreFields, editPoolResultButton);
         resultEntry.setAlignment(Pos.CENTER);
         resultEntry.getStyleClass().remove("result-entry-compact");
     }
@@ -612,7 +612,7 @@ public final class TournamentView extends BorderPane {
         poolResultNames.getChildren().setAll(firstFencerLabel, versus, secondFencerLabel); poolResultNames.setSpacing(14); poolResultNames.setAlignment(Pos.CENTER);
         HBox scoreLine = new HBox(14, firstScoreField, dash, secondScoreField); scoreLine.setAlignment(Pos.CENTER);
         scoreFields.getChildren().setAll(scoreLine, recordResultButton); scoreFields.setSpacing(8); scoreFields.setAlignment(Pos.CENTER); editPoolResultButton.getStyleClass().add("secondary-action");
-        poolResultTitleRow.getChildren().setAll(title, selectedPoolLabel); poolResultTitleRow.setAlignment(Pos.CENTER); poolResultTitleRow.setSpacing(10);
+        poolResultHeading.getChildren().setAll(selectedPoolLabel, title); poolResultHeading.setAlignment(Pos.CENTER); poolResultHeading.setSpacing(2);
         expandPoolResultEntry(); resultEntry.getStyleClass().add("result-entry");
     }
     private VBox buildStandingsTab() {

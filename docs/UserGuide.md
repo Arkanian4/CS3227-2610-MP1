@@ -64,8 +64,9 @@ compete, advance to direct elimination.
 ## Direct Elimination and final results
 
 Choose **Generate direct elimination** from Pool Result. The seeded tableau expands to the next
-power of two; higher seeds receive automatic byes. Ready DE bouts are to 15, using the same
-non-negative, non-tied, winning-score validation as pools.
+power of two; higher seeds receive automatic byes. A DE score may use any non-negative,
+non-tied winning score up to 15 (for example, 10--7 or 5--4); the higher score wins and no score
+may exceed 15.
 
 Completed non-bye DE bouts can be corrected with **Edit result**. Scores are prefilled. Choose
 **Save changes** or **Cancel**. If a changed winner would invalidate a completed later bout, the

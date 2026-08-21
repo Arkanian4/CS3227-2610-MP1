@@ -46,14 +46,17 @@ class BracketGeneratorTest {
     }
 
     @Test
-    void recordedResultAdvancesWinnerAndCompletesTwoFencerBracket() {
-        List<UUID> fencers = ids(2);
-        EliminationBracket bracket = generator.generate(fencers);
-        EliminationMatch opening = bracket.matches().getFirst();
-        EliminationBracket completed = bracket.recordResult(opening.id(), new BoutScore(15, 8), 15);
+    void resultsUpToTheMaximumAreAcceptedAndAdvanceTheHigherScoringFencer() {
+        for (BoutScore score : List.of(new BoutScore(15, 12), new BoutScore(10, 7), new BoutScore(5, 4))) {
+            List<UUID> fencers = ids(2);
+            EliminationBracket bracket = generator.generate(fencers);
+            EliminationMatch opening = bracket.matches().getFirst();
+            EliminationBracket completed = bracket.recordResult(opening.id(), score, 15);
 
-        assertTrue(completed.isComplete());
-        assertEquals(fencers.get(0), completed.matches().getFirst().winnerId());
+            assertTrue(completed.isComplete());
+            assertEquals(fencers.get(0), completed.matches().getFirst().winnerId());
+            assertEquals(score, completed.matches().getFirst().score());
+        }
     }
 
     @Test
@@ -78,9 +81,9 @@ class BracketGeneratorTest {
         EliminationMatch semiFinal = openingMatches(bracket).getFirst();
         EliminationMatch finalMatch = finalMatch(bracket);
 
-        EliminationBracket corrected = bracket.replaceResult(semiFinal.id(), new BoutScore(15, 12), 15, false);
+        EliminationBracket corrected = bracket.replaceResult(semiFinal.id(), new BoutScore(10, 7), 15, false);
 
-        assertEquals(new BoutScore(15, 12), match(corrected, semiFinal.id()).score());
+        assertEquals(new BoutScore(10, 7), match(corrected, semiFinal.id()).score());
         assertEquals(finalMatch.score(), finalMatch(corrected).score());
         assertTrue(corrected.isComplete());
     }
@@ -113,15 +116,21 @@ class BracketGeneratorTest {
     }
 
     @Test
-    void invalidEditedScoreIsRejectedWithoutChangingBracket() {
+    void scoreAboveConfiguredMaximumIsRejectedWithoutChangingBracket() {
         EliminationBracket bracket = completedFourFencerBracket();
         EliminationMatch finalMatch = finalMatch(bracket);
 
         assertThrows(IllegalArgumentException.class,
-                () -> bracket.replaceResult(finalMatch.id(), new BoutScore(14, 10), 15, false));
+                () -> bracket.replaceResult(finalMatch.id(), new BoutScore(16, 10), 15, false));
 
         assertEquals(new BoutScore(15, 11), finalMatch(bracket).score());
         assertTrue(bracket.isComplete());
+    }
+
+    @Test
+    void tiedAndNegativeScoresAreRejected() {
+        assertThrows(IllegalArgumentException.class, () -> new BoutScore(10, 10));
+        assertThrows(IllegalArgumentException.class, () -> new BoutScore(-1, 0));
     }
 
     private EliminationBracket completedFourFencerBracket() {
