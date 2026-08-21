@@ -40,7 +40,12 @@ public final class Tournament {
         this.settings = Objects.requireNonNull(settings, "Tournament settings must not be null.");
         validateRoster(fencers);
         this.fencers = new ArrayList<>(fencers);
-        this.seeding = seeding;
+        // The setup roster has one authoritative order. Older saved setup tournaments
+        // did not persist a seeding until the organiser confirmed it, so initialise a
+        // stable registration-order seed list when loading one of those files.
+        this.seeding = seeding == null && pools.isEmpty() && eliminationBracket == null
+                ? new Seeding(this.fencers.stream().map(Fencer::id).toList())
+                : seeding;
         this.pools = new ArrayList<>(pools);
         validatePoolResults(this.pools, settings.poolBoutScoreLimit());
         this.eliminationBracket = eliminationBracket;
@@ -73,6 +78,9 @@ public final class Tournament {
             throw new IllegalArgumentException("A fencer with this name is already registered.");
         }
         fencers.add(fencer);
+        List<UUID> orderedIds = new ArrayList<>(seeding.fencerIds());
+        orderedIds.add(fencer.id());
+        seeding = new Seeding(orderedIds);
     }
 
     /** Removes a participant by ID and reports whether a fencer was removed. */
@@ -81,7 +89,13 @@ public final class Tournament {
         if (fencerId == null) {
             throw new IllegalArgumentException("Fencer ID must not be null.");
         }
-        return fencers.removeIf(fencer -> fencer.id().equals(fencerId));
+        boolean removed = fencers.removeIf(fencer -> fencer.id().equals(fencerId));
+        if (removed) {
+            List<UUID> orderedIds = new ArrayList<>(seeding.fencerIds());
+            orderedIds.remove(fencerId);
+            seeding = new Seeding(orderedIds);
+        }
+        return removed;
     }
 
     /** Finds a registered participant by immutable identity. */
@@ -148,7 +162,7 @@ public final class Tournament {
         if (!pools.isEmpty()) {
             return TournamentPhase.POOL_PHASE;
         }
-        return seeding == null ? TournamentPhase.REGISTRATION : TournamentPhase.SEEDING;
+        return TournamentPhase.REGISTRATION;
     }
 
     public List<Pool> pools() {
@@ -232,7 +246,7 @@ public final class Tournament {
     }
 
     private void requireRegistrationPhase() {
-        if (seeding != null || !pools.isEmpty() || eliminationBracket != null) {
+        if (!pools.isEmpty() || eliminationBracket != null) {
             throw new IllegalStateException("The tournament is no longer in the registration phase.");
         }
     }

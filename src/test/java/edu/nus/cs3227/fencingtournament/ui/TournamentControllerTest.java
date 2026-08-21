@@ -535,7 +535,7 @@ class TournamentControllerTest {
     }
 
     @Test
-    void registrationRosterUsesCompactHeightForSmallFields() throws Exception {
+    void unifiedSetupRosterUsesCompactHeightForSmallFields() throws Exception {
         onJavaFxThread(() -> {
             TournamentView view = new TournamentView();
             List<Fencer> fencers = List.of(
@@ -545,7 +545,7 @@ class TournamentControllerTest {
 
             view.renderFencers(fencers, fencers);
 
-            assertEquals(122.0, view.fencerList().getPrefHeight());
+            assertEquals(128.0, view.seedList().getPrefHeight());
         });
     }
 
@@ -565,12 +565,10 @@ class TournamentControllerTest {
             service.createTournament("Club Open");
             Fencer alice = service.addFencer("Alice");
             Fencer ben = service.addFencer("Ben");
-            service.seedFencers(List.of(alice.id(), ben.id()));
             TournamentView view = new TournamentView();
             new TournamentController(service, view);
 
-            view.seedList().getSelectionModel().select(ben);
-            view.moveSeedUpButton().fire();
+            assertTrue(service.moveSeedFencer(ben.id(), 0));
             view.generatePoolsButton().fire();
 
             assertEquals(List.of(ben.id(), alice.id()), service.currentTournament().orElseThrow().seeding().fencerIds());

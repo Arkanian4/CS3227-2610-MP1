@@ -331,3 +331,17 @@ These entries are factual summaries for developer verification and later reflect
 - **Outcome:** The app opens maximized and refreshes the active size-dependent workspace after the
   stage is shown and after stage changes. A JavaFX regression test verifies Pool and DE bout
   handlers work after first layout without a manual resize.
+
+## Unified Setup workflow
+
+- **Task:** Merge the separate Registration and Seeding screens into one Setup workspace without
+  changing pool-generation rules.
+- **Decisions:** Make the persisted `Seeding` order authoritative throughout pre-pool setup.
+  `Tournament` appends/removes IDs with roster changes, and `TournamentService.moveSeedFencer`
+  continues to perform insertion-based moves. The JavaFX view renders only that ordered list,
+  with drag handles and compact row-level removal actions; it no longer exposes a confirmation,
+  Move Up/Down, or separate registration roster. Legacy setup saves with null seeding are
+  reconstructed in registration order for compatibility.
+- **Outcome:** Adding, removing, and reordering a fencer immediately updates the visible seed
+  numbers. Selecting the pool-size option and generating pools uses the displayed order directly;
+  autosave continues to occur through the existing service mutation path.

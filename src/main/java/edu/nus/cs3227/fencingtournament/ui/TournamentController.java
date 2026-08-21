@@ -50,11 +50,8 @@ public final class TournamentController {
         view.homeButton().setOnAction(event -> { service.returnToTournamentHome(); refreshWorkspace(); });
         view.loadButton().setOnAction(event -> loadTournament());
         view.addFencerButton().setOnAction(event -> addFencer());
-        view.removeFencerButton().setOnAction(event -> removeFencer());
-        view.moveSeedUpButton().setOnAction(event -> moveSeed(-1));
-        view.moveSeedDownButton().setOnAction(event -> moveSeed(1));
         view.setSeedMoveHandler(this::moveSeedFencer);
-        view.confirmSeedingButton().setOnAction(event -> applySeeding());
+        view.setFencerRemoveHandler(this::removeFencer);
         view.generatePoolsButton().setOnAction(event -> generatePools());
         view.generateEliminationButton().setOnAction(event -> generateEliminationBracket());
         view.poolList().getSelectionModel().selectedItemProperty().addListener(
@@ -85,7 +82,7 @@ public final class TournamentController {
             view.clearTournamentNameValidationError();
             view.tournamentNameField().clear();
             refreshWorkspace();
-            view.showStatus("Tournament created. Register fencers, then apply seeding.");
+            view.showStatus("Tournament created. Add fencers and arrange the seed order.");
         } catch (IllegalArgumentException exception) {
             String message = tournamentNameValidationMessage(exception);
             if (message == null) showError(exception); else view.showTournamentNameValidationError(message);
@@ -182,12 +179,9 @@ public final class TournamentController {
         }
     }
 
-    private void removeFencer() {
-        Fencer selected = view.fencerList().getSelectionModel().getSelectedItem();
-        if (selected == null) {
-            view.showFencerValidationError("Select a fencer to remove.", false);
-            return;
-        }
+    private void removeFencer(UUID fencerId) {
+        Fencer selected = service.currentTournament().flatMap(tournament -> tournament.findFencer(fencerId)).orElse(null);
+        if (selected == null) return;
         Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION,
                 "Remove " + selected.name() + " from this tournament?", ButtonType.CANCEL, ButtonType.OK);
         UiTheme.apply(confirmation.getDialogPane());
@@ -203,28 +197,11 @@ public final class TournamentController {
         }
     }
 
-    private void moveSeed(int direction) {
-        int selected = view.seedList().getSelectionModel().getSelectedIndex();
-        int destination = selected + direction;
-        if (selected < 0 || destination < 0 || destination >= view.seedList().getItems().size()) return;
-        moveSeedFencer(view.seedList().getItems().get(selected).id(), destination);
-    }
-
     private void moveSeedFencer(UUID fencerId, int destination) {
         try {
             if (!service.moveSeedFencer(fencerId, destination)) return;
             refreshWorkspace();
             view.seedList().getSelectionModel().select(destination);
-        } catch (IllegalArgumentException | IllegalStateException | TournamentPersistenceException exception) {
-            showError(exception);
-        }
-    }
-
-    private void applySeeding() {
-        try {
-            service.seedFencers(view.seedList().getItems().stream().map(Fencer::id).toList());
-            refreshWorkspace();
-            view.showStatus("Seeding applied. Generate pools when ready.");
         } catch (IllegalArgumentException | IllegalStateException | TournamentPersistenceException exception) {
             showError(exception);
         }

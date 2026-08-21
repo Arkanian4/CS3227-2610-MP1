@@ -1,6 +1,7 @@
 package edu.nus.cs3227.fencingtournament.domain;
 
 import edu.nus.cs3227.fencingtournament.domain.standings.TieBreakPolicy;
+import edu.nus.cs3227.fencingtournament.domain.rules.PoolGenerator;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -108,11 +109,13 @@ class DomainSkeletonTest {
     }
 
     @Test
-    void rosterCannotBeChangedAfterRegistrationStateHasEnded() {
+    void rosterCanBeManagedThroughoutSetupButLocksAfterPoolsAreGenerated() {
         Fencer fencer = Fencer.create("Alex Tan");
         Tournament tournament = new Tournament(UUID.randomUUID(), "Tournament", testSettings(),
                 List.of(fencer), new Seeding(List.of(fencer.id())), List.of(), null);
 
+        assertDoesNotThrow(() -> tournament.addFencer(Fencer.create("Jamie Lim")));
+        tournament.installPools(new PoolGenerator().generate(tournament.seeding(), 5));
         assertThrows(IllegalStateException.class, () -> tournament.addFencer(Fencer.create("Jamie Lim")));
         assertThrows(IllegalStateException.class, () -> tournament.removeFencer(fencer.id()));
     }

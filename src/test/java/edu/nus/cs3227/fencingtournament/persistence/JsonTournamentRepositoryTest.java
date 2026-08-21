@@ -69,6 +69,37 @@ class JsonTournamentRepositoryTest {
     }
 
     @Test
+    void legacySetupSaveWithoutSeedingLoadsWithRegistrationOrderAsItsSeedOrder() throws IOException {
+        Fencer first = Fencer.create("Alex Tan");
+        Fencer second = Fencer.create("Jamie Lim");
+        Path file = temporaryDirectory.resolve("legacy-setup.json");
+        Files.writeString(file, """
+                {
+                  "id": "%s",
+                  "name": "Internal Open",
+                  "settings": {
+                    "targetPoolSize": 5,
+                    "poolBoutScoreLimit": 5,
+                    "eliminationBoutScoreLimit": 15,
+                    "advancingFencerCount": 8,
+                    "tieBreakPolicy": { "criteria": [] }
+                  },
+                  "fencers": [
+                    { "id": "%s", "name": "Alex Tan" },
+                    { "id": "%s", "name": "Jamie Lim" }
+                  ],
+                  "seeding": null,
+                  "pools": [],
+                  "eliminationBracket": null
+                }
+                """.formatted(UUID.randomUUID(), first.id(), second.id()));
+
+        Tournament loaded = repository.load(file).orElseThrow();
+
+        assertEquals(List.of(first.id(), second.id()), loaded.seeding().fencerIds());
+    }
+
+    @Test
     void settingsSurviveRoundTrip() throws IOException {
         TournamentSettings settings = testSettings();
         Tournament original = Tournament.create("Internal Open", settings);

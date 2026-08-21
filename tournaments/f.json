@@ -1,0 +1,61 @@
+{
+  "id" : "f95427a6-545b-4699-9322-d3c7129cfc02",
+  "name" : "f",
+  "settings" : {
+    "targetPoolSize" : 5,
+    "poolBoutScoreLimit" : 5,
+    "eliminationBoutScoreLimit" : 15,
+    "advancingFencerCount" : 16,
+    "tieBreakPolicy" : {
+      "criteria" : [ "VICTORY_RATIO", "INDICATOR", "TOUCHES_SCORED", "SEED" ]
+    }
+  },
+  "fencers" : [ {
+    "id" : "396ede0c-b5f6-4909-b930-6b225fc405b4",
+    "name" : "ben"
+  }, {
+    "id" : "8ba33dc6-27de-4709-9b4b-29e680f2d6a1",
+    "name" : "alex"
+  } ],
+  "seeding" : {
+    "fencerIds" : [ "396ede0c-b5f6-4909-b930-6b225fc405b4", "8ba33dc6-27de-4709-9b4b-29e680f2d6a1" ]
+  },
+  "pools" : [ {
+    "id" : "0639f776-9d4a-43a2-8af8-8195b1d5aa83",
+    "name" : "POOL #1",
+    "memberIds" : [ "396ede0c-b5f6-4909-b930-6b225fc405b4", "8ba33dc6-27de-4709-9b4b-29e680f2d6a1" ],
+    "bouts" : [ {
+      "id" : "89591356-23d1-42c0-932a-8169601fbbc1",
+      "firstFencerId" : "396ede0c-b5f6-4909-b930-6b225fc405b4",
+      "secondFencerId" : "8ba33dc6-27de-4709-9b4b-29e680f2d6a1",
+      "score" : {
+        "firstScore" : 1,
+        "secondScore" : 5
+      }
+    } ]
+  } ],
+  "eliminationBracket" : {
+    "id" : "27b8dead-9336-3bab-bbdd-b5beafc306e1",
+    "size" : 2,
+    "matches" : [ {
+      "id" : "020d72ce-223d-3e38-b3be-6e57b4c0af53",
+      "round" : 1,
+      "position" : 0,
+      "firstSlot" : {
+        "fencerId" : "8ba33dc6-27de-4709-9b4b-29e680f2d6a1",
+        "resolved" : true
+      },
+      "secondSlot" : {
+        "fencerId" : "396ede0c-b5f6-4909-b930-6b225fc405b4",
+        "resolved" : true
+      },
+      "score" : {
+        "firstScore" : 5,
+        "secondScore" : 15
+      },
+      "winnerId" : "396ede0c-b5f6-4909-b930-6b225fc405b4",
+      "nextMatchId" : null,
+      "nextMatchSlot" : null
+    } ]
+  }
+}

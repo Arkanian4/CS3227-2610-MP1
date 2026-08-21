@@ -32,6 +32,21 @@ class TournamentServiceTest {
     }
 
     @Test
+    void setupOrderAppendsNewFencersAndRenumbersAfterRemoval() {
+        TournamentService service = new TournamentService(new InMemoryRepository());
+        service.createTournament("Internal Open");
+        Fencer alice = service.addFencer("Alice");
+        Fencer ben = service.addFencer("Ben");
+        Fencer chloe = service.addFencer("Chloe");
+
+        assertEquals(List.of(alice.id(), ben.id(), chloe.id()),
+                service.currentTournament().orElseThrow().seeding().fencerIds());
+        assertTrue(service.removeFencer(ben.id()));
+        assertEquals(List.of(alice.id(), chloe.id()),
+                service.currentTournament().orElseThrow().seeding().fencerIds());
+    }
+
+    @Test
     void multipleTournamentsCanBeSelectedWithoutSharingRosterState() {
         TournamentService service = new TournamentService(new InMemoryRepository());
 
@@ -74,15 +89,12 @@ class TournamentServiceTest {
     }
 
     @Test
-    void serviceCoordinatesSeedingPoolGenerationAndReadModels() {
+    void serviceGeneratesPoolsFromTheCurrentSetupOrderWithoutASeparateConfirmation() {
         TournamentService service = new TournamentService(new InMemoryRepository());
         service.createTournament("Internal Open");
         List<Fencer> fencers = java.util.stream.IntStream.range(0, 5)
                 .mapToObj(index -> service.addFencer("Fencer " + (index + 1)))
                 .toList();
-
-        service.seedFencers(fencers.stream().map(Fencer::id).toList());
-        assertEquals(TournamentPhase.SEEDING, service.currentPhase());
 
         service.generatePools();
 
@@ -99,8 +111,6 @@ class TournamentServiceTest {
         service.createTournament("Internal Open");
         List<Fencer> fencers = java.util.stream.IntStream.range(0, 4)
                 .mapToObj(index -> service.addFencer("Fencer " + (index + 1))).toList();
-        service.seedFencers(fencers.stream().map(Fencer::id).toList());
-
         assertTrue(service.moveSeedFencer(fencers.getFirst().id(), 3));
         assertEquals(List.of(fencers.get(1).id(), fencers.get(2).id(), fencers.get(3).id(), fencers.getFirst().id()),
                 service.currentTournament().orElseThrow().seeding().fencerIds());

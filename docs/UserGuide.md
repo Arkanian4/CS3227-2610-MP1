@@ -44,18 +44,21 @@ Use the compact **Light/Dark** switch above the colour swatches to set the neutr
 independently. The selected appearance changes immediately and is remembered when the app is
 reopened.
 
-## Registration and seeding
+## Setup
 
-Add fencers by display name using the compact **Fencer name** entry row. Names must be non-blank
-and unique within the tournament. The roster is numbered in registration order; select a row and
-choose **Remove selected** to remove that fencer after confirmation.
-Name and roster-selection mistakes are shown next to the relevant registration controls, without
-clearing a name that needs correction.
+**Setup** combines registration and initial seeding in one workspace. Add fencers by display name
+using the compact **Fencer name** entry row; pressing Enter adds the name too. Names must be
+non-blank and unique within the tournament. A successful addition appears at the bottom of the
+single numbered **Seed order** list.
 
-With at least two fencers, choose **Continue to seeding** at the bottom of the registration
-workspace. Drag a fencer to a new position, or use **Move up** and **Move down**, to reorder the
-provisional seed list. **Generate pools** locks the order by advancing to the pool stage and uses
-it to distribute fencers across pools; it is also the final standings tie-breaker.
+Drag a row using its handle to insert it at a new position. Seed numbers update immediately. Use
+the compact **×** action at the right of a row to remove that fencer after confirmation; the remaining
+rows are renumbered automatically. Name errors appear next to the entry field without clearing
+the text that needs correction.
+
+With at least two fencers, choose a maximum pool size and select **Generate pools**. The displayed
+order is used directly to distribute fencers across pools and is retained as the final-standings
+tie-breaker. There is no separate confirmation or registration-to-seeding step.
 
 ## Pools and Pool Result
 

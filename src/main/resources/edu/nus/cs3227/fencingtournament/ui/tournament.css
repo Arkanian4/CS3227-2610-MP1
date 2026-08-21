@@ -343,6 +343,7 @@
 .setup-stage { -fx-spacing: 14; }
 .setup-workspace { -fx-alignment: TOP_LEFT; -fx-padding: 4 0 0 0; }
 .registration-layout { -fx-spacing: 18; -fx-padding: 4 0 0 0; }
+.unified-setup-layout { -fx-spacing: 16; -fx-padding: 4 0 0 0; }
 .registration-add-form {
     -fx-alignment: CENTER_LEFT;
     -fx-padding: 10 0 12 0;
@@ -382,6 +383,46 @@
 .fencer-row-name { -fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: -ft-text-primary; }
 .registration-roster .list-cell:filled:selected .fencer-row-number,
 .registration-roster .list-cell:filled:selected .fencer-row-name { -fx-text-fill: -ft-accent-strong; }
+.setup-seed-list {
+    -fx-background-color: transparent;
+    -fx-border-color: -ft-border transparent -ft-border transparent;
+    -fx-border-radius: 0;
+    -fx-background-radius: 0;
+}
+.setup-seed-list .list-cell {
+    -fx-padding: 0 12;
+    -fx-border-color: transparent transparent -ft-border transparent;
+    -fx-border-width: 0 0 1 0;
+}
+.setup-seed-list .list-cell:filled:last-visible { -fx-border-color: transparent; }
+.setup-empty-list { -fx-font-size: 13px; -fx-text-fill: -ft-text-secondary; -fx-alignment: CENTER; }
+.setup-footer {
+    -fx-padding: 14 0 0 0;
+    -fx-border-color: -ft-border transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+}
+.seed-row-remove {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: -ft-text-muted;
+    -fx-font-size: 18px;
+    -fx-font-weight: 500;
+    -fx-min-width: 28px;
+    -fx-pref-width: 28px;
+    -fx-max-width: 28px;
+    -fx-min-height: 28px;
+    -fx-pref-height: 28px;
+    -fx-max-height: 28px;
+    -fx-padding: 0;
+    -fx-alignment: CENTER;
+    -fx-cursor: hand;
+}
+.seed-row-remove:hover, .seed-row-remove:focused {
+    -fx-background-color: -ft-danger-subtle;
+    -fx-background-radius: 3;
+    -fx-border-color: transparent;
+    -fx-text-fill: -ft-danger-text;
+}
 .registration-progression {
     -fx-padding: 14 0 0 0;
     -fx-border-color: -ft-border transparent transparent transparent;

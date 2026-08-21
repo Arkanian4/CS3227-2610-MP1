@@ -24,7 +24,7 @@ collection, invokes rule calculators, and autosaves after successful mutations. 
 tournament deletion: it removes the UUID-keyed collection entry, clears a matching active reference,
 and delegates removal of the corresponding local JSON file to the repository.
 
-`domain.Tournament` is the aggregate root. It protects registration, seeding, pool, and DE phase
+`domain.Tournament` is the aggregate root. It protects setup, pool, and DE phase
 invariants. `domain.rules` contains pool generation, standings, bracket generation, and final
 placement calculations.
 
@@ -90,9 +90,11 @@ width and wrap length follow the visible scroll viewport. The two-pool format us
 dimensions and disables board scrolling; three or more pools retain normal wrapping and scroll only
 after readable panels no longer fit.
 
-Registration deliberately retains a JavaFX `ListView` because its selection model is used by the
-remove-fencer controller workflow. The view customises it into a numbered roster ledger and sets a
-compact preferred height from the current roster size, rather than reserving a large empty list.
+Setup uses one JavaFX `ListView` for the authoritative pre-pool seed order. Its custom cells pair
+a visible drag handle and one-based seed number with a compact row-level remove action. The view
+reports drag insertion and removal intent only; the controller delegates those mutations to the
+service, then refreshes the list from the aggregate so the UI cannot become a competing source of
+order.
 
 ## Key decisions
 
@@ -101,16 +103,18 @@ reliable references and persistence.
 
 The phase is derived from aggregate state rather than persisted separately:
 
-`REGISTRATION → SEEDING → POOL_PHASE → ELIMINATION_PHASE → COMPLETE`.
+`REGISTRATION (Setup) → POOL_PHASE → ELIMINATION_PHASE → COMPLETE`.
 
 The UI selects the tab matching the opened tournament phase. This avoids retaining a previous
 tournament tab when switching from Tournament Home.
 
 Pool generation uses manual seed order, balanced snake distribution, and round-robin bouts. The
 existing 5--7 pool behavior is retained; selecting a maximum of 8 explicitly permits eight-person
-pools and lets sixteen fencers form two 8-person pools. Dragging a seed row delegates to
-`TournamentService.moveSeedFencer`, which validates and updates the pre-pool seeding before the
-view is refreshed; `generatePools` then uses that service-owned order. Overall placing uses victory ratio,
+pools and lets sixteen fencers form two 8-person pools. Setup has one authoritative `Seeding`
+order: adding a fencer appends its ID, removing a fencer removes its ID, and dragging a seed row
+delegates to `TournamentService.moveSeedFencer` for insertion-based reordering. The pre-pool
+order remains editable until `generatePools` consumes it; older setup JSON with a null seeding
+value is normalised to registration order on domain reconstruction. Overall placing uses victory ratio,
 indicator, touches scored, and original seed. The top 16 Pool Result
 places advance to a next-power-of-two DE bracket with automatic byes for higher seeds.
 
