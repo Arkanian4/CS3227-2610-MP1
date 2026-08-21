@@ -177,6 +177,13 @@ public final class TournamentView extends BorderPane {
         return scene;
     }
 
+    /** Rebuilds size-dependent boards only after their ScrollPane viewports have real bounds. */
+    public void initializeAfterStageShown() {
+        applyCss();
+        layout();
+        refreshSizeDependentStageLayout();
+    }
+
     public TextField tournamentNameField() { return tournamentNameField; }
     public Button createButton() { return createButton; }
     public Label tournamentNameValidationErrorLabel() { return tournamentNameValidationErrorLabel; }
@@ -798,6 +805,19 @@ public final class TournamentView extends BorderPane {
         tabs.getSelectionModel().select(stage);
         stageContent.getChildren().setAll(stage.getContent());
         refreshNavigationState();
+        Platform.runLater(this::refreshSizeDependentStageLayout);
+    }
+    private void refreshSizeDependentStageLayout() {
+        if (activeStage == poolsTab) {
+            double viewportWidth = poolDashboardScroll.getViewportBounds().getWidth();
+            if (viewportWidth > 0) {
+                updatePoolDashboardWidth(viewportWidth);
+                if (!renderedPoolPanels.isEmpty()) renderPoolDashboard(renderedPoolPanels);
+            }
+        }
+        if (activeStage == eliminationTab && !renderedEliminationMatches.isEmpty()) {
+            requestEliminationRelayout();
+        }
     }
     private void refreshNavigationState() {
         setNavigationSelected(homeButton, activeStage == null);

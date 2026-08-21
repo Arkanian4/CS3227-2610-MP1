@@ -72,6 +72,12 @@ The shell gives each category of information one visual home: the top bar holds 
 an optional current-tournament context, global file import, and the open tournament's stage
 tracker; the sidebar holds Home; pages own their titles and stage-specific actions.
 
+The controller can render a tournament before the JavaFX stage is visible, when `ScrollPane`
+viewports report zero bounds. `FencingTournamentApp` invokes
+`TournamentView.initializeAfterStageShown` after `Stage.show()`, rebuilding the active
+size-dependent Pool or DE board with real dimensions. Stage switches use the same refresh path so
+first-render hit regions do not depend on a user resize.
+
 The Pools stage receives a `PoolDashboardPanel` per pool and renders the matrices together in a
 wrapping dashboard. A `PoolMatrixSelection` carries the pool ID as well as both fencer IDs, so a
 matrix cell can select the correct pool and scheduled bout without relying on a visible navigator.

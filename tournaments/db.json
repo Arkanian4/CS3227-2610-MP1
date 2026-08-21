@@ -1,0 +1,17 @@
+{
+  "id" : "4a8931cb-53b3-4148-af4b-5260f2e4fe61",
+  "name" : "db",
+  "settings" : {
+    "targetPoolSize" : 5,
+    "poolBoutScoreLimit" : 5,
+    "eliminationBoutScoreLimit" : 15,
+    "advancingFencerCount" : 16,
+    "tieBreakPolicy" : {
+      "criteria" : [ "VICTORY_RATIO", "INDICATOR", "TOUCHES_SCORED", "SEED" ]
+    }
+  },
+  "fencers" : [ ],
+  "seeding" : null,
+  "pools" : [ ],
+  "eliminationBracket" : null
+}

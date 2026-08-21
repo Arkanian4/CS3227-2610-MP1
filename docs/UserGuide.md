@@ -10,6 +10,9 @@ Install JDK 21 or later. From the project root, run:
 
 Run the tests with `./gradlew.bat test`.
 
+The application opens maximized for desktop tournament use. Pool and Direct Elimination bouts are
+selectable immediately; resizing the window is not required before recording a result.
+
 ## Tournament Home
 
 Tournament Home lists ongoing tournaments before completed tournaments. Choose **Open** to

@@ -320,3 +320,14 @@ These entries are factual summaries for developer verification and later reflect
 - **Outcome:** Tournament Home, initial tournament creation, registration, and seeding reuse the
   existing inline error label and subtle invalid-control border. Text edits, successful actions,
   selection changes, and cancelled creation clear stale feedback.
+
+## Initial board-layout correction
+
+- **Task:** Fix Pool and Direct Elimination bouts that were not selectable until the application
+  window was resized.
+- **Cause:** Rendering occurred before `Stage.show()`, while the Pool `ScrollPane` viewport and
+  DE workspace had zero bounds. The Pool board was assigned a one-pixel preferred width and the
+  DE board used provisional geometry; resize listeners later corrected both.
+- **Outcome:** The app opens maximized and refreshes the active size-dependent workspace after the
+  stage is shown and after stage changes. A JavaFX regression test verifies Pool and DE bout
+  handlers work after first layout without a manual resize.

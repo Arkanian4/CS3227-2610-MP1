@@ -15,6 +15,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -455,6 +456,57 @@ class TournamentControllerTest {
             view.layout();
 
             assertTrue(view.poolDashboard().getPrefWidth() > 1_000);
+        });
+    }
+
+    @Test
+    void firstShownLayoutMakesPoolAndDeBoutsInteractiveWithoutAResize() throws Exception {
+        onJavaFxThread(() -> {
+            TournamentView view = new TournamentView();
+            UUID poolId = UUID.randomUUID();
+            UUID first = UUID.randomUUID();
+            UUID second = UUID.randomUUID();
+            AtomicReference<PoolMatrixSelection> poolSelection = new AtomicReference<>();
+            AtomicReference<UUID> deSelection = new AtomicReference<>();
+            view.setMatrixCellHandler(poolSelection::set);
+            view.setEliminationMatchHandler(deSelection::set);
+            LinkedHashMap<UUID, String> firstCells = new LinkedHashMap<>();
+            firstCells.put(first, "—"); firstCells.put(second, "");
+            LinkedHashMap<UUID, String> secondCells = new LinkedHashMap<>();
+            secondCells.put(first, ""); secondCells.put(second, "—");
+            List<PoolMatrixRow> rows = List.of(new PoolMatrixRow(first, "Alice", firstCells),
+                    new PoolMatrixRow(second, "Ben", secondCells));
+
+            view.renderPoolDashboard(List.of(new PoolDashboardPanel(poolId, "POOL #1", 2, 0, 1, rows)));
+            view.selectPoolsTab();
+            view.scene();
+            view.resize(1280, 800);
+            view.applyCss();
+            view.layout();
+            view.initializeAfterStageShown();
+
+            GridPane matrix = (GridPane) ((VBox) view.poolDashboard().getChildren().getFirst()).getChildren().get(1);
+            Label pending = matrix.getChildren().stream().filter(Label.class::isInstance).map(Label.class::cast)
+                    .filter(cell -> Integer.valueOf(1).equals(GridPane.getRowIndex(cell))
+                            && Integer.valueOf(2).equals(GridPane.getColumnIndex(cell)))
+                    .findFirst().orElseThrow();
+            pending.fireEvent(new MouseEvent(MouseEvent.MOUSE_CLICKED, 0, 0, 0, 0,
+                    javafx.scene.input.MouseButton.PRIMARY, 1, false, false, false, false, true,
+                    false, false, true, false, false, null));
+            assertEquals(new PoolMatrixSelection(poolId, first, second), poolSelection.get());
+
+            UUID matchId = UUID.randomUUID();
+            view.renderEliminationBracket(List.of(new EliminationMatchRow(matchId, 1, 0,
+                    new EliminationParticipant(1, "Alice", "", false, false, false),
+                    new EliminationParticipant(2, "Ben", "", false, false, false), true, false, false)));
+            view.selectEliminationTab();
+            view.initializeAfterStageShown();
+            Pane card = (Pane) view.lookup(".fencing-ready-card");
+            assertNotNull(card);
+            card.fireEvent(new MouseEvent(MouseEvent.MOUSE_CLICKED, 0, 0, 0, 0,
+                    javafx.scene.input.MouseButton.PRIMARY, 1, false, false, false, false, true,
+                    false, false, true, false, false, null));
+            assertEquals(matchId, deSelection.get());
         });
     }
 
