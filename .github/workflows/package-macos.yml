@@ -30,7 +30,9 @@ jobs:
           uname -m
 
       - name: Build application distribution
-        run: ./gradlew clean installDist --no-daemon
+        # Invoke through bash so the workflow does not depend on the executable
+        # bit of the wrapper being preserved in a Windows-originated repository.
+        run: bash ./gradlew clean installDist --no-daemon
 
       - name: Package macOS app and DMG
         shell: bash
