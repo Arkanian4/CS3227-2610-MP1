@@ -1,0 +1,7 @@
+interface:
+  display_name: "Package Windows Distribution"
+  short_description: "Build a portable Windows ZIP with bundled Java."
+  default_prompt: "Use $package-windows-distribution to package the latest Windows build for sharing."
+
+policy:
+  allow_implicit_invocation: true
