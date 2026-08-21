@@ -6,6 +6,7 @@ import edu.nus.cs3227.fencingtournament.domain.Tournament;
 import edu.nus.cs3227.fencingtournament.domain.TournamentPhase;
 import edu.nus.cs3227.fencingtournament.domain.pool.Pool;
 import javafx.collections.FXCollections;
+import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.Node;
@@ -29,10 +30,11 @@ public final class TournamentView extends BorderPane {
     private static final double TABLEAU_LEFT = 22;
     private static final double TABLEAU_ROUND_STEP = 244;
     private static final double TABLEAU_CARD_WIDTH = 214;
-    private static final double TABLEAU_CARD_HEIGHT = 56;
-    private static final double TABLEAU_FIRST_CENTRE = 78;
-    private static final double TABLEAU_OPENING_STEP = 104;
-    private static final double TABLEAU_ROW_SEPARATION = 28;
+    private static final double TABLEAU_CARD_HEIGHT = 52;
+    private static final double TABLEAU_ROW_HEIGHT = 26;
+    private static final double TABLEAU_FIRST_CENTRE = 58;
+    private static final double TABLEAU_BOTTOM_PADDING = 14;
+    private static final double HORIZONTAL_SCROLLBAR_ALLOWANCE = 18;
     private final Label tournamentNameLabel = new Label("No tournament open");
     private final Label phaseLabel = new Label("Start by creating or opening a tournament");
     private final Label progressLabel = new Label();
@@ -104,6 +106,7 @@ public final class TournamentView extends BorderPane {
     private final Pane bracketBoard = new Pane();
     private final StackPane bracketCanvas = new StackPane(bracketBoard);
     private final ScrollPane bracketScroll = new ScrollPane(bracketCanvas);
+    private final HBox eliminationWorkspace = new HBox();
     private final Label selectedEliminationMatchLabel = new Label("Select a pending bout in the bracket");
     private final TextField eliminationFirstScoreField = new TextField();
     private final TextField eliminationSecondScoreField = new TextField();
@@ -114,6 +117,8 @@ public final class TournamentView extends BorderPane {
     private final Label eliminationSecondNameLabel = new Label("—");
     private List<EliminationMatchRow> renderedEliminationMatches = List.of();
     private UUID selectedEliminationMatchId;
+    private int activeEliminationRound = 1;
+    private boolean eliminationRelayoutQueued;
     private Consumer<UUID> eliminationMatchHandler = ignored -> { };
     private Consumer<UUID> tournamentOpenHandler = ignored -> { };
     private Consumer<UUID> tournamentDeleteHandler = ignored -> { };
@@ -323,14 +328,18 @@ public final class TournamentView extends BorderPane {
         bracketBoard.getChildren().clear();
         if (matches.isEmpty()) return;
         int finalRound = matches.stream().mapToInt(EliminationMatchRow::round).max().orElse(1);
+        activeEliminationRound = activeEliminationRound(matches, finalRound);
+        int openingMatchCount = (int) matches.stream().filter(match -> match.round() == 1).count();
+        double openingStep = openingStep(openingMatchCount, availableBracketHeight());
         java.util.Map<String, EliminationMatchRow> byPosition = matches.stream().collect(
                 java.util.stream.Collectors.toMap(match -> match.round() + ":" + match.position(), match -> match));
-        java.util.Map<String, BracketGeometry> geometry = calculateBracketGeometry(matches, byPosition, finalRound);
+        java.util.Map<String, BracketGeometry> geometry = calculateBracketGeometry(matches, byPosition, finalRound, openingStep);
         for (int round = 1; round <= finalRound; round++) {
             int currentRound = round;
             int matchCount = (int) matches.stream().filter(match -> match.round() == currentRound).count();
             Label heading = new Label(roundName(matchCount)); heading.getStyleClass().add("bracket-heading");
             if (round == finalRound) heading.getStyleClass().add("bracket-final-heading");
+            if (round == activeEliminationRound) heading.getStyleClass().add("bracket-active-heading");
             heading.relocate(boardX(round) + (TABLEAU_CARD_WIDTH - heading.prefWidth(-1)) / 2, 4); bracketBoard.getChildren().add(heading);
         }
         EliminationMatchRow finalMatch = byPosition.get(finalRound + ":0");
@@ -359,12 +368,12 @@ public final class TournamentView extends BorderPane {
         champion.relocate(championX, finalGeometry.centreY() - 11);
         bracketBoard.getChildren().addAll(winnerHeading, connector(boardX(finalRound) + TABLEAU_CARD_WIDTH, finalGeometry.centreY(), championX - 6, finalGeometry.centreY()), champion);
         double boardHeight = matches.stream().map(match -> geometry.get(keyOf(match)))
-                .mapToDouble(BracketGeometry::centreY).max().orElse(TABLEAU_FIRST_CENTRE) + TABLEAU_CARD_HEIGHT / 2 + 26;
+                .mapToDouble(BracketGeometry::centreY).max().orElse(TABLEAU_FIRST_CENTRE) + TABLEAU_CARD_HEIGHT / 2 + TABLEAU_BOTTOM_PADDING;
         double boardWidth = winnerX + 170;
         bracketBoard.setMinSize(boardWidth, boardHeight); bracketBoard.setPrefSize(boardWidth, boardHeight);
         bracketBoard.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
         bracketCanvas.setMinSize(boardWidth, boardHeight); bracketCanvas.setPrefSize(boardWidth, boardHeight);
-        bracketScroll.setPrefViewportHeight(Math.min(500, boardHeight + 8));
+        focusActiveEliminationRound(boardWidth);
     }
 
     public void showSelectedEliminationMatch(EliminationMatchRow match) {
@@ -615,14 +624,15 @@ public final class TournamentView extends BorderPane {
     private VBox buildEliminationTab() {
         Label title = new Label("Direct Elimination"); title.getStyleClass().add("screen-title");
         Label hint = new Label("Select a pending bracket bout to record its result."); hint.getStyleClass().add("screen-subtitle");
-        bracketBoard.getStyleClass().add("bracket-board"); bracketCanvas.getStyleClass().add("bracket-canvas"); bracketCanvas.setAlignment(Pos.TOP_CENTER); bracketScroll.setFitToHeight(false); bracketScroll.setFitToWidth(true); bracketScroll.setPannable(true); bracketScroll.setPrefViewportHeight(380); bracketScroll.getStyleClass().add("bracket-scroll");
+        bracketBoard.getStyleClass().add("bracket-board"); bracketCanvas.getStyleClass().add("bracket-canvas"); bracketCanvas.setAlignment(Pos.TOP_LEFT); bracketScroll.setFitToHeight(false); bracketScroll.setFitToWidth(false); bracketScroll.setPannable(true); bracketScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED); bracketScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER); bracketScroll.getStyleClass().add("bracket-scroll");
         eliminationFirstScoreField.setPrefWidth(64); eliminationSecondScoreField.setPrefWidth(64); recordEliminationResultButton.getStyleClass().add("primary-action"); editEliminationResultButton.getStyleClass().add("secondary-action"); cancelEliminationEditButton.getStyleClass().add("secondary-action"); endEliminationResultEdit();
         HBox firstRow = new HBox(12, eliminationFirstNameLabel, eliminationFirstScoreField); HBox.setHgrow(eliminationFirstNameLabel, Priority.ALWAYS); firstRow.getStyleClass().add("de-result-row");
         HBox secondRow = new HBox(12, eliminationSecondNameLabel, eliminationSecondScoreField); HBox.setHgrow(eliminationSecondNameLabel, Priority.ALWAYS); secondRow.getStyleClass().add("de-result-row");
         HBox actions = new HBox(8, recordEliminationResultButton, cancelEliminationEditButton);
         VBox entry = new VBox(7, new Label("RECORD RESULT"), selectedEliminationMatchLabel, firstRow, secondRow, actions, editEliminationResultButton); entry.setAlignment(Pos.CENTER_LEFT); entry.getStyleClass().add("de-result-entry");
-        HBox workspace = new HBox(18, bracketScroll, entry); workspace.getStyleClass().add("elimination-workspace"); HBox.setHgrow(bracketScroll, Priority.ALWAYS); VBox.setVgrow(workspace, Priority.ALWAYS);
-        VBox root = new VBox(8, title, hint, workspace); root.getStyleClass().add("screen-content"); return root;
+        eliminationWorkspace.getChildren().setAll(bracketScroll, entry); eliminationWorkspace.setSpacing(14); eliminationWorkspace.getStyleClass().add("elimination-workspace"); HBox.setHgrow(bracketScroll, Priority.ALWAYS); VBox.setVgrow(eliminationWorkspace, Priority.ALWAYS);
+        eliminationWorkspace.heightProperty().addListener((ignored, previous, current) -> requestEliminationRelayout());
+        VBox root = new VBox(6, title, hint, eliminationWorkspace); root.getStyleClass().addAll("screen-content", "elimination-content"); return root;
     }
     private VBox buildFinalResultsTab() {
         Label title = new Label("Final Results"); title.getStyleClass().add("screen-title");
@@ -830,7 +840,7 @@ public final class TournamentView extends BorderPane {
     private static int parse(String value) { try { return Integer.parseInt(value); } catch (NumberFormatException ignored) { return -1; } }
     private java.util.Map<String, BracketGeometry> calculateBracketGeometry(List<EliminationMatchRow> matches,
                                                                               java.util.Map<String, EliminationMatchRow> byPosition,
-                                                                              int finalRound) {
+                                                                              int finalRound, double openingStep) {
         java.util.Map<String, BracketGeometry> geometry = new java.util.HashMap<>();
         for (int round = 1; round <= finalRound; round++) {
             int currentRound = round;
@@ -840,9 +850,9 @@ public final class TournamentView extends BorderPane {
                         double firstRowY;
                         double secondRowY;
                         if (match.round() == 1) {
-                            centreY = TABLEAU_FIRST_CENTRE + match.position() * TABLEAU_OPENING_STEP;
-                            firstRowY = centreY - TABLEAU_ROW_SEPARATION / 2;
-                            secondRowY = centreY + TABLEAU_ROW_SEPARATION / 2;
+                            centreY = TABLEAU_FIRST_CENTRE + match.position() * openingStep;
+                            firstRowY = centreY - TABLEAU_ROW_HEIGHT / 2;
+                            secondRowY = centreY + TABLEAU_ROW_HEIGHT / 2;
                         } else {
                             BracketGeometry firstSource = geometry.get((match.round() - 1) + ":" + (match.position() * 2));
                             BracketGeometry secondSource = geometry.get((match.round() - 1) + ":" + (match.position() * 2 + 1));
@@ -864,6 +874,7 @@ public final class TournamentView extends BorderPane {
         else if (match.resolved()) card.getStyleClass().add("fencing-resolved-card");
         else if (match.ready()) card.getStyleClass().add("fencing-ready-card");
         else card.getStyleClass().add("fencing-future-card");
+        if (match.round() == activeEliminationRound) card.getStyleClass().add("fencing-active-round-card");
         if (finalRound) card.getStyleClass().add("fencing-final-card");
         if ((match.ready() || (match.resolved() && !match.bye())) && match.matchId().equals(selectedEliminationMatchId)) card.getStyleClass().add("fencing-selected-card");
 
@@ -876,7 +887,7 @@ public final class TournamentView extends BorderPane {
             winnerRow.getStyleClass().add("fencing-winner-row");
             loserRow.getStyleClass().add("fencing-loser-row");
         }
-        firstRow.relocate(0, 0); secondRow.relocate(0, 28);
+        firstRow.relocate(0, 0); secondRow.relocate(0, TABLEAU_ROW_HEIGHT);
         card.getChildren().addAll(firstRow, secondRow);
         if (match.ready() || (match.resolved() && !match.bye())) card.setOnMouseClicked(event -> eliminationMatchHandler.accept(match.matchId()));
         card.relocate(boardX(match.round()), geometry.centreY() - TABLEAU_CARD_HEIGHT / 2);
@@ -893,7 +904,7 @@ public final class TournamentView extends BorderPane {
         if (participant.winner()) { name.getStyleClass().add("bracket-winner"); score.getStyleClass().add("bracket-winner"); }
         if (participant.unresolved()) name.getStyleClass().add("bracket-unresolved");
         if (participant.bye()) name.getStyleClass().add("fencing-bye-label");
-        Pane row = new Pane(seed, name, score); row.setPrefSize(TABLEAU_CARD_WIDTH, 28); return row;
+        Pane row = new Pane(seed, name, score); row.setPrefSize(TABLEAU_CARD_WIDTH, TABLEAU_ROW_HEIGHT); return row;
     }
 
     private static String participantText(EliminationParticipant participant) {
@@ -904,6 +915,39 @@ public final class TournamentView extends BorderPane {
     }
     private static String keyOf(EliminationMatchRow match) { return match.round() + ":" + match.position(); }
     private static double boardX(int round) { return TABLEAU_LEFT + (round - 1) * TABLEAU_ROUND_STEP; }
+    private static double openingStep(int openingMatchCount, double availableHeight) {
+        double preferredStep = openingMatchCount >= 8 ? TABLEAU_CARD_HEIGHT + 12
+                : openingMatchCount >= 4 ? TABLEAU_CARD_HEIGHT + 24
+                : openingMatchCount >= 2 ? TABLEAU_CARD_HEIGHT + 44 : TABLEAU_CARD_HEIGHT + 20;
+        if (openingMatchCount < 2 || availableHeight <= 0) return preferredStep;
+        double maximumStep = (availableHeight - TABLEAU_FIRST_CENTRE - TABLEAU_CARD_HEIGHT / 2 - TABLEAU_BOTTOM_PADDING)
+                / (openingMatchCount - 1);
+        return Math.max(TABLEAU_CARD_HEIGHT + 4, Math.min(preferredStep, maximumStep));
+    }
+    private static int activeEliminationRound(List<EliminationMatchRow> matches, int finalRound) {
+        return matches.stream().filter(EliminationMatchRow::ready).mapToInt(EliminationMatchRow::round).min().orElse(finalRound);
+    }
+    private void focusActiveEliminationRound(double boardWidth) {
+        Platform.runLater(() -> {
+            double viewportWidth = bracketScroll.getViewportBounds().getWidth();
+            if (viewportWidth <= 0 || boardWidth <= viewportWidth) return;
+            double targetX = Math.max(0, Math.min(boardX(activeEliminationRound) - 16, boardWidth - viewportWidth));
+            bracketScroll.setHvalue(targetX / (boardWidth - viewportWidth));
+        });
+    }
+    private double availableBracketHeight() {
+        double viewportHeight = bracketScroll.getViewportBounds().getHeight();
+        return viewportHeight > 0 ? viewportHeight
+                : Math.max(0, eliminationWorkspace.getHeight() - HORIZONTAL_SCROLLBAR_ALLOWANCE);
+    }
+    private void requestEliminationRelayout() {
+        if (eliminationRelayoutQueued || renderedEliminationMatches.isEmpty()) return;
+        eliminationRelayoutQueued = true;
+        Platform.runLater(() -> {
+            eliminationRelayoutQueued = false;
+            if (!renderedEliminationMatches.isEmpty()) renderEliminationBracket(renderedEliminationMatches);
+        });
+    }
     private static String winnerLabel(EliminationMatchRow match) {
         return (match.first().winner() ? match.first() : match.second()).name();
     }

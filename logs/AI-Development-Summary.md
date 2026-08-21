@@ -184,3 +184,21 @@ These entries are factual summaries for developer verification and later reflect
   to a service operation that validates and persists the pre-pool seed order.
 - **Outcome:** Seeding can be reordered by drag or buttons without a separate revised-order action;
   **Generate pools** remains the action that advances the tournament and locks the order.
+
+## Active direct-elimination round visibility
+
+- **Task:** Ensure every bout in the current DE round, including all eight bouts in a Round of 16,
+  is visible at a projected 1440×900 desktop size without vertical scrolling.
+- **Decisions:** Replace the fixed opening-round spacing and fixed 500 px viewport cap with spacing
+  derived from the opening-round match count. Keep the two-row bout cards readable, use horizontal
+  overflow only for later rounds, and identify the earliest playable round as the active round.
+- **Outcome:** A 16-fencer opening column now occupies approximately 628 px rather than 860 px;
+  the active heading and cards receive a restrained accent, and the bracket scrolls horizontally to
+  bring the active round into view after rendering.
+- **Notable issue:** JavaFX's `ScrollPane` fitting width would compress the bracket canvas rather
+  than expose intentional horizontal overflow, so the bracket viewport now preserves the board's
+  calculated width.
+- **Follow-up correction:** The initial calculated viewport height could still exceed the space left
+  by the application shell on an 800 px-high desktop. The tableau now reads its actual post-layout
+  `ScrollPane` viewport height and recomputes opening-round spacing on resize instead of imposing a
+  minimum viewport height.

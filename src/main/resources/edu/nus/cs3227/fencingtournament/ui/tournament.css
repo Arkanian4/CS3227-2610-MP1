@@ -152,6 +152,7 @@
 .phase-navigation > .tab-content-area { -fx-background-color: -ft-app-background; }
 
 .screen-content, .pools-content { -fx-padding: 22 28; -fx-spacing: 14; }
+.elimination-content { -fx-padding: 12 20 10 20; -fx-spacing: 6; }
 .pools-content { -fx-padding: 13 18 10 18; -fx-spacing: 8; }
 .pools-page-header { -fx-min-height: 25; }
 .pools-page-header .screen-title { -fx-font-size: 19px; }
@@ -398,6 +399,8 @@
 .fencing-bout-card { -fx-background-color: -ft-surface; -fx-border-color: -ft-border; -fx-border-radius: 4; -fx-background-radius: 4; }
 .fencing-ready-card { -fx-border-color: -ft-accent; -fx-cursor: hand; }
 .fencing-ready-card:hover { -fx-border-color: -ft-accent-hover; -fx-background-color: -ft-hover; }
+.fencing-future-card { -fx-opacity: 0.78; }
+.fencing-active-round-card { -fx-border-color: -ft-accent-strong; -fx-opacity: 1; }
 .fencing-selected-card { -fx-border-color: -ft-accent-strong; -fx-border-width: 2; }
 .fencing-future-card { -fx-background-color: -ft-surface-subtle; -fx-border-color: -ft-border; }
 .fencing-resolved-card { -fx-border-color: -ft-border-strong; }
@@ -413,10 +416,11 @@
 .bracket-connector { -fx-stroke: -ft-connector; -fx-stroke-width: 1; }
 .bracket-heading { -fx-font-size: 12px; -fx-font-weight: 800; -fx-text-fill: -ft-text-secondary; }
 .bracket-final-heading { -fx-text-fill: -ft-accent-strong; }
+.bracket-active-heading { -fx-text-fill: -ft-accent-strong; -fx-font-size: 13px; }
 .bracket-champion { -fx-font-size: 13px; -fx-font-weight: 800; -fx-text-fill: -ft-success; -fx-padding: 0 0 0 5; -fx-background-color: -ft-surface; }
 .elimination-workspace { -fx-alignment: TOP_LEFT; }
-.de-result-entry { -fx-min-width: 320; -fx-max-width: 320; -fx-padding: 14 16; -fx-background-color: -ft-surface-elevated; -fx-border-color: -ft-border; -fx-border-radius: 5; -fx-background-radius: 5; }
-.de-result-row { -fx-min-width: 300; -fx-alignment: CENTER_LEFT; }
+.de-result-entry { -fx-min-width: 280; -fx-max-width: 280; -fx-padding: 10 12; -fx-background-color: -ft-surface-elevated; -fx-border-color: -ft-border; -fx-border-radius: 5; -fx-background-radius: 5; }
+.de-result-row { -fx-min-width: 256; -fx-alignment: CENTER_LEFT; }
 .de-result-row .label { -fx-font-size: 14px; -fx-font-weight: 600; }
 .completion-status { -fx-font-size: 12px; -fx-font-weight: 800; }
 .final-fencer-header { -fx-font-weight: 800; }
