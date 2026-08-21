@@ -9,6 +9,7 @@ import edu.nus.cs3227.fencingtournament.domain.pool.BoutScore;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.KeyEvent;
@@ -86,13 +87,72 @@ class TournamentControllerTest {
     }
 
     @Test
-    void sidebarNavigationSelectsTheCorrespondingStage() throws Exception {
+    void stageNavigationSelectsTheCorrespondingStage() throws Exception {
         onJavaFxThread(() -> {
             TournamentView view = new TournamentView();
 
             view.selectPoolsTab();
 
             assertSame(view.poolsTab(), view.tabs().getSelectionModel().getSelectedItem());
+        });
+    }
+
+    @Test
+    void stageProgressDistinguishesCompletedCurrentAndLockedStages() throws Exception {
+        onJavaFxThread(() -> {
+            TournamentView view = new TournamentView();
+
+            view.setPhaseControls(TournamentPhase.POOL_PHASE, true, false, false);
+
+            assertEquals(1, view.lookupAll(".stage-marker-complete").size());
+            assertTrue(view.poolsNavigationButton().getStyleClass().contains("stage-marker-current"));
+            assertTrue(view.poolsNavigationButton().getStyleClass().contains("button"));
+            assertEquals(3, view.lookupAll(".stage-marker-locked").size());
+            assertTrue(view.setupNavigationButton().getText().isEmpty());
+            assertTrue(view.poolsNavigationButton().getText().isEmpty());
+            assertEquals(2, view.lookupAll(".stage-progress-step-accessible").size());
+            assertEquals(3, view.lookupAll(".stage-progress-step-locked").size());
+        });
+    }
+
+    @Test
+    void stageProgressRendersVisibleCircularMarkersAndLabels() throws Exception {
+        onJavaFxThread(() -> {
+            TournamentView view = new TournamentView();
+            view.showTournamentName("Friday Epee");
+            view.setPhaseControls(TournamentPhase.POOL_PHASE, true, false, false);
+            view.resize(1280, 800);
+            view.scene().getRoot().applyCss();
+            view.layout();
+
+            List<Node> markers = view.lookupAll(".stage-marker").stream().toList();
+            List<Node> labels = view.lookupAll(".stage-progress-label").stream().toList();
+            assertEquals(5, markers.size());
+            assertEquals(5, labels.size());
+            assertTrue(markers.stream().allMatch(Node::isVisible));
+            assertTrue(labels.stream().allMatch(Node::isVisible));
+            assertTrue(markers.stream().allMatch(marker -> marker.getBoundsInParent().getHeight() >= 21));
+            assertTrue(view.poolsNavigationButton().getBoundsInParent().getHeight() >= 24);
+            assertTrue(labels.stream().allMatch(label -> label.getBoundsInParent().getHeight() > 0));
+        });
+    }
+
+    @Test
+    void viewingAnEarlierStageDoesNotChangeTheTournamentProgressMarker() throws Exception {
+        onJavaFxThread(() -> {
+            TournamentView view = new TournamentView();
+            view.setPhaseControls(TournamentPhase.ELIMINATION_PHASE, true, true, true);
+            view.selectEliminationTab();
+
+            assertEquals(1, view.lookupAll(".stage-progress-viewing").size());
+
+            List<Button> markers = view.lookupAll(".stage-marker").stream()
+                    .map(Button.class::cast).toList();
+            markers.get(2).fire();
+
+            assertTrue(markers.get(3).getStyleClass().contains("stage-marker-current"));
+            assertFalse(markers.get(2).getStyleClass().contains("stage-marker-current"));
+            assertEquals(1, view.lookupAll(".stage-progress-viewing").size());
         });
     }
 

@@ -77,7 +77,12 @@ public final class TournamentView extends BorderPane {
     private final Button standingsNavigationButton = new Button("Pool Result");
     private final Button eliminationNavigationButton = new Button("Direct Elimination");
     private final Button finalResultsNavigationButton = new Button("Final Results");
-    private final VBox sidebarStageGroup = new VBox();
+    private final HBox stageProgress = new HBox();
+    private final HBox stageProgressRow = new HBox(stageProgress);
+    private final List<Label> stageProgressLabels = new java.util.ArrayList<>();
+    private final List<VBox> stageProgressSteps = new java.util.ArrayList<>();
+    private final List<Region> stageProgressConnectors = new java.util.ArrayList<>();
+    private int tournamentProgressStage;
     private final Button generateEliminationButton = new Button("Generate direct elimination");
     private final VBox createTournamentSection = new VBox();
     private final VBox registrationSection = new VBox();
@@ -457,7 +462,9 @@ public final class TournamentView extends BorderPane {
         seedList.setDisable(!seeding); moveSeedUpButton.setDisable(!seeding); moveSeedDownButton.setDisable(!seeding);
         confirmSeedingButton.setDisable(!registration || seedList.getItems().size() < 2); generatePoolsButton.setDisable(!seeding || seedList.getItems().size() < 2); poolsTab.setDisable(!pools); standingsTab.setDisable(!poolResultsFinalized); eliminationTab.setDisable(!hasEliminationBracket); finalResultsTab.setDisable(phase != TournamentPhase.COMPLETE); generateEliminationButton.setDisable(!poolResultsFinalized || hasEliminationBracket);
         setupNavigationButton.setDisable(!hasTournament); poolsNavigationButton.setDisable(!pools); standingsNavigationButton.setDisable(!poolResultsFinalized); eliminationNavigationButton.setDisable(!hasEliminationBracket); finalResultsNavigationButton.setDisable(phase != TournamentPhase.COMPLETE);
-        sidebarStageGroup.setVisible(hasTournament); sidebarStageGroup.setManaged(hasTournament);
+        tournamentProgressStage = phase == TournamentPhase.COMPLETE ? 4
+                : hasEliminationBracket ? 3 : poolResultsFinalized ? 2 : pools ? 1 : 0;
+        stageProgressRow.setVisible(hasTournament); stageProgressRow.setManaged(hasTournament);
         refreshNavigationState();
     }
     public void setNoTournamentState() {
@@ -476,29 +483,114 @@ public final class TournamentView extends BorderPane {
         HBox identity = new HBox(appName); identity.setAlignment(Pos.CENTER_LEFT);
         Region spacer = new Region(); HBox.setHgrow(spacer, Priority.ALWAYS);
         HBox actions = new HBox(8, loadButton); actions.setAlignment(Pos.CENTER_RIGHT);
-        HBox bar = new HBox(22, identity, spacer, tournamentContext, actions); bar.setAlignment(Pos.CENTER_LEFT); bar.getStyleClass().add("top-bar"); return new VBox(bar);
+        HBox bar = new HBox(22, identity, spacer, tournamentContext, actions); bar.setAlignment(Pos.CENTER_LEFT); bar.getStyleClass().add("top-bar");
+        buildStageProgress();
+        return new VBox(bar, stageProgressRow);
     }
     private VBox buildSidebar() {
         Label homeLabel = new Label("WORKSPACE"); homeLabel.getStyleClass().add("sidebar-label");
-        Label stagesLabel = new Label("COMPETITION STAGES"); stagesLabel.getStyleClass().add("sidebar-label");
         homeButton.getStyleClass().setAll("sidebar-nav-button");
-        configureNavigationButton(setupNavigationButton, fencersTab);
-        configureNavigationButton(poolsNavigationButton, poolsTab);
-        configureNavigationButton(standingsNavigationButton, standingsTab);
-        configureNavigationButton(eliminationNavigationButton, eliminationTab);
-        configureNavigationButton(finalResultsNavigationButton, finalResultsTab);
-        Region divider = new Region(); divider.getStyleClass().add("sidebar-divider");
-        sidebarStageGroup.getChildren().setAll(divider, stagesLabel, setupNavigationButton, poolsNavigationButton,
-                standingsNavigationButton, eliminationNavigationButton, finalResultsNavigationButton);
-        sidebarStageGroup.setSpacing(4); sidebarStageGroup.getStyleClass().add("sidebar-stage-group");
-        VBox navigation = new VBox(4, homeLabel, homeButton, sidebarStageGroup);
+        VBox navigation = new VBox(4, homeLabel, homeButton);
         navigation.getStyleClass().add("sidebar");
         return navigation;
     }
-    private void configureNavigationButton(Button button, Tab stage) {
-        button.getStyleClass().add("sidebar-nav-button");
-        button.setMaxWidth(Double.MAX_VALUE);
-        button.setOnAction(event -> selectStage(stage));
+    private void buildStageProgress() {
+        List<Button> buttons = List.of(setupNavigationButton, poolsNavigationButton, standingsNavigationButton,
+                eliminationNavigationButton, finalResultsNavigationButton);
+        List<Tab> stages = List.of(fencersTab, poolsTab, standingsTab, eliminationTab, finalResultsTab);
+        List<String> labels = List.of("Setup", "Pools", "Pool Result", "Direct Elimination", "Final Results");
+        stageProgress.getChildren().clear();
+        stageProgressLabels.clear();
+        stageProgressSteps.clear();
+        stageProgressConnectors.clear();
+        stageProgress.setAlignment(Pos.CENTER);
+        for (int index = 0; index < buttons.size(); index++) {
+            int stageIndex = index;
+            Button button = buttons.get(index);
+            button.setText("");
+            button.setAccessibleText(labels.get(index) + " stage");
+            // Preserve JavaFX's base "button" class: the circle CSS intentionally
+            // composes it with stage-marker (".button.stage-marker").
+            button.getStyleClass().setAll("button", "stage-marker");
+            button.setOnAction(event -> selectStage(stages.get(stageIndex)));
+            Label label = new Label(labels.get(index));
+            label.getStyleClass().add("stage-progress-label");
+            stageProgressLabels.add(label);
+            StackPane markerSlot = new StackPane(button);
+            markerSlot.setMinSize(24, 24);
+            markerSlot.setPrefSize(24, 24);
+            markerSlot.setMaxSize(24, 24);
+            VBox step = new VBox(4, markerSlot, label);
+            step.setMinSize(108, 50);
+            step.setPrefSize(108, 50);
+            step.setMaxSize(108, 50);
+            step.setAlignment(Pos.TOP_CENTER);
+            step.getStyleClass().add("stage-progress-step");
+            step.setOnMouseClicked(event -> {
+                if (!button.isDisabled()) {
+                    selectStage(stages.get(stageIndex));
+                }
+            });
+            stageProgressSteps.add(step);
+            stageProgress.getChildren().add(step);
+            if (index < buttons.size() - 1) {
+                Region connector = new Region();
+                connector.getStyleClass().add("stage-progress-connector");
+                connector.setMinWidth(192);
+                connector.setPrefWidth(192);
+                connector.setMaxWidth(192);
+                StackPane connectorSlot = new StackPane(connector);
+                connectorSlot.setMinSize(108, 50);
+                connectorSlot.setPrefSize(108, 50);
+                connectorSlot.setMaxSize(108, 50);
+                connectorSlot.getStyleClass().add("stage-progress-connector-slot");
+                stageProgressConnectors.add(connector);
+                stageProgress.getChildren().add(connectorSlot);
+            }
+        }
+        stageProgressRow.setAlignment(Pos.CENTER);
+        stageProgressRow.getStyleClass().add("stage-progress-row");
+    }
+    private List<Button> stageNavigationButtons() {
+        return List.of(setupNavigationButton, poolsNavigationButton, standingsNavigationButton,
+                eliminationNavigationButton, finalResultsNavigationButton);
+    }
+    private List<Tab> navigationStages() {
+        return List.of(fencersTab, poolsTab, standingsTab, eliminationTab, finalResultsTab);
+    }
+    private void refreshStageProgress() {
+        List<Button> buttons = stageNavigationButtons();
+        List<Tab> stages = navigationStages();
+        for (int index = 0; index < buttons.size(); index++) {
+            Button button = buttons.get(index);
+            Label label = stageProgressLabels.get(index);
+            VBox step = stageProgressSteps.get(index);
+            button.setText("");
+            button.getStyleClass().removeAll("stage-marker-complete", "stage-marker-current", "stage-marker-locked");
+            label.getStyleClass().removeAll("stage-progress-complete", "stage-progress-current", "stage-progress-locked", "stage-progress-viewing");
+            step.getStyleClass().removeAll("stage-progress-step-accessible", "stage-progress-step-locked");
+            if (index < tournamentProgressStage) {
+                button.getStyleClass().add("stage-marker-complete");
+                label.getStyleClass().add("stage-progress-complete");
+            } else if (index == tournamentProgressStage) {
+                button.getStyleClass().add("stage-marker-current");
+                label.getStyleClass().add("stage-progress-current");
+            } else {
+                button.getStyleClass().add("stage-marker-locked");
+                label.getStyleClass().add("stage-progress-locked");
+            }
+            step.getStyleClass().add(button.isDisabled()
+                    ? "stage-progress-step-locked" : "stage-progress-step-accessible");
+            if (activeStage == stages.get(index)) {
+                label.getStyleClass().add("stage-progress-viewing");
+            }
+        }
+        for (int index = 0; index < stageProgressConnectors.size(); index++) {
+            Region connector = stageProgressConnectors.get(index);
+            connector.getStyleClass().removeAll("stage-progress-connector-complete", "stage-progress-connector-locked");
+            connector.getStyleClass().add(index < tournamentProgressStage
+                    ? "stage-progress-connector-complete" : "stage-progress-connector-locked");
+        }
     }
     private void selectStage(Tab stage) {
         activeStage = stage;
@@ -508,11 +600,7 @@ public final class TournamentView extends BorderPane {
     }
     private void refreshNavigationState() {
         setNavigationSelected(homeButton, activeStage == null);
-        setNavigationSelected(setupNavigationButton, activeStage == fencersTab);
-        setNavigationSelected(poolsNavigationButton, activeStage == poolsTab);
-        setNavigationSelected(standingsNavigationButton, activeStage == standingsTab);
-        setNavigationSelected(eliminationNavigationButton, activeStage == eliminationTab);
-        setNavigationSelected(finalResultsNavigationButton, activeStage == finalResultsTab);
+        refreshStageProgress();
     }
     private void showTournamentContext(boolean visible) {
         tournamentContext.setVisible(visible);

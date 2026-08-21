@@ -214,3 +214,29 @@ These entries are factual summaries for developer verification and later reflect
   higher-scoring fencer and continue to use existing downstream invalidation rules.
 - **Notable issue:** Existing tests encoded the old mandatory-15 assumption; they were updated to
   distinguish scores above 15 from valid shorter winning scores.
+
+## Tournament stage-progress navigation
+
+- **Task:** Replace generic stage navigation with a compact connected progression tracker.
+- **Decisions:** Retain the hidden `TabPane` and existing stage buttons as the compatibility and
+  interaction layer; render them as marker-only circles with labels and direct circle-to-circle
+  connectors. Derive completed, current, and locked states exclusively from the existing phase
+  and availability inputs. The wider step hit target forwards label-area clicks only when its
+  underlying navigation button is already available.
+- **Outcome:** Completed stages use filled teal circles, the current stage uses a larger outlined
+  teal circle, and unavailable future stages use muted hollow circles. Accent connector segments
+  extend through the current phase. The tracker conveys tournament flow without changing
+  navigation permissions or controller logic; Tournament Home remains the only item in the sidebar.
+- **Notable issue:** A JavaFX regression test verifies the Pool Phase mapping: one completed marker,
+  one current marker, and three locked future markers.
+- **Rendering correction:** The first marker-only implementation made labels unmanaged within a
+  narrow `StackPane`, so the header could measure only connector height and clip the nodes. Each
+  stage now uses a managed marker-slot-and-label column; connector slots extend only visually
+  between the fixed marker edges. A regression test checks that all five markers and labels have
+  visible, non-zero bounds after layout. A follow-up screenshot exposed missing circles: resetting
+  a button's style list had also removed JavaFX's base `button` class, preventing the composed
+  `.button.stage-marker` CSS selector from matching. The base class is now preserved.
+- **State correction:** Progress-marker styling now represents only the tournament's actual phase.
+  When an organiser navigates back to a completed page, that page receives a label underline rather
+  than a second current-stage ring; a regression test covers the Direct Elimination / Pool Result
+  case.

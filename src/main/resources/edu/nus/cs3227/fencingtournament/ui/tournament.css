@@ -49,6 +49,68 @@
     -fx-border-width: 0 0 1 0;
 }
 
+.stage-progress-row {
+    -fx-padding: 6 24 7 24;
+    -fx-background-color: -ft-surface-elevated;
+    -fx-border-color: transparent transparent -ft-border transparent;
+    -fx-border-width: 0 0 1 0;
+}
+.button.stage-marker {
+    -fx-min-width: 21;
+    -fx-pref-width: 21;
+    -fx-max-width: 21;
+    -fx-min-height: 21;
+    -fx-pref-height: 21;
+    -fx-max-height: 21;
+    -fx-padding: 0;
+    -fx-alignment: CENTER;
+    -fx-background-color: -ft-surface;
+    -fx-background-radius: 50;
+    -fx-border-color: -ft-border-strong;
+    -fx-border-radius: 50;
+    -fx-text-fill: transparent;
+}
+.button.stage-marker:hover { -fx-background-color: -ft-hover; -fx-border-color: -ft-accent; -fx-opacity: 1; }
+.button.stage-marker:disabled { -fx-opacity: 1; -fx-cursor: default; }
+.button.stage-marker:disabled:hover { -fx-background-color: -ft-surface; -fx-border-color: -ft-disabled; }
+.button.stage-marker.stage-marker-complete { -fx-background-color: -ft-accent; -fx-border-color: -ft-accent; -fx-text-fill: -ft-surface; }
+.button.stage-marker.stage-marker-current {
+    -fx-min-width: 24;
+    -fx-pref-width: 24;
+    -fx-max-width: 24;
+    -fx-min-height: 24;
+    -fx-pref-height: 24;
+    -fx-max-height: 24;
+    -fx-background-color: -ft-accent-strong;
+    -fx-border-color: -ft-focus;
+    -fx-border-width: 3;
+}
+.button.stage-marker.stage-marker-locked { -fx-background-color: -ft-surface; -fx-border-color: -ft-disabled; -fx-text-fill: transparent; }
+.stage-progress-step { -fx-alignment: TOP_CENTER; }
+.stage-progress-step-accessible { -fx-cursor: hand; }
+.stage-progress-step-locked { -fx-cursor: default; }
+.stage-progress-label { -fx-font-size: 11px; -fx-font-weight: 700; -fx-text-fill: -ft-text-secondary; }
+.stage-progress-complete { -fx-text-fill: -ft-accent-strong; }
+.stage-progress-current { -fx-text-fill: -ft-accent-strong; -fx-font-weight: 800; }
+.stage-progress-viewing {
+    -fx-text-fill: -ft-accent;
+    -fx-font-weight: 800;
+    -fx-border-color: transparent transparent -ft-accent transparent;
+    -fx-border-width: 0 0 2 0;
+    -fx-padding: 0 0 2 0;
+}
+.stage-progress-current.stage-progress-viewing { -fx-text-fill: -ft-accent-strong; }
+.stage-progress-locked { -fx-text-fill: -ft-disabled; }
+.stage-progress-connector {
+    -fx-min-height: 1.5;
+    -fx-pref-height: 1.5;
+    -fx-max-height: 1.5;
+    -fx-background-color: -ft-border-strong;
+}
+.stage-progress-connector-slot { -fx-translate-y: -13; }
+.stage-progress-connector-complete { -fx-background-color: -ft-accent; }
+.stage-progress-connector-locked { -fx-background-color: -ft-border; }
+
 .app-name { -fx-font-size: 16px; -fx-font-weight: 800; -fx-text-fill: -ft-text-primary; }
 .tournament-context {
     -fx-min-width: 260;

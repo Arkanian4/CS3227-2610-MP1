@@ -23,9 +23,11 @@ other tournament.
 Choose **+ New Tournament**, enter a name, and choose **Create**. Names are trimmed and unique
 without regard to letter case. For example, `Club Open` and ` club open ` cannot both be created.
 
-When a tournament is open, use the left navigation to move between available competition stages.
-Unavailable later stages are muted until the required earlier stage is complete. The header shows
-the current tournament and phase; **Tournament Home** remains available in the sidebar.
+When a tournament is open, use the connected stage tracker below the header to move between
+available competition stages. Completed stages show filled teal circles, the current competition
+stage uses a larger filled teal circle with an accent ring, and unavailable later stages remain muted hollow
+circles. The header shows the current
+tournament and phase; **Tournament Home** remains available in the sidebar.
 
 ## Registration and seeding
 
