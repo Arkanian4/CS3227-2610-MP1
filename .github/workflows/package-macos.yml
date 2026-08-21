@@ -1,0 +1,96 @@
+name: Package macOS application
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package-macos-arm64:
+    # macos-14 is GitHub's standard Apple Silicon runner. The produced app
+    # therefore targets Apple Silicon Macs, rather than Intel Macs.
+    runs-on: macos-14
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Temurin Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Verify packaging tools
+        run: |
+          java -version
+          jpackage --version
+          uname -m
+
+      - name: Build application distribution
+        run: ./gradlew clean installDist --no-daemon
+
+      - name: Package macOS app and DMG
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          APP_NAME="Fencing Tournament Manager"
+          DIST_ROOT="build/install/fencing-tournament-manager"
+          INPUT_DIR="packaging-input"
+          OUTPUT_DIR="packaging-output"
+          MAIN_JAR="fencing-tournament-manager-0.1.0-SNAPSHOT.jar"
+          APP_BUNDLE="$OUTPUT_DIR/$APP_NAME.app"
+
+          test -d "$DIST_ROOT/lib"
+          test -f "$DIST_ROOT/lib/$MAIN_JAR"
+
+          rm -rf "$INPUT_DIR" "$OUTPUT_DIR"
+          mkdir -p "$INPUT_DIR" "$OUTPUT_DIR"
+          cp "$DIST_ROOT/lib/"*.jar "$INPUT_DIR/"
+
+          # JavaFX and other dependencies are supplied through the generated
+          # Gradle distribution's lib directory; jpackage bundles its runtime.
+          jpackage \
+            --type app-image \
+            --name "$APP_NAME" \
+            --input "$INPUT_DIR" \
+            --main-jar "$MAIN_JAR" \
+            --main-class "edu.nus.cs3227.fencingtournament.AppLauncher" \
+            --dest "$OUTPUT_DIR" \
+            --vendor "Fencing Club" \
+            --description "Offline internal fencing tournament manager" \
+            --mac-package-identifier "edu.nus.cs3227.fencingtournament" \
+            --add-modules "java.desktop,java.logging,java.xml,jdk.unsupported"
+
+          test -d "$APP_BUNDLE"
+          test -d "$APP_BUNDLE/Contents/runtime"
+          test -x "$APP_BUNDLE/Contents/MacOS/$APP_NAME"
+
+          # ditto preserves the macOS application bundle structure in the ZIP.
+          ditto -c -k --sequesterRsrc --keepParent \
+            "$APP_BUNDLE" "$OUTPUT_DIR/Fencing-Tournament-Manager-macOS-arm64.zip"
+
+          # The app is intentionally unsigned. Gatekeeper may require the
+          # recipient to explicitly approve opening it on first launch.
+          hdiutil create \
+            -volname "$APP_NAME" \
+            -srcfolder "$APP_BUNDLE" \
+            -ov \
+            -format UDZO \
+            "$OUTPUT_DIR/Fencing-Tournament-Manager-macOS-arm64.dmg"
+
+          test -f "$OUTPUT_DIR/Fencing-Tournament-Manager-macOS-arm64.zip"
+          test -f "$OUTPUT_DIR/Fencing-Tournament-Manager-macOS-arm64.dmg"
+
+      - name: Upload macOS distributables
+        uses: actions/upload-artifact@v4
+        with:
+          name: Fencing-Tournament-Manager-macOS-arm64
+          path: |
+            packaging-output/Fencing-Tournament-Manager-macOS-arm64.zip
+            packaging-output/Fencing-Tournament-Manager-macOS-arm64.dmg
+          if-no-files-found: error
+          retention-days: 14
