@@ -617,7 +617,7 @@ public final class TournamentView extends BorderPane {
     }
     private VBox buildStandingsTab() {
         Label title = new Label("Pool Result"); title.getStyleClass().add("screen-title"); Label description = new Label("Overall placing after every pool bout has been finalized."); description.getStyleClass().add("screen-subtitle"); generateEliminationButton.getStyleClass().add("primary-action");
-        HBox titleRow = new HBox(title, generateEliminationButton); titleRow.setAlignment(Pos.CENTER_LEFT); HBox.setHgrow(title, Priority.ALWAYS); titleRow.getStyleClass().add("page-title-row");
+        HBox titleRow = new HBox(title, generateEliminationButton); titleRow.setAlignment(Pos.CENTER_LEFT); titleRow.setSpacing(16); HBox.setHgrow(title, Priority.ALWAYS); titleRow.getStyleClass().add("page-title-row");
         HBox status = new HBox(standingsStatusLabel); status.setAlignment(Pos.CENTER_LEFT); status.getStyleClass().add("workspace-toolbar");
         ScrollPane standingsScroll = resultsScroll(standingsGrid); VBox root = new VBox(8, titleRow, description, status, standingsScroll); root.getStyleClass().add("screen-content"); VBox.setVgrow(standingsScroll, Priority.ALWAYS); return root;
     }
