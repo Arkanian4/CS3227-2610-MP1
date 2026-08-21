@@ -316,6 +316,26 @@ class TournamentControllerTest {
         });
     }
 
+    @Test
+    void movedSeedOrderIsUsedWhenGeneratingPools() throws Exception {
+        onJavaFxThread(() -> {
+            TournamentService service = new TournamentService(new InMemoryRepository());
+            service.createTournament("Club Open");
+            Fencer alice = service.addFencer("Alice");
+            Fencer ben = service.addFencer("Ben");
+            service.seedFencers(List.of(alice.id(), ben.id()));
+            TournamentView view = new TournamentView();
+            new TournamentController(service, view);
+
+            view.seedList().getSelectionModel().select(ben);
+            view.moveSeedUpButton().fire();
+            view.generatePoolsButton().fire();
+
+            assertEquals(List.of(ben.id(), alice.id()), service.currentTournament().orElseThrow().seeding().fencerIds());
+            assertEquals(TournamentPhase.POOL_PHASE, service.currentPhase());
+        });
+    }
+
     private static void onJavaFxThread(ThrowingRunnable action) throws Exception {
         AtomicReference<Throwable> failure = new AtomicReference<>();
         CountDownLatch completed = new CountDownLatch(1);

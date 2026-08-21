@@ -85,7 +85,9 @@ tournament tab when switching from Tournament Home.
 
 Pool generation uses manual seed order, balanced snake distribution, and round-robin bouts. The
 existing 5--7 pool behavior is retained; selecting a maximum of 8 explicitly permits eight-person
-pools and lets sixteen fencers form two 8-person pools. Overall placing uses victory ratio,
+pools and lets sixteen fencers form two 8-person pools. Dragging a seed row delegates to
+`TournamentService.moveSeedFencer`, which validates and updates the pre-pool seeding before the
+view is refreshed; `generatePools` then uses that service-owned order. Overall placing uses victory ratio,
 indicator, touches scored, and original seed. The top 16 Pool Result
 places advance to a next-power-of-two DE bracket with automatic byes for higher seeds.
 

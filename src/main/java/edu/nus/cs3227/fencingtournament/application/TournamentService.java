@@ -211,6 +211,22 @@ public final class TournamentService {
         });
     }
 
+    /** Moves one seeded fencer to a zero-based target seed position before pools are generated. */
+    public boolean moveSeedFencer(UUID fencerId, int targetSeedIndex) {
+        Tournament tournament = requireActiveTournament();
+        if (tournament.phase() != TournamentPhase.SEEDING || tournament.seeding() == null) return false;
+        List<UUID> orderedIds = new ArrayList<>(tournament.seeding().fencerIds());
+        int sourceIndex = orderedIds.indexOf(fencerId);
+        if (sourceIndex < 0 || targetSeedIndex < 0 || targetSeedIndex >= orderedIds.size()
+                || sourceIndex == targetSeedIndex) return false;
+        return mutate(() -> {
+            UUID moved = orderedIds.remove(sourceIndex);
+            orderedIds.add(targetSeedIndex, moved);
+            tournament.applySeeding(new Seeding(orderedIds));
+            return true;
+        });
+    }
+
     public List<Pool> pools() {
         return requireActiveTournament().pools();
     }

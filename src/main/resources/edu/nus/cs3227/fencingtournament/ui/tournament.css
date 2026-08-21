@@ -296,6 +296,14 @@
 .list-view .list-cell { -fx-padding: 9 10; -fx-background-color: transparent; -fx-text-fill: -ft-text-primary; }
 .list-view .list-cell:filled:selected { -fx-background-color: -ft-accent-subtle; -fx-text-fill: -ft-accent-strong; -fx-font-weight: 700; }
 .list-view .list-cell:filled:hover { -fx-background-color: -ft-hover; }
+.seed-list .list-cell { -fx-cursor: open-hand; -fx-padding: 0 10; }
+.seed-list .list-cell:filled:hover { -fx-background-color: -ft-hover; }
+.seed-list .list-cell.seed-dragging { -fx-background-color: -ft-surface-elevated; -fx-border-color: -ft-border-strong; -fx-opacity: 0.82; }
+.seed-list .list-cell.seed-drop-before { -fx-border-color: -ft-accent transparent transparent transparent; -fx-border-width: 3 0 0 0; }
+.seed-list .list-cell.seed-drop-after { -fx-border-color: transparent transparent -ft-accent transparent; -fx-border-width: 0 0 3 0; }
+.seed-drag-handle { -fx-font-size: 17px; -fx-font-weight: 700; -fx-text-fill: -ft-text-muted; -fx-cursor: open-hand; }
+.seed-row-number { -fx-min-width: 24; -fx-font-size: 12px; -fx-font-weight: 800; -fx-text-fill: -ft-accent-strong; }
+.seed-row-name { -fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: -ft-text-primary; }
 
 .pool-navigator { -fx-padding: 24 0 24 24; -fx-pref-width: 164; }
 .pool-dashboard-scroll {

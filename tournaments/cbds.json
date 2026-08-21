@@ -1,0 +1,52 @@
+{
+  "id" : "91bf4843-9d4c-481d-8e2d-668318d49160",
+  "name" : "cbds",
+  "settings" : {
+    "targetPoolSize" : 5,
+    "poolBoutScoreLimit" : 5,
+    "eliminationBoutScoreLimit" : 15,
+    "advancingFencerCount" : 16,
+    "tieBreakPolicy" : {
+      "criteria" : [ "VICTORY_RATIO", "INDICATOR", "TOUCHES_SCORED", "SEED" ]
+    }
+  },
+  "fencers" : [ {
+    "id" : "b3f26af3-ac32-49ea-be5f-ab5f9b7e9a2e",
+    "name" : "vsvsdvsv"
+  }, {
+    "id" : "2033c71e-7ae3-4bdb-b88a-f2dc87a542f1",
+    "name" : "bdbsv"
+  }, {
+    "id" : "75b992ae-2e42-4273-87de-4418f7d2d101",
+    "name" : "svas"
+  }, {
+    "id" : "1f11c696-a0bf-4d4d-96d4-a92f2fac42c5",
+    "name" : "vcac"
+  }, {
+    "id" : "223ffb99-9737-4f98-96f1-360c4f6ea1d9",
+    "name" : "sc"
+  }, {
+    "id" : "ea1e9a5b-63e6-4b6a-9ed4-9e1a3f94478b",
+    "name" : "scsav"
+  }, {
+    "id" : "9ff114b7-0fde-446f-8167-b98382e289c6",
+    "name" : "sdv"
+  }, {
+    "id" : "71396fab-cd3b-469a-8629-6756f72df2dc",
+    "name" : "sdvsdv"
+  }, {
+    "id" : "ed8ae177-db0a-443c-944d-92ad0a8cce2f",
+    "name" : "sdvsdvsdv"
+  }, {
+    "id" : "8744837e-69bb-449a-ad2c-fe33c81e6820",
+    "name" : "sv"
+  }, {
+    "id" : "b4cb5d5e-9856-48bc-a2bd-fd4e702a3bee",
+    "name" : "dsv"
+  } ],
+  "seeding" : {
+    "fencerIds" : [ "b3f26af3-ac32-49ea-be5f-ab5f9b7e9a2e", "223ffb99-9737-4f98-96f1-360c4f6ea1d9", "75b992ae-2e42-4273-87de-4418f7d2d101", "1f11c696-a0bf-4d4d-96d4-a92f2fac42c5", "9ff114b7-0fde-446f-8167-b98382e289c6", "ed8ae177-db0a-443c-944d-92ad0a8cce2f", "b4cb5d5e-9856-48bc-a2bd-fd4e702a3bee", "ea1e9a5b-63e6-4b6a-9ed4-9e1a3f94478b", "71396fab-cd3b-469a-8629-6756f72df2dc", "8744837e-69bb-449a-ad2c-fe33c81e6820", "2033c71e-7ae3-4bdb-b88a-f2dc87a542f1" ]
+  },
+  "pools" : [ ],
+  "eliminationBracket" : null
+}

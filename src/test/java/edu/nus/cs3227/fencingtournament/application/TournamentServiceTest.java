@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -90,6 +91,31 @@ class TournamentServiceTest {
         assertEquals(0, service.poolProgress().completedBouts());
         assertEquals(10, service.poolProgress().totalBouts());
         assertEquals(5, service.standingsForPool(service.pools().get(0).id()).size());
+    }
+
+    @Test
+    void seededFencersCanBeMovedByInsertionBeforePoolGeneration() {
+        TournamentService service = new TournamentService(new InMemoryRepository());
+        service.createTournament("Internal Open");
+        List<Fencer> fencers = java.util.stream.IntStream.range(0, 4)
+                .mapToObj(index -> service.addFencer("Fencer " + (index + 1))).toList();
+        service.seedFencers(fencers.stream().map(Fencer::id).toList());
+
+        assertTrue(service.moveSeedFencer(fencers.getFirst().id(), 3));
+        assertEquals(List.of(fencers.get(1).id(), fencers.get(2).id(), fencers.get(3).id(), fencers.getFirst().id()),
+                service.currentTournament().orElseThrow().seeding().fencerIds());
+        assertTrue(service.moveSeedFencer(fencers.getFirst().id(), 0));
+        assertTrue(service.moveSeedFencer(fencers.get(3).id(), 1));
+        assertEquals(List.of(fencers.getFirst().id(), fencers.get(3).id(), fencers.get(1).id(), fencers.get(2).id()),
+                service.currentTournament().orElseThrow().seeding().fencerIds());
+        assertFalse(service.moveSeedFencer(UUID.randomUUID(), 0));
+        assertFalse(service.moveSeedFencer(fencers.getFirst().id(), -1));
+        assertFalse(service.moveSeedFencer(fencers.getFirst().id(), 4));
+        assertEquals(4, new java.util.HashSet<>(service.currentTournament().orElseThrow().seeding().fencerIds()).size());
+
+        service.generatePools(5);
+        assertEquals(TournamentPhase.POOL_PHASE, service.currentPhase());
+        assertFalse(service.moveSeedFencer(fencers.getFirst().id(), 1));
     }
 
     @Test

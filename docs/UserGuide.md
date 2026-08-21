@@ -34,9 +34,9 @@ and unique within the tournament. The roster is numbered in registration order; 
 choose **Remove selected** to remove that fencer after confirmation.
 
 With at least two fencers, choose **Continue to seeding** at the bottom of the registration
-workspace. Use **Move up** and **Move down** to
-reorder the seed list, then choose **Confirm seed order**. The order distributes fencers across
-pools and is the final standings tie-breaker.
+workspace. Drag a fencer to a new position, or use **Move up** and **Move down**, to reorder the
+provisional seed list. **Generate pools** locks the order by advancing to the pool stage and uses
+it to distribute fencers across pools; it is also the final standings tie-breaker.
 
 ## Pools and Pool Result
 

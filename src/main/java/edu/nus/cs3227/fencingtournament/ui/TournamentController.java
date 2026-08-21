@@ -53,8 +53,8 @@ public final class TournamentController {
         view.removeFencerButton().setOnAction(event -> removeFencer());
         view.moveSeedUpButton().setOnAction(event -> moveSeed(-1));
         view.moveSeedDownButton().setOnAction(event -> moveSeed(1));
+        view.setSeedMoveHandler(this::moveSeedFencer);
         view.confirmSeedingButton().setOnAction(event -> applySeeding());
-        view.applySeedingButton().setOnAction(event -> applySeeding());
         view.generatePoolsButton().setOnAction(event -> generatePools());
         view.generateEliminationButton().setOnAction(event -> generateEliminationBracket());
         view.poolList().getSelectionModel().selectedItemProperty().addListener(
@@ -195,10 +195,17 @@ public final class TournamentController {
         int selected = view.seedList().getSelectionModel().getSelectedIndex();
         int destination = selected + direction;
         if (selected < 0 || destination < 0 || destination >= view.seedList().getItems().size()) return;
-        var items = view.seedList().getItems();
-        Fencer fencer = items.remove(selected);
-        items.add(destination, fencer);
-        view.seedList().getSelectionModel().select(destination);
+        moveSeedFencer(view.seedList().getItems().get(selected).id(), destination);
+    }
+
+    private void moveSeedFencer(UUID fencerId, int destination) {
+        try {
+            if (!service.moveSeedFencer(fencerId, destination)) return;
+            refreshWorkspace();
+            view.seedList().getSelectionModel().select(destination);
+        } catch (IllegalArgumentException | IllegalStateException | TournamentPersistenceException exception) {
+            showError(exception);
+        }
     }
 
     private void applySeeding() {

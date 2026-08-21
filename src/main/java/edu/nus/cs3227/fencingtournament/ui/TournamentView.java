@@ -11,6 +11,9 @@ import javafx.scene.Scene;
 import javafx.scene.Node;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
 import javafx.scene.shape.Line;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -19,6 +22,7 @@ import java.util.List;
 import java.util.Comparator;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 /** Main JavaFX workspace. It renders presentation state and delegates user intent to its controller. */
 public final class TournamentView extends BorderPane {
@@ -56,7 +60,6 @@ public final class TournamentView extends BorderPane {
     private final Button moveSeedUpButton = new Button("Move up");
     private final Button moveSeedDownButton = new Button("Move down");
     private final Button confirmSeedingButton = new Button("Continue to seeding");
-    private final Button applySeedingButton = new Button("Confirm seed order");
     private final Button generatePoolsButton = new Button("Generate pools");
     private final ComboBox<Integer> maximumPoolSizeChoice = new ComboBox<>();
 
@@ -115,6 +118,7 @@ public final class TournamentView extends BorderPane {
     private Consumer<UUID> tournamentOpenHandler = ignored -> { };
     private Consumer<UUID> tournamentDeleteHandler = ignored -> { };
     private Consumer<PoolMatrixSelection> matrixCellHandler = ignored -> { };
+    private BiConsumer<UUID, Integer> seedMoveHandler = (fencerId, targetIndex) -> { };
     private Runnable poolSelectionDismissHandler = () -> { };
     private UUID selectedMatrixRow;
     private UUID selectedMatrixOpponent;
@@ -212,7 +216,6 @@ public final class TournamentView extends BorderPane {
     public Button moveSeedUpButton() { return moveSeedUpButton; }
     public Button moveSeedDownButton() { return moveSeedDownButton; }
     public Button confirmSeedingButton() { return confirmSeedingButton; }
-    public Button applySeedingButton() { return applySeedingButton; }
     public Button generatePoolsButton() { return generatePoolsButton; }
     public ComboBox<Integer> maximumPoolSizeChoice() { return maximumPoolSizeChoice; }
     public TabPane tabs() { return tabs; }
@@ -233,6 +236,7 @@ public final class TournamentView extends BorderPane {
     public Button editPoolResultButton() { return editPoolResultButton; }
     public FlowPane poolDashboard() { return poolDashboard; }
     public void setMatrixCellHandler(Consumer<PoolMatrixSelection> handler) { matrixCellHandler = handler == null ? ignored -> { } : handler; }
+    public void setSeedMoveHandler(BiConsumer<UUID, Integer> handler) { seedMoveHandler = handler == null ? (fencerId, targetIndex) -> { } : handler; }
     public void setPoolSelectionDismissHandler(Runnable handler) { poolSelectionDismissHandler = handler == null ? () -> { } : handler; }
     public void markSelectedMatrixCell(UUID poolId, UUID row, UUID opponent) {
         selectedMatrixPool = poolId;
@@ -441,8 +445,8 @@ public final class TournamentView extends BorderPane {
         boolean pools = hasTournament && (phase == TournamentPhase.POOL_PHASE || phase == TournamentPhase.ELIMINATION_PHASE || phase == TournamentPhase.COMPLETE);
         showOnly(createTournamentSection, !hasTournament); showOnly(registrationSection, registration); showOnly(seedingSection, seeding);
         fencerNameField.setDisable(!registration); addFencerButton.setDisable(!registration); removeFencerButton.setDisable(!registration); fencerList.setDisable(!registration);
-        seedList.setDisable(!seeding); moveSeedUpButton.setDisable(!seeding); moveSeedDownButton.setDisable(!seeding); applySeedingButton.setDisable(!(registration || seeding));
-        confirmSeedingButton.setDisable(!registration || seedList.getItems().size() < 2); applySeedingButton.setText("Apply revised order"); generatePoolsButton.setDisable(!seeding || seedList.getItems().size() < 2); poolsTab.setDisable(!pools); standingsTab.setDisable(!poolResultsFinalized); eliminationTab.setDisable(!hasEliminationBracket); finalResultsTab.setDisable(phase != TournamentPhase.COMPLETE); generateEliminationButton.setDisable(!poolResultsFinalized || hasEliminationBracket);
+        seedList.setDisable(!seeding); moveSeedUpButton.setDisable(!seeding); moveSeedDownButton.setDisable(!seeding);
+        confirmSeedingButton.setDisable(!registration || seedList.getItems().size() < 2); generatePoolsButton.setDisable(!seeding || seedList.getItems().size() < 2); poolsTab.setDisable(!pools); standingsTab.setDisable(!poolResultsFinalized); eliminationTab.setDisable(!hasEliminationBracket); finalResultsTab.setDisable(phase != TournamentPhase.COMPLETE); generateEliminationButton.setDisable(!poolResultsFinalized || hasEliminationBracket);
         setupNavigationButton.setDisable(!hasTournament); poolsNavigationButton.setDisable(!pools); standingsNavigationButton.setDisable(!poolResultsFinalized); eliminationNavigationButton.setDisable(!hasEliminationBracket); finalResultsNavigationButton.setDisable(phase != TournamentPhase.COMPLETE);
         sidebarStageGroup.setVisible(hasTournament); sidebarStageGroup.setManaged(hasTournament);
         refreshNavigationState();
@@ -550,10 +554,10 @@ public final class TournamentView extends BorderPane {
         Label progressionHint = new Label("Set the seed order after the field is complete."); progressionHint.getStyleClass().add("screen-subtitle");
         HBox progression = new HBox(12, progressionHint, confirmSeedingButton); progression.setAlignment(Pos.CENTER_RIGHT); HBox.setHgrow(progressionHint, Priority.ALWAYS); progression.getStyleClass().add("registration-progression");
         registrationSection.getChildren().setAll(sectionTitle("Registration", "Build the tournament field before setting the seed order."), addForm, roster, progression); registrationSection.getStyleClass().addAll("setup-stage", "registration-layout"); registrationSection.setMaxWidth(900);
-        seedList.setPlaceholder(new Label("No fencers registered yet.")); VBox.setVgrow(seedList, Priority.ALWAYS); HBox reorder = new HBox(8, moveSeedUpButton, moveSeedDownButton); reorder.getStyleClass().add("secondary-actions"); generatePoolsButton.getStyleClass().add("primary-action");
+        seedList.setPlaceholder(new Label("No fencers registered yet.")); seedList.getStyleClass().add("seed-list"); VBox.setVgrow(seedList, Priority.ALWAYS); HBox reorder = new HBox(8, moveSeedUpButton, moveSeedDownButton); reorder.getStyleClass().add("secondary-actions"); generatePoolsButton.getStyleClass().add("primary-action");
         maximumPoolSizeChoice.getItems().setAll(5, 6, 7, 8); maximumPoolSizeChoice.getSelectionModel().select(Integer.valueOf(5)); maximumPoolSizeChoice.setPrefWidth(90);
         HBox poolOptions = new HBox(8, new Label("Maximum fencers per pool"), maximumPoolSizeChoice); poolOptions.setAlignment(Pos.CENTER_LEFT); poolOptions.getStyleClass().add("pool-options");
-        VBox seedingActions = new VBox(12, new Label("Adjust the selected seed"), reorder, poolOptions, actionRow(applySeedingButton, generatePoolsButton));
+        VBox seedingActions = new VBox(12, new Label("Drag a fencer or adjust the selected seed"), reorder, poolOptions, actionRow(generatePoolsButton));
         seedingActions.getStyleClass().add("setup-actions");
         VBox seedOrder = new VBox(8, new Label("SEED ORDER"), seedList);
         seedOrder.getStyleClass().add("setup-roster");
@@ -631,8 +635,66 @@ public final class TournamentView extends BorderPane {
     }
     private HBox buildStatusBar() { statusLabel.getStyleClass().add("status-text"); HBox bar = new HBox(statusLabel); bar.getStyleClass().add("status-bar"); return bar; }
     private void configureListCells() {
-        fencerList.setCellFactory(ignored -> fencerCell()); seedList.setCellFactory(ignored -> new ListCell<>() { @Override protected void updateItem(Fencer fencer, boolean empty) { super.updateItem(fencer, empty); setText(empty || fencer == null ? null : (getIndex() + 1) + "   " + fencer.name()); }});
+        fencerList.setCellFactory(ignored -> fencerCell()); seedList.setCellFactory(ignored -> seedCell());
         poolList.setCellFactory(ignored -> poolCell());
+    }
+    private ListCell<Fencer> seedCell() {
+        ListCell<Fencer> cell = new ListCell<>() {
+            @Override protected void updateItem(Fencer fencer, boolean empty) {
+                super.updateItem(fencer, empty);
+                getStyleClass().removeAll("seed-drop-before", "seed-drop-after", "seed-dragging");
+                if (empty || fencer == null) {
+                    setText(null);
+                    setGraphic(null);
+                    return;
+                }
+                Label handle = new Label("≡"); handle.getStyleClass().add("seed-drag-handle");
+                Label number = new Label(Integer.toString(getIndex() + 1)); number.getStyleClass().add("seed-row-number");
+                Label name = new Label(fencer.name()); name.getStyleClass().add("seed-row-name");
+                HBox row = new HBox(10, handle, number, name); row.setAlignment(Pos.CENTER_LEFT); HBox.setHgrow(name, Priority.ALWAYS);
+                setText(null);
+                setGraphic(row);
+            }
+        };
+        cell.setOnDragDetected(event -> {
+            Fencer fencer = cell.getItem();
+            if (fencer == null || seedList.isDisabled()) return;
+            Dragboard dragboard = cell.startDragAndDrop(TransferMode.MOVE);
+            ClipboardContent content = new ClipboardContent(); content.putString(fencer.id().toString()); dragboard.setContent(content);
+            cell.getStyleClass().add("seed-dragging");
+            event.consume();
+        });
+        cell.setOnDragOver(event -> {
+            if (event.getGestureSource() != cell && event.getDragboard().hasString() && !seedList.isDisabled()) {
+                event.acceptTransferModes(TransferMode.MOVE);
+                cell.getStyleClass().removeAll("seed-drop-before", "seed-drop-after");
+                cell.getStyleClass().add(event.getY() <= cell.getHeight() / 2 ? "seed-drop-before" : "seed-drop-after");
+            }
+            event.consume();
+        });
+        cell.setOnDragExited(event -> cell.getStyleClass().removeAll("seed-drop-before", "seed-drop-after"));
+        cell.setOnDragDropped(event -> {
+            Dragboard dragboard = event.getDragboard();
+            boolean moved = false;
+            if (dragboard.hasString() && cell.getItem() != null && !seedList.isDisabled()) {
+                try {
+                    UUID fencerId = UUID.fromString(dragboard.getString());
+                    int source = indexOfSeed(fencerId);
+                    int insertion = cell.getIndex() + (event.getY() > cell.getHeight() / 2 ? 1 : 0);
+                    int destination = insertion > source ? insertion - 1 : insertion;
+                    if (source >= 0 && destination != source) seedMoveHandler.accept(fencerId, destination);
+                    moved = true;
+                } catch (IllegalArgumentException ignored) { }
+            }
+            cell.getStyleClass().removeAll("seed-drop-before", "seed-drop-after"); event.setDropCompleted(moved); event.consume();
+        });
+        cell.setOnDragDone(event -> cell.getStyleClass().remove("seed-dragging"));
+        return cell;
+    }
+
+    private int indexOfSeed(UUID fencerId) {
+        return java.util.stream.IntStream.range(0, seedList.getItems().size())
+                .filter(index -> seedList.getItems().get(index).id().equals(fencerId)).findFirst().orElse(-1);
     }
     private ListCell<Pool> poolCell() { return new ListCell<>() { @Override protected void updateItem(Pool pool, boolean empty) { super.updateItem(pool, empty); setText(empty || pool == null ? null : "POOL #" + (getIndex() + 1)); }}; }
     private ListCell<Fencer> fencerCell() {

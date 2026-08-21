@@ -176,3 +176,11 @@ These entries are factual summaries for developer verification and later reflect
   scrolling for zero through two entries; larger lists retain normal vertical scrolling on demand.
 - **Outcome:** Small tournament collections no longer display an unnecessary scrollbar, while
   longer histories remain scrollable.
+
+## Seed ordering interaction
+
+- **Task:** Remove the redundant revised-order confirmation and allow drag reordering.
+- **Decisions:** Let JavaFX calculate a visual insertion target, but delegate each successful move
+  to a service operation that validates and persists the pre-pool seed order.
+- **Outcome:** Seeding can be reordered by drag or buttons without a separate revised-order action;
+  **Generate pools** remains the action that advances the tournament and locks the order.
