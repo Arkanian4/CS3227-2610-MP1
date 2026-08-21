@@ -180,6 +180,39 @@ class TournamentControllerTest {
     }
 
     @Test
+    void lowerHalfPoolMatrixSelectionKeepsItsFencerAndScoreOrientationAfterSaving() throws Exception {
+        onJavaFxThread(() -> {
+            TournamentService service = new TournamentService(new InMemoryRepository());
+            service.createTournament("Club Open");
+            Fencer jackie = service.addFencer("Jackie");
+            Fencer charlie = service.addFencer("Charlie");
+            service.seedFencers(List.of(jackie.id(), charlie.id()));
+            service.generatePools();
+
+            TournamentView view = new TournamentView();
+            new TournamentController(service, view);
+            VBox panel = (VBox) view.poolDashboard().getChildren().getFirst();
+            GridPane matrix = (GridPane) panel.getChildren().get(1);
+            Label charlieVsJackie = matrix.getChildren().stream().filter(Label.class::isInstance).map(Label.class::cast)
+                    .filter(cell -> Integer.valueOf(2).equals(GridPane.getRowIndex(cell))
+                            && Integer.valueOf(1).equals(GridPane.getColumnIndex(cell)))
+                    .findFirst().orElseThrow();
+
+            charlieVsJackie.fireEvent(new MouseEvent(MouseEvent.MOUSE_CLICKED, 0, 0, 0, 0,
+                    javafx.scene.input.MouseButton.PRIMARY, 1, false, false, false, false, true,
+                    false, false, true, false, false, null));
+            view.firstScoreField().setText("5");
+            view.secondScoreField().setText("2");
+            view.recordResultButton().fire();
+
+            assertEquals(new BoutScore(2, 5), service.pools().getFirst().bouts().getFirst().score());
+            view.editPoolResultButton().fire();
+            assertEquals("5", view.firstScoreField().getText());
+            assertEquals("2", view.secondScoreField().getText());
+        });
+    }
+
+    @Test
     void twoPoolBoardUsesTheCompactSideBySideLayoutMode() throws Exception {
         onJavaFxThread(() -> {
             TournamentView view = new TournamentView();

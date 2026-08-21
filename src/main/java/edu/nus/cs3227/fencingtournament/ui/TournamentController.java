@@ -233,9 +233,13 @@ public final class TournamentController {
         List<PoolBoutRow> bouts = pool.bouts().stream().map(this::boutRow).toList();
         int poolNumber = service.pools().indexOf(pool) + 1;
         view.renderSelectedPool("POOL #" + poolNumber, members, matrixRows(pool));
-        selectedBout = selectedBout == null ? null : bouts.stream()
-                .filter(bout -> bout.boutId().equals(selectedBout.boutId()))
-                .findFirst().orElse(null);
+        UUID selectedBoutId = selectedBout == null ? null : selectedBout.boutId();
+        UUID selectedRowFencerId = selectedBout == null ? null : selectedBout.firstId();
+        selectedBout = selectedBoutId == null ? null : pool.bouts().stream()
+                .filter(bout -> bout.id().equals(selectedBoutId))
+                .findFirst()
+                .map(bout -> orientedBoutRow(bout, selectedRowFencerId))
+                .orElse(null);
         view.showSelectedBout(selectedBout);
     }
 

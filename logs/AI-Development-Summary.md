@@ -159,3 +159,12 @@ These entries are factual summaries for developer verification and later reflect
   menu item remains labeled and muted red.
 - **Follow-up refinement:** The closed ellipsis now returns to a neutral background, and the
   context menu uses the shorter `Delete` label with compact spacing and width.
+
+## Pool matrix lower-half result orientation
+
+- **Task:** Fix score-entry reversal after recording a bout selected from the lower-left half of a
+  pool matrix.
+- **Decisions:** Preserve the selected matrix row fencer while rebuilding the selected `PoolBoutRow`
+  after a refresh, rather than recreating it only in the bout's scheduled order.
+- **Outcome:** Result entry and later edits retain the row-versus-column order that the organiser
+  clicked, while the domain score continues to be stored in scheduled-bout order.

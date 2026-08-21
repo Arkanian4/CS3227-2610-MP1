@@ -57,7 +57,10 @@
       "id" : "8b6ba249-b29c-4074-8ccb-d48f2c829473",
       "firstFencerId" : "b5322397-8595-403d-83b4-4bad90327c15",
       "secondFencerId" : "52899ee9-202a-4b20-9379-7f4ce9f71346",
-      "score" : null
+      "score" : {
+        "firstScore" : 5,
+        "secondScore" : 1
+      }
     }, {
       "id" : "aa0ccf72-078f-4e64-9e7f-ec6c384901dc",
       "firstFencerId" : "b5322397-8595-403d-83b4-4bad90327c15",
@@ -75,27 +78,42 @@
       "id" : "d9eba790-3df9-42e6-b3cc-39b21892ed27",
       "firstFencerId" : "8a2ba1e7-3784-4070-9396-6e5b40d19531",
       "secondFencerId" : "52899ee9-202a-4b20-9379-7f4ce9f71346",
-      "score" : null
+      "score" : {
+        "firstScore" : 5,
+        "secondScore" : 1
+      }
     }, {
       "id" : "753dd391-7db0-4ff8-ae44-5f3cb8ca196a",
       "firstFencerId" : "8a2ba1e7-3784-4070-9396-6e5b40d19531",
       "secondFencerId" : "00d57d4f-33d7-4fa1-afee-7eb9876407e5",
-      "score" : null
+      "score" : {
+        "firstScore" : 5,
+        "secondScore" : 1
+      }
     }, {
       "id" : "4a197b5d-512a-4658-83fc-db209ca376b0",
       "firstFencerId" : "8a2ba1e7-3784-4070-9396-6e5b40d19531",
       "secondFencerId" : "3840ead8-dea7-49e4-a225-59c3180bea95",
-      "score" : null
+      "score" : {
+        "firstScore" : 5,
+        "secondScore" : 1
+      }
     }, {
       "id" : "3f64bbae-d15c-4ba5-8b37-d96892ba2122",
       "firstFencerId" : "52899ee9-202a-4b20-9379-7f4ce9f71346",
       "secondFencerId" : "00d57d4f-33d7-4fa1-afee-7eb9876407e5",
-      "score" : null
+      "score" : {
+        "firstScore" : 1,
+        "secondScore" : 5
+      }
     }, {
       "id" : "bf7499f7-6de4-4b8a-86e1-16b3224e5042",
       "firstFencerId" : "52899ee9-202a-4b20-9379-7f4ce9f71346",
       "secondFencerId" : "3840ead8-dea7-49e4-a225-59c3180bea95",
-      "score" : null
+      "score" : {
+        "firstScore" : 5,
+        "secondScore" : 1
+      }
     }, {
       "id" : "65fb203a-1d3f-4b40-85fe-b6ef60205269",
       "firstFencerId" : "00d57d4f-33d7-4fa1-afee-7eb9876407e5",
