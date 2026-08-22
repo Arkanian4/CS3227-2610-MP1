@@ -535,7 +535,7 @@ class TournamentControllerTest {
     }
 
     @Test
-    void unifiedSetupRosterUsesCompactHeightForSmallFields() throws Exception {
+    void unifiedSetupRosterKeepsAStableViewportForSmallAndLargeFields() throws Exception {
         onJavaFxThread(() -> {
             TournamentView view = new TournamentView();
             List<Fencer> fencers = List.of(
@@ -545,7 +545,14 @@ class TournamentControllerTest {
 
             view.renderFencers(fencers, fencers);
 
-            assertEquals(128.0, view.seedList().getPrefHeight());
+            assertEquals(336.0, view.seedList().getPrefHeight());
+            List<Fencer> largerField = java.util.stream.IntStream.range(0, 20)
+                    .mapToObj(index -> new Fencer(UUID.randomUUID(), "Fencer " + index)).toList();
+            view.renderFencers(largerField, largerField);
+
+            assertEquals(336.0, view.seedList().getPrefHeight());
+            assertEquals(252.0, view.seedList().getMinHeight());
+            assertEquals(420.0, view.seedList().getMaxHeight());
         });
     }
 

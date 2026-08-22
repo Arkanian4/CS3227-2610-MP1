@@ -51,7 +51,8 @@ using the compact **Fencer name** entry row; pressing Enter adds the name too. N
 non-blank and unique within the tournament. A successful addition appears at the bottom of the
 single numbered **Seed order** list.
 
-Drag a row using its handle to insert it at a new position. Seed numbers update immediately. Use
+Drag a row using its handle to insert it at a new position. For a longer roster, hold the dragged
+row near the top or bottom of the seed list to scroll it automatically. Seed numbers update immediately. Use
 the compact **×** action at the right of a row to remove that fencer after confirmation; the remaining
 rows are renumbered automatically. Name errors appear next to the entry field without clearing
 the text that needs correction.

@@ -94,7 +94,10 @@ Setup uses one JavaFX `ListView` for the authoritative pre-pool seed order. Its 
 a visible drag handle and one-based seed number with a compact row-level remove action. The view
 reports drag insertion and removal intent only; the controller delegates those mutations to the
 service, then refreshes the list from the aggregate so the UI cannot become a competing source of
-order.
+order. The list has a bounded responsive viewport so its configuration footer does not move with
+roster size. During a valid drag, a short JavaFX timer adjusts only the ListView's internal vertical
+scrollbar while the pointer is within its top or bottom edge zone; standard dragging and dropping
+remain responsible for insertion and cancellation.
 
 ## Key decisions
 

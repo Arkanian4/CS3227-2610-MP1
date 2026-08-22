@@ -7,6 +7,8 @@ import edu.nus.cs3227.fencingtournament.domain.TournamentPhase;
 import edu.nus.cs3227.fencingtournament.domain.pool.Pool;
 import javafx.collections.FXCollections;
 import javafx.application.Platform;
+import javafx.animation.AnimationTimer;
+import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -15,6 +17,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.Dragboard;
+import javafx.scene.input.DragEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.shape.Line;
 import javafx.scene.control.*;
@@ -36,6 +39,9 @@ public final class TournamentView extends BorderPane {
     private static final double TABLEAU_FIRST_CENTRE = 58;
     private static final double TABLEAU_BOTTOM_PADDING = 14;
     private static final double HORIZONTAL_SCROLLBAR_ALLOWANCE = 18;
+    private static final double SEED_AUTO_SCROLL_EDGE = 42;
+    private static final double SEED_AUTO_SCROLL_MIN_RATE = 0.35;
+    private static final double SEED_AUTO_SCROLL_MAX_RATE = 1.15;
     private final Label tournamentNameLabel = new Label("No tournament open");
     private final Label phaseLabel = new Label("Start by creating or opening a tournament");
     private final Label progressLabel = new Label();
@@ -65,6 +71,21 @@ public final class TournamentView extends BorderPane {
     private final Button addFencerButton = new Button("Add fencer");
     private final Label fencerValidationErrorLabel = new Label();
     private final ListView<Fencer> seedList = new ListView<>(FXCollections.observableArrayList());
+    private double seedAutoScrollRate;
+    private long seedAutoScrollLastNanos;
+    private boolean seedAutoScrollRunning;
+    private final AnimationTimer seedAutoScrollTimer = new AnimationTimer() {
+        @Override
+        public void handle(long now) {
+            if (seedAutoScrollLastNanos == 0) {
+                seedAutoScrollLastNanos = now;
+                return;
+            }
+            double elapsedSeconds = Math.min(0.05, (now - seedAutoScrollLastNanos) / 1_000_000_000.0);
+            seedAutoScrollLastNanos = now;
+            scrollSeedList(seedAutoScrollRate * elapsedSeconds);
+        }
+    };
     private final Label registeredFencerCountLabel = new Label("0 fencers");
     private final Button generatePoolsButton = new Button("Generate pools");
     private final ComboBox<Integer> maximumPoolSizeChoice = new ComboBox<>();
@@ -290,7 +311,6 @@ public final class TournamentView extends BorderPane {
     public void renderFencers(List<Fencer> fencers, List<Fencer> seedOrder) {
         seedList.getItems().setAll(seedOrder);
         registeredFencerCountLabel.setText(fencers.size() + (fencers.size() == 1 ? " fencer" : " fencers"));
-        seedList.setPrefHeight(Math.min(420, Math.max(76, fencers.size() * 42 + 2)));
     }
     public void renderPools(List<Pool> pools) {
         Pool selected = poolList.getSelectionModel().getSelectedItem();
@@ -864,8 +884,11 @@ public final class TournamentView extends BorderPane {
         Label rosterTitle = new Label("SEED ORDER"); rosterTitle.getStyleClass().add("section-kicker"); registeredFencerCountLabel.getStyleClass().add("registration-count");
         HBox rosterHeading = new HBox(10, rosterTitle, registeredFencerCountLabel); rosterHeading.setAlignment(Pos.CENTER_LEFT); HBox.setHgrow(registeredFencerCountLabel, Priority.ALWAYS);
         Label noFencers = new Label("No fencers registered yet.\nAdd the first fencer above."); noFencers.getStyleClass().add("setup-empty-list"); noFencers.setWrapText(true);
-        seedList.setPlaceholder(noFencers); seedList.getStyleClass().addAll("seed-list", "setup-seed-list"); seedList.setFixedCellSize(42); seedList.setMinHeight(76); seedList.setMaxHeight(420);
+        seedList.setPlaceholder(noFencers); seedList.getStyleClass().addAll("seed-list", "setup-seed-list");
+        seedList.setFixedCellSize(42); seedList.setMinHeight(252); seedList.setPrefHeight(336); seedList.setMaxHeight(420);
+        VBox.setVgrow(seedList, Priority.ALWAYS);
         VBox roster = new VBox(6, rosterHeading, seedList); roster.getStyleClass().add("registration-roster");
+        VBox.setVgrow(roster, Priority.ALWAYS);
         generatePoolsButton.getStyleClass().add("primary-action");
         maximumPoolSizeChoice.getItems().setAll(5, 6, 7, 8); maximumPoolSizeChoice.getSelectionModel().select(Integer.valueOf(5)); maximumPoolSizeChoice.setPrefWidth(90);
         HBox poolOptions = new HBox(8, new Label("Maximum fencers per pool"), maximumPoolSizeChoice); poolOptions.setAlignment(Pos.CENTER_LEFT); poolOptions.getStyleClass().add("pool-options");
@@ -875,7 +898,9 @@ public final class TournamentView extends BorderPane {
                 sectionTitle("Setup", "Build the tournament field and arrange the initial seed order."),
                 addFencerForm, roster, seedingValidationErrorLabel, setupFooter);
         registrationSection.getStyleClass().addAll("setup-stage", "unified-setup-layout"); registrationSection.setMaxWidth(900);
-        VBox root = new VBox(createTournamentSection, registrationSection); root.setAlignment(Pos.TOP_CENTER); root.getStyleClass().add("screen-content"); return root;
+        VBox root = new VBox(createTournamentSection, registrationSection); root.setAlignment(Pos.TOP_CENTER); root.getStyleClass().add("screen-content");
+        VBox.setVgrow(registrationSection, Priority.ALWAYS);
+        return root;
     }
     private BorderPane buildPoolsTab() {
         Label title = new Label("Pools"); title.getStyleClass().add("screen-title");
@@ -973,7 +998,90 @@ public final class TournamentView extends BorderPane {
     }
     private void configureListCells() {
         seedList.setCellFactory(ignored -> seedCell());
+        configureSeedListAutoScroll();
         poolList.setCellFactory(ignored -> poolCell());
+    }
+    private void configureSeedListAutoScroll() {
+        seedList.addEventFilter(DragEvent.DRAG_OVER, event -> {
+            if (event.getDragboard().hasString() && !seedList.isDisabled()) {
+                updateSeedAutoScroll(event.getSceneY());
+            }
+        });
+        seedList.addEventFilter(DragEvent.DRAG_EXITED, event -> {
+            Bounds bounds = seedList.localToScene(seedList.getBoundsInLocal());
+            if (bounds == null || event.getSceneY() < bounds.getMinY() || event.getSceneY() > bounds.getMaxY()) {
+                stopSeedAutoScroll();
+            }
+        });
+        seedList.addEventFilter(DragEvent.DRAG_DROPPED, event -> stopSeedAutoScroll());
+        seedList.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, event -> {
+            if (event.getCode() == KeyCode.ESCAPE) stopSeedAutoScroll();
+        });
+        seedList.setOnDragDropped(event -> {
+            boolean moved = false;
+            if (event.getDragboard().hasString() && !seedList.isDisabled() && !seedList.getItems().isEmpty()) {
+                try {
+                    UUID fencerId = UUID.fromString(event.getDragboard().getString());
+                    int source = indexOfSeed(fencerId);
+                    int destination = seedList.getItems().size() - 1;
+                    if (source >= 0 && source != destination) seedMoveHandler.accept(fencerId, destination);
+                    moved = source >= 0;
+                } catch (IllegalArgumentException ignored) { }
+            }
+            stopSeedAutoScroll();
+            event.setDropCompleted(moved);
+            event.consume();
+        });
+    }
+    private void updateSeedAutoScroll(double sceneY) {
+        Bounds bounds = seedList.localToScene(seedList.getBoundsInLocal());
+        if (bounds == null || sceneY < bounds.getMinY() || sceneY > bounds.getMaxY()) {
+            stopSeedAutoScroll();
+            return;
+        }
+        double distanceFromTop = sceneY - bounds.getMinY();
+        double distanceFromBottom = bounds.getMaxY() - sceneY;
+        if (distanceFromTop < SEED_AUTO_SCROLL_EDGE) {
+            startSeedAutoScroll(-autoScrollRate(distanceFromTop));
+        } else if (distanceFromBottom < SEED_AUTO_SCROLL_EDGE) {
+            startSeedAutoScroll(autoScrollRate(distanceFromBottom));
+        } else {
+            stopSeedAutoScroll();
+        }
+    }
+    private static double autoScrollRate(double distanceFromEdge) {
+        double proximity = 1.0 - Math.max(0, distanceFromEdge) / SEED_AUTO_SCROLL_EDGE;
+        return SEED_AUTO_SCROLL_MIN_RATE + (SEED_AUTO_SCROLL_MAX_RATE - SEED_AUTO_SCROLL_MIN_RATE) * proximity;
+    }
+    private void startSeedAutoScroll(double rate) {
+        seedAutoScrollRate = rate;
+        if (!seedAutoScrollRunning) {
+            seedAutoScrollRunning = true;
+            seedAutoScrollLastNanos = 0;
+            seedAutoScrollTimer.start();
+        }
+    }
+    private void stopSeedAutoScroll() {
+        seedAutoScrollRate = 0;
+        seedAutoScrollLastNanos = 0;
+        if (seedAutoScrollRunning) {
+            seedAutoScrollTimer.stop();
+            seedAutoScrollRunning = false;
+        }
+    }
+    private void scrollSeedList(double amount) {
+        ScrollBar bar = seedList.lookupAll(".scroll-bar").stream()
+                .filter(ScrollBar.class::isInstance)
+                .map(ScrollBar.class::cast)
+                .filter(candidate -> candidate.getOrientation() == javafx.geometry.Orientation.VERTICAL)
+                .findFirst().orElse(null);
+        if (bar == null || amount == 0) return;
+        double next = Math.max(bar.getMin(), Math.min(bar.getMax(), bar.getValue() + amount));
+        if (Double.compare(next, bar.getValue()) == 0) {
+            stopSeedAutoScroll();
+            return;
+        }
+        bar.setValue(next);
     }
     private ListCell<Fencer> seedCell() {
         ListCell<Fencer> cell = new ListCell<>() {
@@ -1039,9 +1147,13 @@ public final class TournamentView extends BorderPane {
                     moved = true;
                 } catch (IllegalArgumentException ignored) { }
             }
+            stopSeedAutoScroll();
             cell.getStyleClass().removeAll("seed-drop-before", "seed-drop-after"); event.setDropCompleted(moved); event.consume();
         });
-        cell.setOnDragDone(event -> cell.getStyleClass().remove("seed-dragging"));
+        cell.setOnDragDone(event -> {
+            stopSeedAutoScroll();
+            cell.getStyleClass().remove("seed-dragging");
+        });
         return cell;
     }
 

@@ -345,3 +345,13 @@ These entries are factual summaries for developer verification and later reflect
 - **Outcome:** Adding, removing, and reordering a fencer immediately updates the visible seed
   numbers. Selecting the pool-size option and generating pools uses the displayed order directly;
   autosave continues to occur through the existing service mutation path.
+
+## Setup viewport and drag auto-scroll
+
+- **Task:** Keep Setup configuration controls anchored while longer seed orders remain easy to
+  reorder.
+- **Decisions:** Replace roster-size-dependent ListView height with a bounded min/preferred/max
+  viewport and reserve it even for the empty state. Add a lightweight JavaFX `AnimationTimer` that
+  adjusts the ListView's own vertical scrollbar only during a valid drag in a top/bottom edge zone.
+- **Outcome:** Long seed lists scroll internally, dragging can continue across off-screen rows,
+  and maximum-pool-size/Generate pools controls no longer move down as fencers are added.
