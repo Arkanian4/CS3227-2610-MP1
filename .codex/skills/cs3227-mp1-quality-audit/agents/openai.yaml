@@ -1,0 +1,7 @@
+interface:
+  display_name: "CS3227 MP1 Quality Audit"
+  short_description: "Audit this repository for release and submission quality."
+  default_prompt: "Use $cs3227-mp1-quality-audit to audit this repository for submission."
+
+policy:
+  allow_implicit_invocation: false
