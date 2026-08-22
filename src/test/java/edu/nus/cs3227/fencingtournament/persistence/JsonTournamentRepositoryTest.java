@@ -12,6 +12,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -46,6 +47,7 @@ class JsonTournamentRepositoryTest {
         assertEquals(original.seeding(), loaded.seeding());
         assertEquals(original.pools(), loaded.pools());
         assertEquals(original.eliminationBracket(), loaded.eliminationBracket());
+        assertEquals(original.lastModified(), loaded.lastModified());
     }
 
     @Test
@@ -97,6 +99,7 @@ class JsonTournamentRepositoryTest {
         Tournament loaded = repository.load(file).orElseThrow();
 
         assertEquals(List.of(first.id(), second.id()), loaded.seeding().fencerIds());
+        assertEquals(Files.getLastModifiedTime(file).toInstant(), loaded.lastModified());
     }
 
     @Test

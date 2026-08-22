@@ -5,13 +5,14 @@ import edu.nus.cs3227.fencingtournament.domain.pool.Pool;
 import edu.nus.cs3227.fencingtournament.domain.pool.BoutScore;
 import edu.nus.cs3227.fencingtournament.domain.rules.PoolGenerator;
 
-import java.util.List;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.Set;
+import java.util.UUID;
 
 /** Aggregate root for one locally managed tournament. Behaviour is added incrementally. */
 public final class Tournament {
@@ -22,6 +23,8 @@ public final class Tournament {
     private Seeding seeding;
     private final List<Pool> pools;
     private EliminationBracket eliminationBracket;
+    private Instant lastModified;
+    private Instant completedAt;
 
     /** Creates a new tournament in the registration phase with an empty roster. */
     public Tournament(UUID id, String name, TournamentSettings settings) {
@@ -35,6 +38,21 @@ public final class Tournament {
 
     public Tournament(UUID id, String name, TournamentSettings settings, List<Fencer> fencers,
                       Seeding seeding, List<Pool> pools, EliminationBracket eliminationBracket) {
+        this(id, name, settings, fencers, seeding, pools, eliminationBracket, Instant.now());
+    }
+
+    /** Reconstructs a tournament with its persisted modification timestamp. */
+    public Tournament(UUID id, String name, TournamentSettings settings, List<Fencer> fencers,
+                      Seeding seeding, List<Pool> pools, EliminationBracket eliminationBracket,
+                      Instant lastModified) {
+        this(id, name, settings, fencers, seeding, pools, eliminationBracket, lastModified,
+                eliminationBracket != null && eliminationBracket.isComplete() ? lastModified : null);
+    }
+
+    /** Reconstructs a tournament with its persisted modification and completion timestamps. */
+    public Tournament(UUID id, String name, TournamentSettings settings, List<Fencer> fencers,
+                      Seeding seeding, List<Pool> pools, EliminationBracket eliminationBracket,
+                      Instant lastModified, Instant completedAt) {
         this.id = requireId(id);
         this.name = requireName(name, "Tournament name");
         this.settings = Objects.requireNonNull(settings, "Tournament settings must not be null.");
@@ -49,6 +67,11 @@ public final class Tournament {
         this.pools = new ArrayList<>(pools);
         validatePoolResults(this.pools, settings.poolBoutScoreLimit());
         this.eliminationBracket = eliminationBracket;
+        // Legacy saves did not contain this value. Keep them safely loadable without
+        // treating every migrated tournament as newly changed.
+        this.lastModified = lastModified == null ? Instant.EPOCH : lastModified;
+        this.completedAt = phase() == TournamentPhase.COMPLETE
+                ? (completedAt == null ? this.lastModified : completedAt) : null;
     }
 
     public UUID id() {
@@ -61,6 +84,30 @@ public final class Tournament {
 
     public TournamentSettings settings() {
         return settings;
+    }
+
+    /** Time of the latest persisted tournament-state change. */
+    public Instant lastModified() {
+        return lastModified;
+    }
+
+    /** Time when this tournament most recently entered the completed state. */
+    public Optional<Instant> completedAt() {
+        return Optional.ofNullable(completedAt);
+    }
+
+    /**
+     * Marks a successful aggregate mutation. The application service owns when this
+     * happens so opening or viewing a tournament never changes its modification time.
+     */
+    public void markModified() {
+        Instant now = Instant.now();
+        lastModified = now.isAfter(lastModified) ? now : lastModified.plusNanos(1);
+        if (phase() == TournamentPhase.COMPLETE) {
+            if (completedAt == null) completedAt = lastModified;
+        } else {
+            completedAt = null;
+        }
     }
 
     public List<Fencer> fencers() {

@@ -309,6 +309,7 @@
 .home-tournament-row-complete { -fx-background-color: -ft-surface-subtle; -fx-border-color: -ft-border; }
 .home-tournament-name { -fx-font-size: 15px; -fx-font-weight: 800; -fx-text-fill: -ft-text-primary; }
 .home-tournament-meta { -fx-font-size: 12px; -fx-text-fill: -ft-text-secondary; }
+.home-tournament-updated { -fx-font-size: 11px; -fx-text-fill: -ft-text-muted; -fx-alignment: center-right; }
 .home-status { -fx-padding: 2 6; -fx-font-size: 11px; -fx-font-weight: 800; -fx-background-radius: 4; }
 .home-status-ongoing { -fx-text-fill: -ft-accent-strong; -fx-background-color: -ft-accent-subtle; }
 .home-status-complete { -fx-text-fill: -ft-text-secondary; -fx-background-color: -ft-unavailable; }

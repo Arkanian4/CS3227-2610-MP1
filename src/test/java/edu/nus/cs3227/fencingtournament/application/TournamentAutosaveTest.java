@@ -87,6 +87,7 @@ class TournamentAutosaveTest {
         List<EliminationMatch> semiFinals = service.currentTournament().orElseThrow().eliminationBracket().matches().stream()
                 .filter(match -> match.round() == 1).sorted(java.util.Comparator.comparingInt(EliminationMatch::position)).toList();
         EliminationMatch firstSemiFinal = semiFinals.getFirst();
+        assertTrue(service.currentTournament().orElseThrow().completedAt().isPresent());
 
         service.replaceEliminationBoutResult(firstSemiFinal.id(), new BoutScore(6, 15), true);
 
@@ -98,6 +99,7 @@ class TournamentAutosaveTest {
         assertEquals(new BoutScore(6, 15), match(reloaded.currentTournament().orElseThrow(), firstSemiFinal.id()).score());
         assertFalse(reloadedFinal.isResolved());
         assertEquals(TournamentPhase.ELIMINATION_PHASE, reloaded.currentPhase());
+        assertTrue(reloaded.currentTournament().orElseThrow().completedAt().isEmpty());
     }
 
     @Test
@@ -105,6 +107,7 @@ class TournamentAutosaveTest {
         Path autosaveDirectory = temporaryDirectory.resolve("tournaments");
         TournamentService service = completedFourFencerTournament(autosaveDirectory);
         EliminationMatch finalMatch = finalMatch(service.currentTournament().orElseThrow());
+        var completedAt = service.currentTournament().orElseThrow().completedAt().orElseThrow();
 
         service.replaceEliminationBoutResult(finalMatch.id(), new BoutScore(7, 15), false);
 
@@ -115,6 +118,7 @@ class TournamentAutosaveTest {
         assertEquals(TournamentPhase.COMPLETE, reloaded.currentPhase());
         assertEquals(finalMatch.secondSlot().fencerId(), finalMatch(reloaded.currentTournament().orElseThrow()).winnerId());
         assertEquals(finalMatch.secondSlot().fencerId(), reloaded.finalStandings().getFirst().fencerId());
+        assertEquals(completedAt, reloaded.currentTournament().orElseThrow().completedAt().orElseThrow());
     }
 
     @Test

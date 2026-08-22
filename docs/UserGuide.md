@@ -15,8 +15,13 @@ selectable immediately; resizing the window is not required before recording a r
 
 ## Tournament Home
 
-Tournament Home lists ongoing tournaments before completed tournaments. Choose **Open** to
-continue an ongoing tournament or **View Results** to inspect a completed one.
+Tournament Home lists ongoing tournaments before completed tournaments. Ongoing tournaments are
+ordered by their latest saved change and show quiet `Updated …` metadata; recent changes use a
+relative time while older changes show a concise date. Completed tournaments are ordered by their
+completion time and instead show `Completed …`. Opening, viewing, or navigating through a
+tournament does not change either time. While Tournament Home is open, relative update labels
+refresh approximately once a minute without changing tournament data. Choose **Open** to continue
+an ongoing tournament or **View Results** to inspect a completed one.
 
 Each tournament row has a compact **⋯** menu containing the secondary **Delete** action. Deleting requires confirmation and
 permanently removes that tournament, including its fencers, pool results, Direct Elimination

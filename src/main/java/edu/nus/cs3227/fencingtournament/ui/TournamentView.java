@@ -8,6 +8,8 @@ import edu.nus.cs3227.fencingtournament.domain.pool.Pool;
 import javafx.collections.FXCollections;
 import javafx.application.Platform;
 import javafx.animation.AnimationTimer;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -26,6 +28,12 @@ import javafx.scene.layout.*;
 import java.util.List;
 import java.util.Comparator;
 import java.util.UUID;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.function.BiConsumer;
 
@@ -61,6 +69,9 @@ public final class TournamentView extends BorderPane {
     private final VBox homeTournamentRows = new VBox();
     private final ScrollPane homeTournamentScroll = new ScrollPane(homeTournamentRows);
     private final VBox homeScreen = new VBox();
+    private final List<HomeTimestampLabel> homeTimestampLabels = new java.util.ArrayList<>();
+    private final Timeline homeTimeRefreshTimer = new Timeline(new KeyFrame(
+            javafx.util.Duration.minutes(1), event -> refreshHomeTimeLabels()));
     private final HBox themeSwatches = new HBox(6);
     private final List<Button> themeSwatchButtons = new java.util.ArrayList<>();
     private final HBox appearanceToggle = new HBox(7);
@@ -185,6 +196,7 @@ public final class TournamentView extends BorderPane {
         tabs.setManaged(false);
         configureListCells();
         configureScoreValidationFeedback();
+        homeTimeRefreshTimer.setCycleCount(Timeline.INDEFINITE);
         setNoTournamentState();
     }
 
@@ -218,6 +230,8 @@ public final class TournamentView extends BorderPane {
         activeStage = null;
         stageContent.getChildren().setAll(homeScreen);
         refreshNavigationState();
+        refreshHomeTimeLabels();
+        homeTimeRefreshTimer.play();
     }
     public void selectSetupTab() { selectStage(fencersTab); }
     public void selectPoolsTab() { selectStage(poolsTab); }
@@ -249,12 +263,15 @@ public final class TournamentView extends BorderPane {
         if (show) homeTournamentNameField.requestFocus();
     }
     public void renderTournamentList(List<Tournament> tournaments) {
-        List<Tournament> ongoing = tournaments.stream().filter(tournament -> tournament.phase() != TournamentPhase.COMPLETE).toList();
-        List<Tournament> completed = tournaments.stream().filter(tournament -> tournament.phase() == TournamentPhase.COMPLETE).toList();
+        List<Tournament> ongoing = orderByMostRecentlyModified(tournaments.stream()
+                .filter(tournament -> tournament.phase() != TournamentPhase.COMPLETE).toList());
+        List<Tournament> completed = orderByCompletionTime(tournaments.stream()
+                .filter(tournament -> tournament.phase() == TournamentPhase.COMPLETE).toList());
         homeTournamentScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         homeTournamentScroll.setVbarPolicy(tournaments.size() <= 2
                 ? ScrollPane.ScrollBarPolicy.NEVER : ScrollPane.ScrollBarPolicy.AS_NEEDED);
         homeTournamentRows.getChildren().clear();
+        homeTimestampLabels.clear();
         if (tournaments.isEmpty()) {
             Label emptyTitle = new Label("No tournaments yet."); emptyTitle.getStyleClass().add("home-empty-title");
             Label emptyText = new Label("Create your first tournament to get started."); emptyText.getStyleClass().add("screen-subtitle");
@@ -810,6 +827,7 @@ public final class TournamentView extends BorderPane {
         }
     }
     private void selectStage(Tab stage) {
+        homeTimeRefreshTimer.stop();
         activeStage = stage;
         tabs.getSelectionModel().select(stage);
         stageContent.getChildren().setAll(stage.getContent());
@@ -857,18 +875,84 @@ public final class TournamentView extends BorderPane {
         Label heading = new Label(title); heading.getStyleClass().add("home-section-heading"); homeTournamentRows.getChildren().add(heading);
         tournaments.forEach(tournament -> homeTournamentRows.getChildren().add(homeTournamentRow(tournament)));
     }
-    private HBox homeTournamentRow(Tournament tournament) {
-        Label name = new Label(tournament.name()); name.getStyleClass().add("home-tournament-name");
+    private GridPane homeTournamentRow(Tournament tournament) {
+        Label name = new Label(tournament.name()); name.getStyleClass().add("home-tournament-name"); name.setWrapText(true);
         Label status = new Label(phaseText(tournament.phase())); status.getStyleClass().addAll("home-status", tournament.phase() == TournamentPhase.COMPLETE ? "home-status-complete" : "home-status-ongoing");
         Label metadata = new Label(tournament.fencers().size() + " fencers"); metadata.getStyleClass().add("home-tournament-meta");
         HBox details = new HBox(10, status, metadata); details.setAlignment(Pos.CENTER_LEFT);
-        VBox summary = new VBox(4, name, details); HBox.setHgrow(summary, Priority.ALWAYS);
+        VBox summary = new VBox(4, name, details); summary.setMinWidth(0);
+        Label updated = new Label(homeTimestampText(tournament)); updated.getStyleClass().add("home-tournament-updated");
+        homeTimestampLabels.add(new HomeTimestampLabel(updated, tournament));
+        updated.setMinWidth(112); updated.setMaxWidth(145); updated.setWrapText(true); updated.setTextAlignment(javafx.scene.text.TextAlignment.RIGHT);
         Button open = new Button(tournament.phase() == TournamentPhase.COMPLETE ? "View Results" : "Open"); open.getStyleClass().add(tournament.phase() == TournamentPhase.COMPLETE ? "home-view-action" : "primary-action"); open.setOnAction(event -> tournamentOpenHandler.accept(tournament.id()));
         MenuItem delete = new MenuItem("Delete"); delete.getStyleClass().add("menu-danger-action"); delete.setOnAction(event -> tournamentDeleteHandler.accept(tournament.id()));
         ContextMenu overflowMenu = new ContextMenu(delete); overflowMenu.getStyleClass().add("home-overflow-menu-popup");
         Button overflow = new Button("…"); overflow.getStyleClass().add("home-overflow-menu"); overflow.setAccessibleText("More actions");
         overflow.setOnAction(event -> overflowMenu.show(overflow, javafx.geometry.Side.BOTTOM, 0, 0));
-        HBox row = new HBox(10, summary, open, overflow); row.setAlignment(Pos.CENTER_LEFT); row.getStyleClass().add(tournament.phase() == TournamentPhase.COMPLETE ? "home-tournament-row-complete" : "home-tournament-row"); return row;
+        HBox actions = new HBox(10, updated, open, overflow); actions.setAlignment(Pos.CENTER_RIGHT);
+        GridPane row = new GridPane();
+        ColumnConstraints summaryColumn = new ColumnConstraints(); summaryColumn.setHgrow(Priority.ALWAYS); summaryColumn.setMinWidth(0);
+        row.getColumnConstraints().setAll(summaryColumn, new ColumnConstraints());
+        row.add(summary, 0, 0); row.add(actions, 1, 0);
+        row.setHgap(18); row.setAlignment(Pos.CENTER_LEFT);
+        row.getStyleClass().add(tournament.phase() == TournamentPhase.COMPLETE ? "home-tournament-row-complete" : "home-tournament-row");
+        return row;
+    }
+
+    private static String homeTimestampText(Tournament tournament) {
+        return tournament.phase() == TournamentPhase.COMPLETE
+                ? formatCompletedAt(tournament.completedAt().orElse(tournament.lastModified()))
+                : formatLastModified(tournament.lastModified());
+    }
+
+    private void refreshHomeTimeLabels() {
+        if (activeStage != null) return;
+        homeTimestampLabels.forEach(item -> item.label().setText(homeTimestampText(item.tournament())));
+    }
+
+    private record HomeTimestampLabel(Label label, Tournament tournament) {
+    }
+
+    static List<Tournament> orderByMostRecentlyModified(List<Tournament> tournaments) {
+        return tournaments.stream()
+                .sorted(Comparator.comparing(Tournament::lastModified).reversed()
+                        .thenComparing(Tournament::name, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+    }
+
+    static List<Tournament> orderByCompletionTime(List<Tournament> tournaments) {
+        return tournaments.stream()
+                .sorted(Comparator.comparing((Tournament tournament) -> tournament.completedAt().orElse(Instant.EPOCH)).reversed()
+                        .thenComparing(Tournament::name, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+    }
+
+    static String formatLastModified(Instant timestamp) {
+        return formatLastModified(timestamp, Instant.now(), ZoneId.systemDefault());
+    }
+
+    static String formatLastModified(Instant timestamp, Instant now, ZoneId zoneId) {
+        if (timestamp == null) return "Updated before tracking";
+        Duration age = Duration.between(timestamp, now);
+        if (age.isNegative() || age.compareTo(Duration.ofMinutes(1)) < 0) return "Updated just now";
+        LocalDate date = timestamp.atZone(zoneId).toLocalDate();
+        LocalDate today = now.atZone(zoneId).toLocalDate();
+        if (date.equals(today.minusDays(1))) return "Updated yesterday";
+        if (age.compareTo(Duration.ofHours(1)) < 0) return "Updated " + age.toMinutes() + " min ago";
+        if (date.equals(today)) return "Updated " + age.toHours() + "h ago";
+        String pattern = date.getYear() == today.getYear() ? "d MMM" : "d MMM uuuu";
+        return "Updated " + DateTimeFormatter.ofPattern(pattern, Locale.ENGLISH).withZone(zoneId).format(timestamp);
+    }
+
+    static String formatCompletedAt(Instant timestamp) {
+        return formatCompletedAt(timestamp, Instant.now(), ZoneId.systemDefault());
+    }
+
+    static String formatCompletedAt(Instant timestamp, Instant now, ZoneId zoneId) {
+        LocalDate date = timestamp.atZone(zoneId).toLocalDate();
+        LocalDate today = now.atZone(zoneId).toLocalDate();
+        String pattern = date.getYear() == today.getYear() ? "d MMM" : "d MMM uuuu";
+        return "Completed " + DateTimeFormatter.ofPattern(pattern, Locale.ENGLISH).withZone(zoneId).format(timestamp);
     }
     private VBox buildSetupTab() {
         tournamentNameField.setPromptText("Tournament name, e.g. Friday Internal Open"); tournamentNameField.setOnAction(event -> createButton.fire()); createButton.getStyleClass().add("primary-action");

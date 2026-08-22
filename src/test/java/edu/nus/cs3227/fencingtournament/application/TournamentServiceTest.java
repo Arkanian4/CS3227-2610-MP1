@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -60,6 +61,39 @@ class TournamentServiceTest {
         service.openTournament(second.id());
         assertEquals(List.of("Bob"), service.registeredFencers().stream().map(Fencer::name).toList());
         assertEquals(2, service.listTournaments().size());
+    }
+
+    @Test
+    void successfulMutationsRefreshLastModifiedButOpeningAndNoOpsDoNot() {
+        TournamentService service = new TournamentService(new InMemoryRepository());
+        Tournament tournament = service.createTournament("Internal Open");
+        Instant createdAt = tournament.lastModified();
+
+        service.openTournament(tournament.id());
+        assertEquals(createdAt, tournament.lastModified());
+
+        Fencer alice = service.addFencer("Alice");
+        Instant afterAdd = tournament.lastModified();
+        assertTrue(afterAdd.isAfter(createdAt));
+
+        assertFalse(service.removeFencer(UUID.randomUUID()));
+        assertEquals(afterAdd, tournament.lastModified());
+
+        assertTrue(service.removeFencer(alice.id()));
+        assertTrue(tournament.lastModified().isAfter(afterAdd));
+    }
+
+    @Test
+    void tournamentListUsesMostRecentlyModifiedOrder() {
+        TournamentService service = new TournamentService(new InMemoryRepository());
+        Tournament first = service.createTournament("Alpha");
+        Tournament second = service.createTournament("Bravo");
+
+        service.openTournament(first.id());
+        service.addFencer("Alice");
+
+        assertEquals(List.of(first.id(), second.id()),
+                service.listTournaments().stream().map(Tournament::id).toList());
     }
 
     @Test
@@ -177,7 +211,42 @@ class TournamentServiceTest {
         assertEquals("Runner-up", finalResults.get(1).directEliminationFinish());
         assertNotNull(tournament.eliminationBracket());
         assertEquals(1, tournament.pools().size());
+        Instant completedAt = tournament.completedAt().orElseThrow();
+        service.openTournament(tournament.id());
+        assertEquals(completedAt, tournament.completedAt().orElseThrow());
         assertThrows(IllegalStateException.class, () -> service.recordEliminationBoutResult(finalMatch.id(), new BoutScore(15, 0)));
+    }
+
+    @Test
+    void completionTimestampClearsWhenTheFinalIsInvalidatedAndReturnsOnRecompletion() {
+        TournamentService service = new TournamentService(new InMemoryRepository());
+        service.createTournament("Internal Open");
+        List<Fencer> fencers = java.util.stream.IntStream.range(0, 4)
+                .mapToObj(index -> service.addFencer("Fencer " + (index + 1))).toList();
+        service.generatePools();
+        var pool = service.pools().getFirst();
+        pool.bouts().forEach(bout -> service.recordPoolBoutResult(pool.id(), bout.id(), new BoutScore(5, 0)));
+        service.generateEliminationBracket();
+        while (service.currentPhase() != TournamentPhase.COMPLETE) {
+            var ready = service.currentTournament().orElseThrow().eliminationBracket().matches().stream()
+                    .filter(match -> match.isReady()).findFirst().orElseThrow();
+            service.recordEliminationBoutResult(ready.id(), new BoutScore(15, 0));
+        }
+
+        Tournament tournament = service.currentTournament().orElseThrow();
+        Instant firstCompletion = tournament.completedAt().orElseThrow();
+        var firstSemiFinal = tournament.eliminationBracket().matches().stream()
+                .filter(match -> match.round() == 1).findFirst().orElseThrow();
+        service.replaceEliminationBoutResult(firstSemiFinal.id(), new BoutScore(0, 15), true);
+
+        assertEquals(TournamentPhase.ELIMINATION_PHASE, service.currentPhase());
+        assertTrue(tournament.completedAt().isEmpty());
+        while (service.currentPhase() != TournamentPhase.COMPLETE) {
+            var ready = tournament.eliminationBracket().matches().stream()
+                    .filter(match -> match.isReady()).findFirst().orElseThrow();
+            service.recordEliminationBoutResult(ready.id(), new BoutScore(15, 0));
+        }
+        assertTrue(tournament.completedAt().orElseThrow().isAfter(firstCompletion));
     }
 
     private static final class InMemoryRepository implements TournamentRepository {

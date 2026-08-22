@@ -20,7 +20,11 @@ JsonTournamentRepository
 not calculate standings, bracket placement, or score validity.
 
 `application.TournamentService` coordinates workflows, owns the active tournament and tournament
-collection, invokes rule calculators, and autosaves after successful mutations. It also owns
+collection, invokes rule calculators, updates the active aggregate's `lastModified` time after
+successful mutations, records `completedAt` on the first transition to a complete DE bracket, and
+autosaves after successful mutations. Opening or viewing is read-only and does not refresh either
+timestamp. If a correction makes a completed bracket incomplete, the same mutation path clears
+`completedAt`. It also owns
 tournament deletion: it removes the UUID-keyed collection entry, clears a matching active reference,
 and delegates removal of the corresponding local JSON file to the repository.
 
@@ -29,7 +33,10 @@ invariants. `domain.rules` contains pool generation, standings, bracket generati
 placement calculations.
 
 `persistence.JsonTournamentRepository` reconstructs a `Tournament` through its constructor so
-persisted data must satisfy domain invariants.
+persisted data must satisfy domain invariants. It persists `lastModified` and optional
+`completedAt` as ISO-8601 instants; older JSON without either field falls back to the save file's
+modification time where the tournament state requires one, so legacy data remains loadable and
+receives useful Tournament Home ordering and metadata.
 
 ## Visual theme architecture
 

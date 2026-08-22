@@ -29,30 +29,11 @@
       "firstFencerId" : "b93da924-eda9-49da-8552-6da790921739",
       "secondFencerId" : "c06cec83-e9b5-4244-b9b1-862e9124757a",
       "score" : {
-        "firstScore" : 1,
+        "firstScore" : 2,
         "secondScore" : 5
       }
     } ]
   } ],
-  "eliminationBracket" : {
-    "id" : "9471ba30-b53c-3d34-bcac-e5bd9e5f9789",
-    "size" : 2,
-    "matches" : [ {
-      "id" : "020d72ce-223d-3e38-b3be-6e57b4c0af53",
-      "round" : 1,
-      "position" : 0,
-      "firstSlot" : {
-        "fencerId" : "c06cec83-e9b5-4244-b9b1-862e9124757a",
-        "resolved" : true
-      },
-      "secondSlot" : {
-        "fencerId" : "b93da924-eda9-49da-8552-6da790921739",
-        "resolved" : true
-      },
-      "score" : null,
-      "winnerId" : null,
-      "nextMatchId" : null,
-      "nextMatchSlot" : null
-    } ]
-  }
+  "eliminationBracket" : null,
+  "lastModified" : "2026-08-22T06:48:15.452317100Z"
 }

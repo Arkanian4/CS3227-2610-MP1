@@ -555,8 +555,11 @@
         "fencerId" : "9a585ba5-e38b-41f3-852d-ed4986a4b9e4",
         "resolved" : true
       },
-      "score" : null,
-      "winnerId" : null,
+      "score" : {
+        "firstScore" : 3,
+        "secondScore" : 4
+      },
+      "winnerId" : "9a585ba5-e38b-41f3-852d-ed4986a4b9e4",
       "nextMatchId" : "ba4311f2-bf9e-3892-b93e-b5b949f14bc9",
       "nextMatchSlot" : 1
     }, {
@@ -664,8 +667,8 @@
         "resolved" : true
       },
       "secondSlot" : {
-        "fencerId" : null,
-        "resolved" : false
+        "fencerId" : "9a585ba5-e38b-41f3-852d-ed4986a4b9e4",
+        "resolved" : true
       },
       "score" : null,
       "winnerId" : null,
@@ -768,5 +771,6 @@
       "nextMatchId" : null,
       "nextMatchSlot" : null
     } ]
-  }
+  },
+  "lastModified" : "2026-08-22T06:48:32.168478100Z"
 }

@@ -21,6 +21,8 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.AtomicMoveNotSupportedException;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
@@ -49,6 +51,7 @@ public final class JsonTournamentRepository implements TournamentRepository {
             if (persisted == null) {
                 throw new IOException("Tournament JSON must contain an object.");
             }
+            Instant lastModified = parseLastModified(persisted.lastModified(), path);
             return Optional.of(new Tournament(
                     persisted.id(),
                     persisted.name(),
@@ -56,7 +59,9 @@ public final class JsonTournamentRepository implements TournamentRepository {
                     persisted.fencers(),
                     persisted.seeding(),
                     persisted.pools(),
-                    persisted.eliminationBracket()));
+                    persisted.eliminationBracket(),
+                    lastModified,
+                    parseCompletedAt(persisted.completedAt(), path, persisted.eliminationBracket(), lastModified)));
         } catch (JsonProcessingException exception) {
             throw exception;
         } catch (IllegalArgumentException | NullPointerException exception) {
@@ -90,7 +95,9 @@ public final class JsonTournamentRepository implements TournamentRepository {
                 tournament.fencers(),
                 tournament.seeding(),
                 tournament.pools(),
-                tournament.eliminationBracket());
+                tournament.eliminationBracket(),
+                tournament.lastModified().toString(),
+                tournament.completedAt().map(Instant::toString).orElse(null));
         String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(persisted);
         Path temporary = Files.createTempFile(parent, path.getFileName().toString(), ".tmp");
         try {
@@ -118,9 +125,38 @@ public final class JsonTournamentRepository implements TournamentRepository {
         }
     }
 
+    private static Instant parseLastModified(String persistedTimestamp, Path sourcePath) {
+        if (persistedTimestamp == null || persistedTimestamp.isBlank()) return fileModificationTime(sourcePath);
+        try {
+            return Instant.parse(persistedTimestamp);
+        } catch (DateTimeParseException exception) {
+            return fileModificationTime(sourcePath);
+        }
+    }
+
+    private static Instant fileModificationTime(Path path) {
+        try {
+            return Files.getLastModifiedTime(path).toInstant();
+        } catch (IOException exception) {
+            return Instant.EPOCH;
+        }
+    }
+
+    private static Instant parseCompletedAt(String persistedTimestamp, Path sourcePath,
+                                            EliminationBracket bracket, Instant lastModified) {
+        if (bracket == null || !bracket.isComplete()) return null;
+        if (persistedTimestamp == null || persistedTimestamp.isBlank()) return fileModificationTime(sourcePath);
+        try {
+            return Instant.parse(persistedTimestamp);
+        } catch (DateTimeParseException exception) {
+            return lastModified == null ? fileModificationTime(sourcePath) : lastModified;
+        }
+    }
+
     /** Persistence-only representation; domain reconstruction happens through Tournament. */
     private record PersistedTournament(UUID id, String name, TournamentSettings settings,
                                        List<Fencer> fencers, Seeding seeding, List<Pool> pools,
-                                       EliminationBracket eliminationBracket) {
+                                       EliminationBracket eliminationBracket, String lastModified,
+                                       String completedAt) {
     }
 }

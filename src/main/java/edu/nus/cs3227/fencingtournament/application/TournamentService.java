@@ -93,7 +93,10 @@ public final class TournamentService {
     }
 
     public List<Tournament> listTournaments() {
-        return tournaments.values().stream().sorted(Comparator.comparing(Tournament::name, String.CASE_INSENSITIVE_ORDER)).toList();
+        return tournaments.values().stream()
+                .sorted(Comparator.comparing(Tournament::lastModified).reversed()
+                        .thenComparing(Tournament::name, String.CASE_INSENSITIVE_ORDER))
+                .toList();
     }
 
     public Tournament openTournament(UUID tournamentId) {
@@ -178,7 +181,9 @@ public final class TournamentService {
     }
 
     public boolean removeFencer(UUID fencerId) {
-        return mutate(() -> requireActiveTournament().removeFencer(fencerId));
+        boolean removed = requireActiveTournament().removeFencer(fencerId);
+        if (removed) persistSuccessfulMutation();
+        return removed;
     }
 
     public void recordPoolBoutResult(UUID poolId, UUID boutId, BoutScore score) {
@@ -320,13 +325,19 @@ public final class TournamentService {
 
     private <T> T mutate(Supplier<T> operation) {
         T result = operation.get();
-        if (autoSaveDirectory == null) return result;
+        persistSuccessfulMutation();
+        return result;
+    }
+
+    /** Touches the active aggregate only after a domain mutation has succeeded. */
+    private void persistSuccessfulMutation() {
+        requireActiveTournament().markModified();
+        if (autoSaveDirectory == null) return;
         try {
             saveAll(autoSaveDirectory);
         } catch (IOException exception) {
             throw new TournamentPersistenceException("Change applied, but automatic saving failed.", exception);
         }
-        return result;
     }
 
     private static String normalizeName(String name) {

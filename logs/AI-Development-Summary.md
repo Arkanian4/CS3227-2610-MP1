@@ -355,3 +355,27 @@ These entries are factual summaries for developer verification and later reflect
   adjusts the ListView's own vertical scrollbar only during a valid drag in a top/bottom edge zone.
 - **Outcome:** Long seed lists scroll internally, dragging can continue across off-screen rows,
   and maximum-pool-size/Generate pools controls no longer move down as fencers are added.
+
+## Tournament modification timestamps
+
+- **Task:** Record when each tournament's persistent state actually changes and use that time to
+  order Tournament Home.
+- **Decisions:** Store an `Instant` on the `Tournament` aggregate and refresh it centrally after a
+  successful `TournamentService` mutation, never on open/view/navigation. Persist an ISO timestamp
+  in JSON; legacy saves without it load with an epoch fallback. Order ongoing and completed Home
+  sections newest-first with name as a stable tie-breaker.
+- **Outcome:** Home rows show quiet human-friendly `Updated …` metadata, recent changes appear
+  first in each section, and timestamp persistence/migration/order behaviour is covered by tests.
+
+## Completed-tournament timestamps
+
+- **Task:** Distinguish an ongoing tournament's latest saved change from the moment a tournament
+  actually finished.
+- **Decisions:** Add optional `completedAt` to the aggregate and persistence DTO. The central
+  successful-mutation path sets it only when the DE bracket first becomes complete and clears it
+  if a score correction invalidates completion. Tournament Home orders ongoing rows by
+  `lastModified` and completed rows by `completedAt`; a Home-only minute timer only reformats
+  relative `Updated …` text.
+- **Outcome:** Completed cards show `Completed <date>` near View Results, ongoing cards retain
+  `Updated …`, and completion timestamps survive reloads while reset/re-completion is covered by
+  tests.
