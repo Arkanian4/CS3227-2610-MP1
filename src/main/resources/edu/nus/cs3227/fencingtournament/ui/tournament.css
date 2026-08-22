@@ -534,6 +534,40 @@
     -fx-background-color: transparent;
     -fx-border-color: transparent;
 }
+.import-choice-card {
+    -fx-background-color: -ft-surface;
+    -fx-border-color: -ft-border;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+    -fx-padding: 10 12;
+    -fx-cursor: hand;
+}
+.import-choice-card:hover { -fx-background-color: -ft-accent-subtle; -fx-border-color: -ft-accent; }
+.import-choice-card:focused { -fx-border-color: -ft-focus; -fx-border-width: 2; }
+.import-choice-card:pressed { -fx-background-color: -ft-accent-subtle; }
+.import-summary { -fx-font-size: 14px; -fx-font-weight: 800; -fx-text-fill: -ft-text-primary; }
+.import-result-scroll,
+.import-result-scroll .viewport {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+.import-result-scroll { -fx-padding: 0; }
+.import-result-section { -fx-padding: 2 0 2 0; }
+.import-success-heading, .import-failure-heading {
+    -fx-font-size: 11px;
+    -fx-font-weight: 800;
+}
+.import-success-heading, .import-success-marker { -fx-text-fill: -ft-success-text; }
+.import-failure-heading, .import-failure-marker { -fx-text-fill: -ft-danger-text; }
+.import-result-item {
+    -fx-padding: 6 2;
+    -fx-background-color: transparent;
+    -fx-border-color: -ft-border;
+    -fx-border-width: 0 0 1 0;
+}
+.import-result-name { -fx-font-weight: 700; -fx-text-fill: -ft-text-primary; }
+.import-result-reason { -fx-text-fill: -ft-text-secondary; -fx-font-size: 11px; }
+.import-success-marker, .import-failure-marker { -fx-font-size: 16px; -fx-font-weight: 900; }
 .pool-panel-heading { -fx-padding: 1 2 4 2; }
 .pool-panel-title { -fx-font-size: 13px; -fx-font-weight: 800; -fx-text-fill: -ft-text-primary; }
 .pool-panel-progress { -fx-font-size: 11px; -fx-font-weight: 700; -fx-text-fill: -ft-text-secondary; }

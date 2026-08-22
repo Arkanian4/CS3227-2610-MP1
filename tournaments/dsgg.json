@@ -1,6 +1,6 @@
 {
-  "id" : "bc582878-44d2-4943-854e-1dccc0d590eb",
-  "name" : "test",
+  "id" : "3776ebe1-9c0f-4dee-985e-702a812e8818",
+  "name" : "dsgg",
   "settings" : {
     "targetPoolSize" : 5,
     "poolBoutScoreLimit" : 5,
@@ -16,6 +16,6 @@
   },
   "pools" : [ ],
   "eliminationBracket" : null,
-  "lastModified" : "2026-08-22T16:11:43.763854501Z",
+  "lastModified" : "2026-08-22T16:11:49.820788801Z",
   "completedAt" : null
 }

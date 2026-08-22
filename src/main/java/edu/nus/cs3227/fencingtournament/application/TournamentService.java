@@ -72,7 +72,7 @@ public final class TournamentService {
     }
 
     public Optional<Tournament> loadTournament(Path path) throws IOException {
-        Optional<Tournament> loaded = repository.load(path);
+        Optional<Tournament> loaded = loadValidatedTournament(path);
         loaded.ifPresent(tournament -> {
             String key = nameKey(tournament.name());
             Tournament existing = tournaments.values().stream().filter(item -> nameKey(item.name()).equals(key)).findFirst().orElse(null);
@@ -91,6 +91,96 @@ public final class TournamentService {
             }
         }
         return loaded;
+    }
+
+    /** Imports one tournament using the same validation and persistence path as folder import. */
+    public TournamentFolderImportResult importTournamentFile(Path file) throws IOException {
+        List<TournamentFolderImportResult.Item> imported = new ArrayList<>();
+        List<TournamentFolderImportResult.Item> skipped = new ArrayList<>();
+        List<TournamentFolderImportResult.Item> rejected = new ArrayList<>();
+        try {
+            Tournament tournament = loadValidatedTournament(file).orElseThrow(() ->
+                    new IOException("Tournament file could not be read."));
+            String key = nameKey(tournament.name());
+            if (tournamentNameKeys.contains(key)) {
+                skipped.add(item(file, tournament.name(), "Tournament with this name already exists."));
+            } else if (tournaments.containsKey(tournament.id())) {
+                skipped.add(item(file, tournament.name(), "This tournament is already imported."));
+            } else if (autoSaveDirectory != null) {
+                try {
+                    Files.createDirectories(autoSaveDirectory);
+                    repository.save(tournament, autoSaveDirectory.resolve(safeFileName(tournament.name()) + ".json"));
+                    registerImportedTournament(tournament, key);
+                    activeTournament = tournament;
+                    imported.add(item(file, tournament.name(), "Imported."));
+                } catch (IOException exception) {
+                    rejected.add(item(file, tournament.name(), "Could not save imported tournament locally."));
+                }
+            } else {
+                registerImportedTournament(tournament, key);
+                activeTournament = tournament;
+                imported.add(item(file, tournament.name(), "Imported."));
+            }
+        } catch (IOException | IllegalArgumentException exception) {
+            rejected.add(item(file, "", importFailureMessage(exception)));
+        }
+        return new TournamentFolderImportResult(imported, skipped, rejected);
+    }
+
+    /**
+     * Imports every regular JSON tournament file in one directory. Each source is isolated:
+     * a malformed, inconsistent, duplicate, or unpersistable file never prevents another
+     * independently valid tournament from being imported.
+     */
+    public TournamentFolderImportResult importTournamentsFromFolder(Path directory) throws IOException {
+        if (directory == null || !Files.isDirectory(directory)) {
+            throw new IllegalArgumentException("Choose a folder containing tournament JSON files.");
+        }
+        List<TournamentFolderImportResult.Item> imported = new ArrayList<>();
+        List<TournamentFolderImportResult.Item> skipped = new ArrayList<>();
+        List<TournamentFolderImportResult.Item> rejected = new ArrayList<>();
+
+        List<Path> files;
+        try (var stream = Files.list(directory)) {
+            files = stream.filter(Files::isRegularFile)
+                    .filter(path -> path.getFileName().toString().toLowerCase(java.util.Locale.ROOT).endsWith(".json"))
+                    .sorted(Comparator.comparing(path -> path.getFileName().toString(), String.CASE_INSENSITIVE_ORDER))
+                    .toList();
+        }
+
+        Set<String> incomingNameKeys = new HashSet<>();
+        Set<UUID> incomingIds = new HashSet<>();
+        for (Path file : files) {
+            try {
+                Tournament tournament = loadValidatedTournament(file).orElseThrow(() ->
+                        new IOException("Tournament file could not be read."));
+                String key = nameKey(tournament.name());
+                if (tournamentNameKeys.contains(key) || incomingNameKeys.contains(key)) {
+                    skipped.add(item(file, tournament.name(), "Tournament with this name already exists."));
+                    continue;
+                }
+                if (tournaments.containsKey(tournament.id()) || incomingIds.contains(tournament.id())) {
+                    rejected.add(item(file, tournament.name(), "Tournament ID conflicts with existing data."));
+                    continue;
+                }
+                if (autoSaveDirectory != null) {
+                    try {
+                        Files.createDirectories(autoSaveDirectory);
+                        repository.save(tournament, autoSaveDirectory.resolve(safeFileName(tournament.name()) + ".json"));
+                    } catch (IOException exception) {
+                        rejected.add(item(file, tournament.name(), "Could not save imported tournament locally."));
+                        continue;
+                    }
+                }
+                registerImportedTournament(tournament, key);
+                incomingNameKeys.add(key);
+                incomingIds.add(tournament.id());
+                imported.add(item(file, tournament.name(), "Imported."));
+            } catch (IOException | IllegalArgumentException exception) {
+                rejected.add(item(file, "", importFailureMessage(exception)));
+            }
+        }
+        return new TournamentFolderImportResult(imported, skipped, rejected);
     }
 
     public List<Tournament> listTournaments() {
@@ -152,7 +242,7 @@ public final class TournamentService {
         List<Tournament> loaded = new ArrayList<>();
         try (var stream = Files.list(directory)) {
             for (Path file : stream.filter(path -> path.toString().toLowerCase().endsWith(".json")).toList()) {
-                Optional<Tournament> value = repository.load(file);
+                Optional<Tournament> value = loadValidatedTournament(file);
                 if (value.isEmpty()) continue;
                 Tournament tournament = value.get();
                 if (tournamentNameKeys.add(nameKey(tournament.name()))) {
@@ -335,6 +425,40 @@ public final class TournamentService {
         T result = operation.get();
         persistSuccessfulMutation();
         return result;
+    }
+
+    private Optional<Tournament> loadValidatedTournament(Path path) throws IOException {
+        try {
+            Optional<Tournament> loaded = repository.load(path);
+            loaded.ifPresent(TournamentImportValidator::validate);
+            return loaded;
+        } catch (IllegalArgumentException exception) {
+            throw new IOException(exception.getMessage(), exception);
+        }
+    }
+
+    private void registerImportedTournament(Tournament tournament, String key) {
+        tournaments.put(tournament.id(), tournament);
+        tournamentNameKeys.add(key);
+    }
+
+    private static TournamentFolderImportResult.Item item(Path file, String tournamentName, String detail) {
+        return new TournamentFolderImportResult.Item(file, tournamentName, detail);
+    }
+
+    private static String importFailureMessage(Exception exception) {
+        String message = exception.getMessage();
+        if (message == null || message.isBlank()) return "Unsupported or corrupted tournament data.";
+        if (message.contains("Unexpected character") || message.contains("Unexpected end-of-input")
+                || message.contains("Cannot deserialize") || message.contains("No content")
+                || message.contains("Tournament JSON")) {
+            return "Invalid JSON format.";
+        }
+        if (message.contains("Tournament name")) return "Missing tournament name.";
+        if (message.contains("unknown fencer") || message.startsWith("Pool ")
+                || message.startsWith("Seed order") || message.startsWith("Direct Elimination")) return message;
+        if (message.contains("score")) return message;
+        return "Unsupported or corrupted tournament data.";
     }
 
     /** Touches the active aggregate only after a domain mutation has succeeded. */

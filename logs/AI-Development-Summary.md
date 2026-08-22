@@ -439,3 +439,44 @@ These entries are factual summaries for developer verification and later reflect
 - **Outcome:** Small pools no longer expand into giant tables, larger displays naturally admit more
   columns, and large numbers of pools wrap instead of shrinking below the defined readable minimum.
   Pure layout tests cover 1, 2, 3, 6, and 30-pool cases at wide and narrow viewports.
+
+## Safe bulk tournament-folder import
+
+- **Task:** Support device migration by importing multiple standalone tournament JSON files from
+  one selected folder without allowing a corrupt file to block valid ones.
+- **Decisions:** Reuse the single-file repository reconstruction path, then perform a focused
+  cross-state validation pass before a tournament enters the service collection. Each direct JSON
+  file produces an imported, skipped, or rejected outcome. Existing case-insensitive names are
+  skipped rather than overwritten; accepted imports retain their timestamps and are autosaved to
+  normal local storage one at a time.
+- **Outcome:** The header exposes **Import folder** alongside the existing single-file action. A
+  folder chooser opens a concise result summary with expandable per-file details. Tests cover mixed
+  valid/corrupt folders, duplicate-name safety, cross-pool assignment corruption, legacy files
+  lacking newer timestamps, autosave output, and preserved imported timestamps.
+
+## Unified tournament import entry point
+
+- **Task:** Make single-file and folder migration discoverable as one top-level action while
+  preserving both capabilities.
+- **Decisions:** Replace the two header buttons with **Import**, which presents a small themed choice
+  dialog and then delegates to the existing FileChooser or DirectoryChooser. Both routes now return
+  the same per-file imported/skipped/rejected result model and share the validated repository path.
+- **Outcome:** Every completed import shows one concise themed result dialog; cancelling either the
+  choice dialog or native chooser leaves application state unchanged. User documentation now uses
+  the unified terminology.
+
+## Import choice-card refinement
+
+- **Task:** Remove ambiguity between hoverable import cards and duplicate footer buttons.
+- **Decision:** Make each file/folder option a single full-width, keyboard-focusable JavaFX button
+  containing its title and supporting text; keep only Cancel in the dialog footer.
+- **Outcome:** Hover, focus, pressed, and keyboard activation now belong to the same visible target,
+  while the underlying file/folder chooser and validation paths remain unchanged.
+
+## Simplified import result presentation
+
+- **Task:** Reduce the cognitive load of import outcomes without changing import classification.
+- **Decision:** Keep imported/skipped/rejected distinctions in the service result model, but merge
+  skipped and rejected into one user-facing **Not imported** section with the original reason text.
+- **Outcome:** The summary now reports only imported and not-imported counts, with themed check/X rows
+  and bounded scrolling for larger batches; empty sections are omitted.

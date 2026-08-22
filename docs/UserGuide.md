@@ -31,6 +31,12 @@ other tournament.
 Tournament names must be non-blank and unique. Any name error is shown directly below the name
 field, while the entered text remains available for correction.
 
+Choose **Import** in the header, then choose **Import file** to load one saved tournament JSON file
+or **Import folder** to migrate several saved tournaments at once. The app imports each valid file
+independently, leaves existing names and malformed or inconsistent files out without preventing
+other files in the folder from being restored. The result dialog groups every unsuccessful item
+under **Not imported** and explains the reason. Importing never overwrites an existing tournament.
+
 Choose **+ New Tournament**, enter a name, and choose **Create**. Names are trimmed and unique
 without regard to letter case. For example, `Club Open` and ` club open ` cannot both be created.
 
@@ -122,6 +128,6 @@ the final loser second, and same-round eliminations use Pool Result place as the
 ## Saving and opening tournaments
 
 Successful changes, including deleting a tournament, are automatically saved in `tournaments/`; no normal Save action is required.
-Saved tournaments are restored to Tournament Home when the app starts. The header **Open File** action
+Saved tournaments are restored to Tournament Home when the app starts. The header **Import** action
 imports a tournament JSON file into this local autosaved collection. If autosaving fails, the app
 reports the error while retaining the in-memory tournament for the current session.

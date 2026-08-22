@@ -58,7 +58,7 @@ public final class TournamentView extends BorderPane {
     private final TextField tournamentNameField = new TextField();
     private final Button createButton = new Button("Create tournament");
     private final Label tournamentNameValidationErrorLabel = new Label();
-    private final Button loadButton = new Button("Open");
+    private final Button importButton = new Button("Import");
     private final Button homeButton = new Button("Tournament Home");
     private final TextField homeTournamentNameField = new TextField();
     private final Button homeNewButton = new Button("+ New Tournament");
@@ -220,7 +220,7 @@ public final class TournamentView extends BorderPane {
     public TextField tournamentNameField() { return tournamentNameField; }
     public Button createButton() { return createButton; }
     public Label tournamentNameValidationErrorLabel() { return tournamentNameValidationErrorLabel; }
-    public Button loadButton() { return loadButton; }
+    public Button importButton() { return importButton; }
     public Button homeButton() { return homeButton; }
     public TextField homeTournamentNameField() { return homeTournamentNameField; }
     public Button homeNewButton() { return homeNewButton; }
@@ -649,12 +649,12 @@ public final class TournamentView extends BorderPane {
 
     private VBox buildHeader() {
         Label appName = new Label("Fencing Tournament Manager"); appName.getStyleClass().add("app-name"); tournamentNameLabel.getStyleClass().add("tournament-name"); phaseLabel.getStyleClass().add("phase-name"); progressLabel.getStyleClass().add("progress-text");
-        loadButton.getStyleClass().add("secondary-action");
-        loadButton.setText("Open File");
+        importButton.getStyleClass().add("secondary-action");
+        importButton.setTooltip(new Tooltip("Import a tournament file or folder"));
         tournamentContext.getChildren().setAll(tournamentNameLabel, phaseLabel, progressLabel); tournamentContext.getStyleClass().add("tournament-context");
         HBox identity = new HBox(appName); identity.setAlignment(Pos.CENTER_LEFT);
         Region spacer = new Region(); HBox.setHgrow(spacer, Priority.ALWAYS);
-        HBox actions = new HBox(8, loadButton); actions.setAlignment(Pos.CENTER_RIGHT);
+        HBox actions = new HBox(8, importButton); actions.setAlignment(Pos.CENTER_RIGHT);
         HBox bar = new HBox(22, identity, spacer, tournamentContext, actions); bar.setAlignment(Pos.CENTER_LEFT); bar.getStyleClass().add("top-bar");
         buildStageProgress();
         return new VBox(bar, stageProgressRow);

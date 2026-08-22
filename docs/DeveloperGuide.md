@@ -38,6 +38,15 @@ persisted data must satisfy domain invariants. It persists `lastModified` and op
 modification time where the tournament state requires one, so legacy data remains loadable and
 receives useful Tournament Home ordering and metadata.
 
+`TournamentService.importTournamentsFromFolder` uses the same repository deserialization path as
+single-file import, followed by `TournamentImportValidator` for relationships that span persisted
+value objects: seed coverage, unique pool assignments, complete pool schedules, known participants,
+and coherent DE winners/scores/topology. It scans only direct `.json` files and isolates every
+source file. A valid file is only merged after validation and local autosave succeed; duplicate
+case-insensitive names are skipped, while malformed or inconsistent files are returned as
+user-facing rejected outcomes. Missing legacy timestamps receive repository fallbacks, whereas an
+explicit malformed timestamp is rejected.
+
 ## Visual theme architecture
 
 `ui/tournament.css` combines two independent token layers: Light/Dark appearance classes define

@@ -125,12 +125,12 @@ public final class JsonTournamentRepository implements TournamentRepository {
         }
     }
 
-    private static Instant parseLastModified(String persistedTimestamp, Path sourcePath) {
+    private static Instant parseLastModified(String persistedTimestamp, Path sourcePath) throws IOException {
         if (persistedTimestamp == null || persistedTimestamp.isBlank()) return fileModificationTime(sourcePath);
         try {
             return Instant.parse(persistedTimestamp);
         } catch (DateTimeParseException exception) {
-            return fileModificationTime(sourcePath);
+            throw new IOException("Tournament last-modified timestamp is invalid.", exception);
         }
     }
 
@@ -143,13 +143,13 @@ public final class JsonTournamentRepository implements TournamentRepository {
     }
 
     private static Instant parseCompletedAt(String persistedTimestamp, Path sourcePath,
-                                            EliminationBracket bracket, Instant lastModified) {
+                                            EliminationBracket bracket, Instant lastModified) throws IOException {
         if (bracket == null || !bracket.isComplete()) return null;
         if (persistedTimestamp == null || persistedTimestamp.isBlank()) return fileModificationTime(sourcePath);
         try {
             return Instant.parse(persistedTimestamp);
         } catch (DateTimeParseException exception) {
-            return lastModified == null ? fileModificationTime(sourcePath) : lastModified;
+            throw new IOException("Tournament completion timestamp is invalid.", exception);
         }
     }
 

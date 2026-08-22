@@ -1,6 +1,6 @@
 {
-  "id" : "bc582878-44d2-4943-854e-1dccc0d590eb",
-  "name" : "test",
+  "id" : "d1552008-cf20-49dd-8d59-01b8e09ee70b",
+  "name" : "dbndfbs",
   "settings" : {
     "targetPoolSize" : 5,
     "poolBoutScoreLimit" : 5,
@@ -16,6 +16,6 @@
   },
   "pools" : [ ],
   "eliminationBracket" : null,
-  "lastModified" : "2026-08-22T16:11:43.763854501Z",
+  "lastModified" : "2026-08-22T16:24:19.198464200Z",
   "completedAt" : null
 }

@@ -3,6 +3,7 @@ package edu.nus.cs3227.fencingtournament.ui;
 import edu.nus.cs3227.fencingtournament.application.PoolProgress;
 import edu.nus.cs3227.fencingtournament.application.TournamentService;
 import edu.nus.cs3227.fencingtournament.application.TournamentPersistenceException;
+import edu.nus.cs3227.fencingtournament.application.TournamentFolderImportResult;
 import edu.nus.cs3227.fencingtournament.domain.Fencer;
 import edu.nus.cs3227.fencingtournament.domain.Tournament;
 import edu.nus.cs3227.fencingtournament.domain.TournamentPhase;
@@ -14,9 +15,18 @@ import edu.nus.cs3227.fencingtournament.domain.elimination.EliminationMatch;
 import edu.nus.cs3227.fencingtournament.domain.standings.OverallStanding;
 import edu.nus.cs3227.fencingtournament.domain.standings.FinalStanding;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.ContentDisplay;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.stage.FileChooser;
+import javafx.stage.DirectoryChooser;
+import javafx.geometry.Pos;
+import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
 
 import java.io.IOException;
 import java.util.List;
@@ -48,7 +58,7 @@ public final class TournamentController {
         view.setTournamentOpenHandler(this::openTournament);
         view.setTournamentDeleteHandler(this::deleteTournament);
         view.homeButton().setOnAction(event -> { service.returnToTournamentHome(); refreshWorkspace(); });
-        view.loadButton().setOnAction(event -> loadTournament());
+        view.importButton().setOnAction(event -> chooseImport());
         view.addFencerButton().setOnAction(event -> addFencer());
         view.setSeedMoveHandler(this::moveSeedFencer);
         view.setFencerRemoveHandler(this::removeFencer);
@@ -146,24 +156,142 @@ public final class TournamentController {
         return alert.showAndWait().orElse(ButtonType.CANCEL) == delete;
     }
 
-    private void loadTournament() {
-        var selected = jsonFileChooser("Open tournament").showOpenDialog(view.getScene().getWindow());
+    private void chooseImport() {
+        ButtonType fileChoice = new ButtonType("Import file", ButtonBar.ButtonData.OK_DONE);
+        ButtonType folderChoice = new ButtonType("Import folder", ButtonBar.ButtonData.OK_DONE);
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Import tournament data");
+        dialog.getDialogPane().setHeaderText("What would you like to import?");
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CANCEL);
+        Button fileCard = importChoiceCard("Import file", "Load a single tournament JSON file.",
+                () -> { dialog.setResult(fileChoice); dialog.close(); });
+        Button folderCard = importChoiceCard("Import folder", "Load all valid tournament JSON files from a folder.",
+                () -> { dialog.setResult(folderChoice); dialog.close(); });
+        dialog.getDialogPane().setContent(new VBox(10, fileCard, folderCard));
+        dialog.setOnShown(event -> fileCard.requestFocus());
+        UiTheme.apply(dialog.getDialogPane());
+        ButtonType choice = dialog.showAndWait().orElse(ButtonType.CANCEL);
+        if (choice == fileChoice) importTournamentFile();
+        if (choice == folderChoice) importTournamentFolder();
+    }
+
+    private static Button importChoiceCard(String title, String description, Runnable action) {
+        Label heading = new Label(title);
+        heading.getStyleClass().add("section-kicker");
+        Label detail = new Label(description);
+        detail.getStyleClass().add("secondary-text");
+        VBox text = new VBox(2, heading, detail);
+        Button card = new Button();
+        card.setGraphic(text);
+        card.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+        card.setMaxWidth(Double.MAX_VALUE);
+        card.setAlignment(Pos.CENTER_LEFT);
+        card.setMnemonicParsing(false);
+        card.setAccessibleText(title + ". " + description);
+        card.setOnAction(event -> action.run());
+        card.getStyleClass().add("import-choice-card");
+        return card;
+    }
+
+    private void importTournamentFile() {
+        var selected = jsonFileChooser("Import tournament file").showOpenDialog(view.getScene().getWindow());
         if (selected == null) return;
         try {
-            Optional<Tournament> loaded = service.loadTournament(selected.toPath());
-            if (loaded.isEmpty()) {
-                view.showStatus("The selected tournament file does not exist.");
-                return;
-            }
+            TournamentFolderImportResult result = service.importTournamentFile(selected.toPath());
             refreshWorkspace();
-            view.showStatus("Tournament loaded.");
+            showImportSummary(result);
         } catch (TournamentPersistenceException exception) {
             refreshWorkspace();
-            showError("Could not load tournament: " + exception.getMessage());
+            showError("Could not import tournament: " + exception.getMessage());
         } catch (IOException | IllegalArgumentException exception) {
-            showError("Could not load tournament: " + exception.getMessage());
+            showError("Could not import tournament: " + exception.getMessage());
         }
     }
+
+    private void importTournamentFolder() {
+        DirectoryChooser chooser = new DirectoryChooser();
+        chooser.setTitle("Import tournaments from folder");
+        var selected = chooser.showDialog(view.getScene().getWindow());
+        if (selected == null) return;
+        try {
+            TournamentFolderImportResult result = service.importTournamentsFromFolder(selected.toPath());
+            refreshWorkspace();
+            showImportSummary(result);
+            if (!result.imported().isEmpty()) view.showStatus("Imported " + result.imported().size() + " tournament"
+                    + (result.imported().size() == 1 ? "." : "s."));
+        } catch (IOException | IllegalArgumentException exception) {
+            showError("Could not import tournaments: " + exception.getMessage());
+        }
+    }
+
+    private void showImportSummary(TournamentFolderImportResult result) {
+        String summary = importSummaryText(result);
+        Dialog<Void> alert = new Dialog<>();
+        UiTheme.apply(alert.getDialogPane());
+        alert.setTitle("Import complete");
+        alert.getDialogPane().setHeaderText("Import complete");
+        alert.getDialogPane().getButtonTypes().add(ButtonType.OK);
+        Label summaryLabel = new Label(summary);
+        summaryLabel.getStyleClass().add("import-summary");
+        VBox resultSections = new VBox(14);
+        if (!result.imported().isEmpty()) {
+            resultSections.getChildren().add(importResultSection("Imported", result.imported(), true));
+        }
+        List<TournamentFolderImportResult.Item> notImported = new java.util.ArrayList<>();
+        notImported.addAll(result.skipped());
+        notImported.addAll(result.rejected());
+        if (!notImported.isEmpty()) {
+            resultSections.getChildren().add(importResultSection("Not imported", notImported, false));
+        }
+        if (resultSections.getChildren().isEmpty()) {
+            resultSections.getChildren().add(new Label("No tournament JSON files were found."));
+        }
+        ScrollPane resultScroll = new ScrollPane(resultSections);
+        resultScroll.getStyleClass().add("import-result-scroll");
+        resultScroll.setFitToWidth(true);
+        resultScroll.setPrefViewportHeight(Math.min(360, Math.max(100, resultSections.getChildren().size() * 96)));
+        resultScroll.setMaxHeight(420);
+        VBox content = new VBox(12, summaryLabel, resultScroll);
+        alert.getDialogPane().setContent(content);
+        alert.showAndWait();
+    }
+
+    private static VBox importResultSection(String title, List<TournamentFolderImportResult.Item> items,
+                                            boolean successful) {
+        Label heading = new Label(title);
+        heading.getStyleClass().add(successful ? "import-success-heading" : "import-failure-heading");
+        VBox section = new VBox(7, heading);
+        section.getStyleClass().add("import-result-section");
+        for (TournamentFolderImportResult.Item item : items) {
+            Label marker = new Label(successful ? "✓" : "✕");
+            marker.getStyleClass().add(successful ? "import-success-marker" : "import-failure-marker");
+            marker.setMinWidth(18);
+            marker.setAlignment(Pos.TOP_CENTER);
+            Label name = new Label(item.displayName());
+            name.getStyleClass().add("import-result-name");
+            VBox details = new VBox(2, name);
+            if (!successful && !item.detail().isBlank()) {
+                Label reason = new Label(item.detail());
+                reason.setWrapText(true);
+                reason.getStyleClass().add("import-result-reason");
+                details.getChildren().add(reason);
+            }
+            HBox row = new HBox(8, marker, details);
+            row.setAlignment(Pos.TOP_LEFT);
+            row.getStyleClass().add("import-result-item");
+            section.getChildren().add(row);
+        }
+        return section;
+    }
+
+    private static String importSummaryText(TournamentFolderImportResult result) {
+        if (result.imported().size() == 1 && result.skipped().isEmpty() && result.rejected().isEmpty()) {
+            return "1 tournament imported.";
+        }
+        return result.imported().size() + " imported    "
+                + (result.skipped().size() + result.rejected().size()) + " not imported";
+    }
+
 
     private void addFencer() {
         try {
