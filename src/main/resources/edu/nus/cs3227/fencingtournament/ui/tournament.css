@@ -9,6 +9,7 @@
     -ft-border: #d3e2dc; -ft-border-strong: #b9d1c8; -ft-disabled: #aab8b4;
     -ft-unavailable: #e6ece9; -ft-unavailable-text: #8b9995; -ft-table-header: #eaf2ef;
     -ft-hover: #e8f5f0; -ft-menu-hover: #d5e2df; -ft-connector: #b9ccc5;
+    -ft-scroll-track: #edf4f1; -ft-scroll-thumb: #a9beb7; -ft-scroll-thumb-hover: #829b92;
     -ft-success: #197a55; -ft-success-subtle: #dcefe4; -ft-success-text: #197a55;
     -ft-danger: #a64b4e; -ft-danger-subtle: #f5e2e2; -ft-danger-text: #a64b4e;
     -ft-warning: #8a6934; -ft-warning-subtle: #f5edda; -ft-gold: #ffe066; -ft-gold-text: #5b4300;
@@ -22,21 +23,22 @@
     -ft-border: #3b504d; -ft-border-strong: #506763; -ft-disabled: #6f827e;
     -ft-unavailable: #2c3b39; -ft-unavailable-text: #80918d; -ft-table-header: #2b3c39;
     -ft-hover: #354a46; -ft-menu-hover: #49605b; -ft-connector: #637a75;
+    -ft-scroll-track: #1b2927; -ft-scroll-thumb: #526963; -ft-scroll-thumb-hover: #6f8981;
     -ft-success: #43a879; -ft-success-subtle: #214436; -ft-success-text: #67d59d;
     -ft-danger: #d17478; -ft-danger-subtle: #512f33; -ft-danger-text: #f08a8e;
     -ft-warning: #d0ae6d; -ft-warning-subtle: #4c412b; -ft-gold: #ffe066; -ft-gold-text: #3e3100;
     -ft-silver: #a9b0b4; -ft-bronze: #a97142;
 }
 
-.theme-emerald-teal { -ft-accent: #087f78; -ft-accent-hover: #066860; -ft-accent-strong: #05635d; -ft-accent-subtle: #d8f1ea; -ft-focus: #14a99d; }
-.theme-deep-navy-electric-blue { -ft-accent: #1769e0; -ft-accent-hover: #1257b7; -ft-accent-strong: #0d4aa6; -ft-accent-subtle: #dceaff; -ft-focus: #2d93e8; }
-.theme-royal-purple-violet { -ft-accent: #7045b7; -ft-accent-hover: #593595; -ft-accent-strong: #482a80; -ft-accent-subtle: #eadfff; -ft-focus: #9a6ee5; }
-.theme-ice-blue-cerulean { -ft-accent: #1687aa; -ft-accent-hover: #116e8c; -ft-accent-strong: #0b5872; -ft-accent-subtle: #d6f0f7; -ft-focus: #25a8ca; }
+.theme-emerald-teal { -ft-accent: #087f78; -ft-accent-hover: #066860; -ft-accent-strong: #05635d; -ft-accent-subtle: #d8f1ea; -ft-focus: #14a99d; -ft-scroll-track: #edf5f2; -ft-scroll-thumb: #a6bcb4; -ft-scroll-thumb-hover: #78958a; }
+.theme-deep-navy-electric-blue { -ft-accent: #1769e0; -ft-accent-hover: #1257b7; -ft-accent-strong: #0d4aa6; -ft-accent-subtle: #dceaff; -ft-focus: #2d93e8; -ft-scroll-track: #eef2f7; -ft-scroll-thumb: #a8b7c5; -ft-scroll-thumb-hover: #7f96aa; }
+.theme-royal-purple-violet { -ft-accent: #7045b7; -ft-accent-hover: #593595; -ft-accent-strong: #482a80; -ft-accent-subtle: #eadfff; -ft-focus: #9a6ee5; -ft-scroll-track: #f3f0f6; -ft-scroll-thumb: #b7aec2; -ft-scroll-thumb-hover: #9587a4; }
+.theme-ice-blue-cerulean { -ft-accent: #1687aa; -ft-accent-hover: #116e8c; -ft-accent-strong: #0b5872; -ft-accent-subtle: #d6f0f7; -ft-focus: #25a8ca; -ft-scroll-track: #edf4f7; -ft-scroll-thumb: #a7bcc4; -ft-scroll-thumb-hover: #7f9da8; }
 
-.appearance-dark.theme-emerald-teal { -ft-accent: #21a89e; -ft-accent-hover: #2bbcb1; -ft-accent-strong: #57d0c6; -ft-accent-subtle: #234f4a; -ft-focus: #6ae3d8; }
-.appearance-dark.theme-deep-navy-electric-blue { -ft-accent: #4d93f5; -ft-accent-hover: #72abff; -ft-accent-strong: #91c1ff; -ft-accent-subtle: #294665; -ft-focus: #9fcaff; }
-.appearance-dark.theme-royal-purple-violet { -ft-accent: #a174e8; -ft-accent-hover: #b892f1; -ft-accent-strong: #d0b4ff; -ft-accent-subtle: #4b386c; -ft-focus: #d7c1ff; }
-.appearance-dark.theme-ice-blue-cerulean { -ft-accent: #49b9d5; -ft-accent-hover: #6dcae2; -ft-accent-strong: #92d9eb; -ft-accent-subtle: #24515d; -ft-focus: #9fe5f5; }
+.appearance-dark.theme-emerald-teal { -ft-accent: #21a89e; -ft-accent-hover: #2bbcb1; -ft-accent-strong: #57d0c6; -ft-accent-subtle: #234f4a; -ft-focus: #6ae3d8; -ft-scroll-track: #1c2c29; -ft-scroll-thumb: #527167; -ft-scroll-thumb-hover: #71958a; }
+.appearance-dark.theme-deep-navy-electric-blue { -ft-accent: #4d93f5; -ft-accent-hover: #72abff; -ft-accent-strong: #91c1ff; -ft-accent-subtle: #294665; -ft-focus: #9fcaff; -ft-scroll-track: #1c2834; -ft-scroll-thumb: #53697d; -ft-scroll-thumb-hover: #718ba5; }
+.appearance-dark.theme-royal-purple-violet { -ft-accent: #a174e8; -ft-accent-hover: #b892f1; -ft-accent-strong: #d0b4ff; -ft-accent-subtle: #4b386c; -ft-focus: #d7c1ff; -ft-scroll-track: #282330; -ft-scroll-thumb: #6b6079; -ft-scroll-thumb-hover: #8b7c9e; }
+.appearance-dark.theme-ice-blue-cerulean { -ft-accent: #49b9d5; -ft-accent-hover: #6dcae2; -ft-accent-strong: #92d9eb; -ft-accent-subtle: #24515d; -ft-focus: #9fe5f5; -ft-scroll-track: #1b2b31; -ft-scroll-thumb: #536d76; -ft-scroll-thumb-hover: #71929d; }
 
 .workspace {
     -fx-background-color: -ft-app-background;
@@ -45,6 +47,46 @@
 }
 
 .workspace .label, .dialog-pane .label { -fx-text-fill: -ft-text-primary; }
+
+/* Shared neutral scrollbars for ListView and every ScrollPane. Appearance controls contrast;
+   colour families provide only a restrained cool/neutral tint, never a permanent accent thumb. */
+.workspace .scroll-bar, .dialog-pane .scroll-bar {
+    -fx-background-color: transparent;
+    -fx-padding: 1;
+}
+.workspace .scroll-bar:vertical, .dialog-pane .scroll-bar:vertical {
+    -fx-pref-width: 12;
+}
+.workspace .scroll-bar:horizontal, .dialog-pane .scroll-bar:horizontal {
+    -fx-pref-height: 12;
+}
+.workspace .scroll-bar > .track, .dialog-pane .scroll-bar > .track {
+    -fx-background-color: -ft-scroll-track;
+    -fx-background-radius: 7;
+    -fx-border-color: transparent;
+}
+.workspace .scroll-bar > .thumb, .dialog-pane .scroll-bar > .thumb {
+    -fx-background-color: -ft-scroll-thumb;
+    -fx-background-insets: 2;
+    -fx-background-radius: 6;
+}
+.workspace .scroll-bar > .thumb:hover, .workspace .scroll-bar:focused > .thumb,
+.dialog-pane .scroll-bar > .thumb:hover, .dialog-pane .scroll-bar:focused > .thumb {
+    -fx-background-color: -ft-scroll-thumb-hover;
+}
+.workspace .scroll-bar > .increment-button, .workspace .scroll-bar > .decrement-button,
+.dialog-pane .scroll-bar > .increment-button, .dialog-pane .scroll-bar > .decrement-button {
+    -fx-padding: 0;
+    -fx-background-color: transparent;
+}
+.workspace .scroll-bar .increment-arrow, .workspace .scroll-bar .decrement-arrow,
+.dialog-pane .scroll-bar .increment-arrow, .dialog-pane .scroll-bar .decrement-arrow {
+    -fx-padding: 0;
+    -fx-background-color: transparent;
+}
+.workspace .scroll-pane > .corner, .dialog-pane .scroll-pane > .corner {
+    -fx-background-color: -ft-scroll-track;
+}
 .text-field, .text-area, .combo-box-base, .combo-box-base .list-cell {
     -fx-text-fill: -ft-text-primary;
     -fx-prompt-text-fill: -ft-text-muted;

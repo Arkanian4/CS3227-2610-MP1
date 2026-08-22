@@ -101,8 +101,14 @@ public final class Tournament {
      * happens so opening or viewing a tournament never changes its modification time.
      */
     public void markModified() {
+        markModifiedAfter(Instant.EPOCH);
+    }
+
+    /** Marks a change while preserving ordering against other persisted tournaments. */
+    public void markModifiedAfter(Instant latestKnownTimestamp) {
         Instant now = Instant.now();
-        lastModified = now.isAfter(lastModified) ? now : lastModified.plusNanos(1);
+        Instant floor = lastModified.isAfter(latestKnownTimestamp) ? lastModified : latestKnownTimestamp;
+        lastModified = now.isAfter(floor) ? now : floor.plusNanos(1);
         if (phase() == TournamentPhase.COMPLETE) {
             if (completedAt == null) completedAt = lastModified;
         } else {

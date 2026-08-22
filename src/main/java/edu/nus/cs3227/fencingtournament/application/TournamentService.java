@@ -21,6 +21,7 @@ import edu.nus.cs3227.fencingtournament.domain.standings.TieBreakPolicy;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -331,7 +332,13 @@ public final class TournamentService {
 
     /** Touches the active aggregate only after a domain mutation has succeeded. */
     private void persistSuccessfulMutation() {
-        requireActiveTournament().markModified();
+        Tournament active = requireActiveTournament();
+        Instant latestOtherTimestamp = tournaments.values().stream()
+                .filter(tournament -> tournament != active)
+                .map(Tournament::lastModified)
+                .max(Instant::compareTo)
+                .orElse(Instant.EPOCH);
+        active.markModifiedAfter(latestOtherTimestamp);
         if (autoSaveDirectory == null) return;
         try {
             saveAll(autoSaveDirectory);

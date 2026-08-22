@@ -51,6 +51,11 @@ tokens; theme families do not replace the success/danger meanings. Shared Label,
 button, and menu rules consume these tokens so Dark mode does not depend on JavaFX's
 light-oriented default text paint.
 
+The same stylesheet defines shared scrollbar selectors for `ListView` and `ScrollPane`. Appearance
+tokens set neutral track/thumb contrast, while each colour family supplies a restrained cool-neutral
+tint; the thumb only becomes more visible on hover/focus and never uses the accent colour as its
+default state.
+
 `UiTheme` applies the selected root class and stylesheet to both the main JavaFX scene and dialog
 panes, so confirmation dialogs remain visually consistent with the workspace.
 

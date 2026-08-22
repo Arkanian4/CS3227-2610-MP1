@@ -379,3 +379,13 @@ These entries are factual summaries for developer verification and later reflect
 - **Outcome:** Completed cards show `Completed <date>` near View Results, ongoing cards retain
   `Updated …`, and completion timestamps survive reloads while reset/re-completion is covered by
   tests.
+
+## Theme-aware scrollbars
+
+- **Task:** Replace visually disconnected platform scrollbar styling with a reusable treatment
+  across Seed Order, pool boards, result tables, and the DE tableau.
+- **Decisions:** Define neutral track, thumb, and hover-thumb tokens in Light/Dark appearance
+  layers, with restrained per-family tints. Apply one JavaFX selector set to shared scrollbars,
+  tracks, thumbs, arrows, and corners rather than screen-specific rules.
+- **Outcome:** Scrollbars remain slim, grabbable, and readable in every colour family and
+  appearance without using the tournament accent as a permanently saturated control.
