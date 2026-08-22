@@ -132,7 +132,7 @@ public final class TournamentView extends BorderPane {
     private final ListView<Pool> poolList = new ListView<>(FXCollections.observableArrayList());
     private final Label selectedPoolLabel = new Label("Select a pool");
     private final Label poolProgressLabel = new Label();
-    private final FlowPane poolDashboard = new FlowPane(18, 18);
+    private final GridPane poolDashboard = new GridPane();
     private final ScrollPane poolDashboardScroll = new ScrollPane(poolDashboard);
     private final TextField firstScoreField = new TextField();
     private final TextField secondScoreField = new TextField();
@@ -311,7 +311,7 @@ public final class TournamentView extends BorderPane {
     public Button editPoolResultButton() { return editPoolResultButton; }
     public Label poolValidationErrorLabel() { return poolValidationErrorLabel; }
     public Label eliminationValidationErrorLabel() { return eliminationValidationErrorLabel; }
-    public FlowPane poolDashboard() { return poolDashboard; }
+    public GridPane poolDashboard() { return poolDashboard; }
     public void setMatrixCellHandler(Consumer<PoolMatrixSelection> handler) { matrixCellHandler = handler == null ? ignored -> { } : handler; }
     public void setSeedMoveHandler(BiConsumer<UUID, Integer> handler) { seedMoveHandler = handler == null ? (fencerId, targetIndex) -> { } : handler; }
     public void setFencerRemoveHandler(Consumer<UUID> handler) { fencerRemoveHandler = handler == null ? ignored -> { } : handler; }
@@ -347,37 +347,33 @@ public final class TournamentView extends BorderPane {
     public void renderPoolDashboard(List<PoolDashboardPanel> panels) {
         renderedPoolPanels = List.copyOf(panels);
         poolDashboard.getChildren().clear();
-        poolDashboard.getStyleClass().removeAll("one-pool-dashboard", "two-pool-dashboard", "multi-pool-dashboard");
-        poolDashboard.getStyleClass().add(panels.size() == 1 ? "one-pool-dashboard"
-                : panels.size() == 2 ? "two-pool-dashboard" : "multi-pool-dashboard");
-        poolDashboard.setHgap(panels.size() == 2 ? 12 : 18);
-        poolDashboard.setVgap(panels.size() == 2 ? 12 : 18);
-        updatePoolDashboardWidth(poolDashboardScroll.getViewportBounds().getWidth());
-        boolean boardFitsWithoutScrolling = panels.size() <= 2;
-        poolDashboardScroll.setHbarPolicy(boardFitsWithoutScrolling
-                ? ScrollPane.ScrollBarPolicy.NEVER : ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        poolDashboardScroll.setVbarPolicy(boardFitsWithoutScrolling
-                ? ScrollPane.ScrollBarPolicy.NEVER : ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        poolDashboard.getColumnConstraints().clear();
+        poolDashboard.getRowConstraints().clear();
+        PoolLayout.BoardLayout layout = PoolLayout.calculate(panels.stream()
+                        .map(panel -> panel.matrixRows().size()).toList(),
+                poolDashboardScroll.getViewportBounds().getWidth(), PoolLayout.ORGANISER);
+        poolDashboard.setHgap(PoolLayout.ORGANISER.horizontalGap());
+        poolDashboard.setVgap(PoolLayout.ORGANISER.horizontalGap());
+        poolDashboard.setPrefWidth(layout.usableWidth());
+        poolDashboardScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        poolDashboardScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         if (panels.isEmpty()) {
             Label empty = new Label("Pools will appear here after generation.");
             empty.getStyleClass().add("compact-grid-empty");
             poolDashboard.getChildren().add(empty);
             return;
         }
-        if (panels.size() == 2) {
-            VBox firstPool = poolPanel(panels.getFirst());
-            VBox secondPool = poolPanel(panels.get(1));
-            firstPool.setMaxWidth(Double.MAX_VALUE);
-            secondPool.setMaxWidth(Double.MAX_VALUE);
-            HBox.setHgrow(firstPool, Priority.ALWAYS);
-            HBox.setHgrow(secondPool, Priority.ALWAYS);
-            HBox twoPoolRow = new HBox(12, firstPool, secondPool);
-            twoPoolRow.setAlignment(Pos.TOP_LEFT);
-            twoPoolRow.getStyleClass().add("two-pool-row");
-            poolDashboard.getChildren().add(twoPoolRow);
-            return;
+        for (int column = 0; column < layout.columns(); column++) {
+            ColumnConstraints constraints = new ColumnConstraints(layout.panelWidth());
+            constraints.setMinWidth(layout.panelWidth());
+            constraints.setPrefWidth(layout.panelWidth());
+            constraints.setMaxWidth(layout.panelWidth());
+            poolDashboard.getColumnConstraints().add(constraints);
         }
-        panels.forEach(panel -> poolDashboard.getChildren().add(poolPanel(panel)));
+        for (int index = 0; index < panels.size(); index++) {
+            poolDashboard.add(poolPanel(panels.get(index), layout.panelWidth()),
+                    index % layout.columns(), index / layout.columns());
+        }
     }
     public void renderStandings(List<PoolStandingRow> standings, boolean complete) {
         standingsGrid.getChildren().setAll(new Label("Pool Result is calculated after all pool bouts are complete."));
@@ -860,8 +856,7 @@ public final class TournamentView extends BorderPane {
         if (activeStage == poolsTab) {
             double viewportWidth = poolDashboardScroll.getViewportBounds().getWidth();
             if (viewportWidth > 0) {
-                updatePoolDashboardWidth(viewportWidth);
-                if (!renderedPoolPanels.isEmpty()) renderPoolDashboard(renderedPoolPanels);
+            if (!renderedPoolPanels.isEmpty()) renderPoolDashboard(renderedPoolPanels);
             }
         }
         if (activeStage == eliminationTab && !renderedEliminationMatches.isEmpty()) {
@@ -1018,8 +1013,9 @@ public final class TournamentView extends BorderPane {
         poolList.setVisible(false); poolList.setManaged(false);
         poolDashboard.setAlignment(Pos.TOP_LEFT); poolDashboard.setMinWidth(0); poolDashboard.setMaxWidth(Double.MAX_VALUE); poolDashboard.getStyleClass().add("pool-dashboard");
         poolDashboardScroll.setFitToWidth(true); poolDashboardScroll.setFitToHeight(false); poolDashboardScroll.setPannable(true);
-        poolDashboardScroll.viewportBoundsProperty().addListener((observable, previous, current) ->
-                updatePoolDashboardWidth(current.getWidth()));
+        poolDashboardScroll.viewportBoundsProperty().addListener((observable, previous, current) -> {
+            if (!renderedPoolPanels.isEmpty()) renderPoolDashboard(renderedPoolPanels);
+        });
         poolDashboardScroll.getStyleClass().add("pool-dashboard-scroll");
         buildResultEntry();
         VBox content = new VBox(8, header, poolDashboardScroll, resultEntry);
@@ -1271,24 +1267,30 @@ public final class TournamentView extends BorderPane {
                 .filter(index -> seedList.getItems().get(index).id().equals(fencerId)).findFirst().orElse(-1);
     }
     private ListCell<Pool> poolCell() { return new ListCell<>() { @Override protected void updateItem(Pool pool, boolean empty) { super.updateItem(pool, empty); setText(empty || pool == null ? null : "POOL #" + (getIndex() + 1)); }}; }
-    private VBox poolPanel(PoolDashboardPanel panel) {
+    private VBox poolPanel(PoolDashboardPanel panel, double width) {
         Label name = new Label(panel.poolName()); name.getStyleClass().add("pool-panel-title");
         Label progress = new Label(panel.fencerCount() + " fencers · " + panel.completedBouts()
                 + " / " + panel.totalBouts() + " bouts"); progress.getStyleClass().add("pool-panel-progress");
         VBox heading = new VBox(1, name, progress); heading.getStyleClass().add("pool-panel-heading");
-        GridPane grid = new GridPane(); renderPoolMatrix(grid, panel.poolId(), panel.matrixRows());
+        GridPane grid = new GridPane();
+        renderPoolMatrix(grid, panel.poolId(), panel.matrixRows(),
+                PoolLayout.matrixMetrics(panel.matrixRows().size(), width, PoolLayout.ORGANISER));
         VBox panelNode = new VBox(5, heading, grid); panelNode.getStyleClass().add("pool-panel");
+        panelNode.setAlignment(Pos.TOP_CENTER);
+        panelNode.setMinWidth(width);
+        panelNode.setPrefWidth(width);
+        panelNode.setMaxWidth(width);
         return panelNode;
     }
 
-    private void renderPoolMatrix(GridPane grid, UUID poolId, List<PoolMatrixRow> rows) {
+    private void renderPoolMatrix(GridPane grid, UUID poolId, List<PoolMatrixRow> rows,
+                                  PoolLayout.MatrixMetrics metrics) {
         prepareGrid(grid, "pool-score-grid");
         if (rows.isEmpty()) { addGridCell(grid, "Pool data unavailable.", 0, 0, 280, "compact-grid-empty"); return; }
         List<UUID> opponents = new java.util.ArrayList<>(rows.getFirst().cells().keySet());
-        boolean compactEightPersonMatrix = rows.size() >= 8;
-        double nameWidth = compactEightPersonMatrix ? 118 : 132;
-        double scoreWidth = compactEightPersonMatrix ? 46 : 52;
-        double rowHeight = compactEightPersonMatrix ? 30 : 34;
+        double nameWidth = metrics.nameWidth();
+        double scoreWidth = metrics.scoreWidth();
+        double rowHeight = metrics.rowHeight();
         addGridCell(grid, "", 0, 0, nameWidth, rowHeight, "compact-grid-header", "matrix-fencer-label");
         for (int column = 0; column < opponents.size(); column++) {
             String name = fencerNameForColumn(rows, opponents.get(column));
@@ -1372,12 +1374,6 @@ public final class TournamentView extends BorderPane {
             if (current.getStyleClass().contains(styleClass)) return true;
         }
         return false;
-    }
-
-    private void updatePoolDashboardWidth(double viewportWidth) {
-        double contentWidth = Math.max(1, viewportWidth - 4);
-        poolDashboard.setPrefWidth(contentWidth);
-        poolDashboard.setPrefWrapLength(contentWidth);
     }
 
     private boolean isWinner(PoolMatrixRow row, UUID opponentId, String score, List<PoolMatrixRow> rows) { for (PoolMatrixRow opponent : rows) if (opponent.fencerId().equals(opponentId)) return parse(score) > parse(opponent.cell(row.fencerId())); return false; }

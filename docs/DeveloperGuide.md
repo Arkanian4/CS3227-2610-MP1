@@ -95,12 +95,13 @@ wrapping dashboard. A `PoolMatrixSelection` carries the pool ID as well as both 
 matrix cell can select the correct pool and scheduled bout without relying on a visible navigator.
 This preserves the existing service and domain APIs while making all pools scannable at once.
 
-For exactly two pools, the dashboard uses one explicit equal-width `HBox` row rather than relying
-on `FlowPane` wrapping. This prevents JavaFX from choosing a narrow internal width and stacking two
-otherwise readable matrices. One pool and three or more pools use the `FlowPane`, whose preferred
-width and wrap length follow the visible scroll viewport. The two-pool format uses compact matrix
-dimensions and disables board scrolling; three or more pools retain normal wrapping and scroll only
-after readable panels no longer fit.
+The dashboard uses one responsive `GridPane` strategy for every pool count. `ui.PoolLayout` derives
+minimum readable panel width from each matrix's minimum name and score-cell widths, calculates the
+number of fitting columns from the live viewport, then assigns explicit row/column positions.
+The renderer selects matrix dimensions between minimum and comfortable bounds according to the width
+allocated to that panel. Vertical scrolling appears only when readable rows no longer fit in the
+visible board area. The same utility is presentation-parameterized so a future projection renderer
+can use larger readability limits without duplicating the layout algorithm.
 
 Setup uses one JavaFX `ListView` for the authoritative pre-pool seed order. Its custom cells pair
 a visible drag handle and one-based seed number with a compact row-level remove action. The view
@@ -124,8 +125,10 @@ The UI selects the tab matching the opened tournament phase. This avoids retaini
 tournament tab when switching from Tournament Home.
 
 Pool generation uses manual seed order, balanced snake distribution, and round-robin bouts. The
-existing 5--7 pool behavior is retained; selecting a maximum of 8 explicitly permits eight-person
-pools and lets sixteen fencers form two 8-person pools. Setup has one authoritative `Seeding`
+selected maximum is a hard capacity limit: pool count is `ceil(fencerCount / maximumPoolSize)`, so
+members are distributed across balanced pools without exceeding the organiser's selected 5--8
+limit. Selecting a maximum of 8 therefore permits sixteen fencers to form two 8-person pools.
+Setup has one authoritative `Seeding`
 order: adding a fencer appends its ID, removing a fencer removes its ID, and dragging a seed row
 delegates to `TournamentService.moveSeedFencer` for insertion-based reordering. The pre-pool
 order remains editable until `generatePools` consumes it, unless the organiser later explicitly

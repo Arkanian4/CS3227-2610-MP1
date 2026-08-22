@@ -530,15 +530,10 @@
 .pool-dashboard-scroll > .viewport { -fx-background-color: transparent; }
 .pool-dashboard { -fx-padding: 0 2 4 2; }
 .pool-panel {
-    -fx-min-width: 520;
-    -fx-pref-width: 520;
     -fx-padding: 6;
     -fx-background-color: transparent;
     -fx-border-color: transparent;
 }
-.two-pool-dashboard .pool-panel { -fx-min-width: 506; -fx-pref-width: 506; }
-.two-pool-row { -fx-alignment: TOP_LEFT; }
-.one-pool-dashboard .pool-panel { -fx-min-width: 620; -fx-pref-width: 620; }
 .pool-panel-heading { -fx-padding: 1 2 4 2; }
 .pool-panel-title { -fx-font-size: 13px; -fx-font-weight: 800; -fx-text-fill: -ft-text-primary; }
 .pool-panel-progress { -fx-font-size: 11px; -fx-font-weight: 700; -fx-text-fill: -ft-text-secondary; }
@@ -567,8 +562,6 @@
 .workspace .pool-status-advanced { -fx-text-fill: -ft-success-text; -fx-font-weight: 800; }
 .workspace .pool-status-eliminated { -fx-text-fill: -ft-danger-text; -fx-font-weight: 800; }
 .pool-score-grid .matrix-grid-cell { -fx-font-size: 14px; -fx-font-weight: 800; -fx-alignment: CENTER; -fx-padding: 0; }
-.two-pool-dashboard .pool-score-grid .matrix-grid-cell { -fx-font-size: 13px; }
-.two-pool-dashboard .pool-score-grid .compact-grid-header { -fx-font-size: 10px; -fx-padding: 2 4; }
 .pool-score-grid .matrix-pending { -fx-background-color: -ft-surface; -fx-text-fill: transparent; -fx-cursor: hand; }
 .pool-score-grid .matrix-pending:hover { -fx-background-color: -ft-hover; }
 .pool-score-grid .matrix-diagonal { -fx-background-color: -ft-unavailable; -fx-text-fill: transparent; }

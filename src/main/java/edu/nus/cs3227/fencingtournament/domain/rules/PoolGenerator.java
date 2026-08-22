@@ -12,13 +12,7 @@ import java.util.UUID;
 
 /** Deterministically distributes seeds and creates one round-robin schedule per pool. */
 public final class PoolGenerator {
-    /**
-     * Generates balanced pools from a complete ordered seeding.
-     *
-     * <p>The target is preferred when selecting the number of pools. Pool sizes differ by at
-     * most one. For fields that cannot produce only 5--7-person pools, the smallest number of
-     * pools whose maximum size is at most the selected target is used.</p>
-     */
+    /** Generates balanced pools from a complete ordered seeding without exceeding the selected cap. */
     public List<Pool> generate(Seeding seeding, int targetPoolSize) {
         if (seeding == null) {
             throw new IllegalArgumentException("Seeding must not be null.");
@@ -54,22 +48,7 @@ public final class PoolGenerator {
         if (fencerCount < 2) {
             throw new IllegalArgumentException("At least two fencers are required to generate pools.");
         }
-        // Preserve the established single-pool handling through seven fencers; eight is a
-        // single pool only when the organiser explicitly selects the supported size of eight.
-        if (fencerCount <= Math.max(7, targetPoolSize)) {
-            return 1;
-        }
-
-        int supportedMaximum = targetPoolSize == 8 ? 8 : 7;
-        int minimumPoolsForMaximumSize = (fencerCount + supportedMaximum - 1) / supportedMaximum;
-        int maximumPoolsForMinimumSize = fencerCount / 5;
-        if (minimumPoolsForMaximumSize > maximumPoolsForMinimumSize) {
-            return minimumPoolsForMaximumSize;
-        }
-
-        int preferredPools = Math.max(1, (int) Math.round((double) fencerCount / targetPoolSize));
-        return Math.max(minimumPoolsForMaximumSize,
-                Math.min(maximumPoolsForMinimumSize, preferredPools));
+        return (fencerCount + targetPoolSize - 1) / targetPoolSize;
     }
 
     private static List<List<UUID>> distributeSeeds(List<UUID> seededFencerIds, int numberOfPools) {

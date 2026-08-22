@@ -75,12 +75,14 @@ the tournament.
 
 ## Pools and Pool Result
 
-Choose a maximum pool size of 5, 6, 7, or 8 and select **Generate pools**. Pools are balanced
+Choose a maximum pool size of 5, 6, 7, or 8 and select **Generate pools**. This is a hard upper
+limit: no generated pool can contain more fencers than the selected maximum. Pools are balanced
 round-robin groups labelled `POOL #1`, `POOL #2`, and so on.
 
 The **Pools** tab shows each generated pool as a separate matrix, so organisers can scan progress
-across all pools without changing pages. Two pools use a compact side-by-side board suitable for
-the club's common 8-fencer format; extra pools wrap and scroll instead of making a matrix unreadable.
+across all pools without changing pages. The board automatically uses as many side-by-side columns
+as the visible width can accommodate while keeping every matrix readable, then wraps additional
+pools to later rows. It recalculates when the window is resized.
 In a score matrix, `V5` is a five-touch win for the row
 fencer, a non-prefixed score is a loss, grey diagonal cells are self-matchups, and blank cells are
 uncompleted bouts. Select an unfinished cell in any pool, enter scores in the associated result

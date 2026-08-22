@@ -111,13 +111,13 @@ These entries are factual summaries for developer verification and later reflect
 
 - **Task:** Support the club's common two-pool, eight-fencer format and make both matrices visible
   together for projected use.
-- **Decisions:** Extend the domain maximum to eight while retaining the previous 5--7 behavior;
-  use an explicit compact two-pool layout mode instead of hardcoding tournament data into the view.
+- **Decisions:** Extend the domain maximum to eight. This was later refined so the selected maximum
+  is a hard capacity limit for every supported setting, while retaining snake seeding distribution.
 - **Outcome:** Sixteen fencers with maximum eight produce two balanced snake-seeded pools. The
   two-pool board uses compact cells, ellipsised/tooltip names, no board scrolling, and a collapsed
   result strip until a matchup is selected.
-- **Notable issue:** Pool generation tests initially exposed an unintended change to the existing
-  five-person target behavior; the pool-count ceiling is now conditional on selecting eight.
+- **Notable issue:** A later audit showed that preserving a legacy seven-fencer exception violated
+  the organiser's selected maximum. Capacity now always uses a ceiling calculation.
 
 ## Pool-board responsiveness and dismissal
 
@@ -401,3 +401,41 @@ These entries are factual summaries for developer verification and later reflect
 - **Outcome:** Organisers can inspect Setup safely from later stages, then deliberately unlock it to
   amend the field and regenerate fresh pools. Tests cover no-op historical viewing, reset state,
   retained seed order, completed-state clearing, and persisted reset state.
+
+## General responsive Pools board
+
+- **Task:** Correct the Pools board so three or more pools do not unnecessarily stack in one long
+  vertical column after the two-pool layout had been improved.
+- **Cause:** The old JavaFX view special-cased exactly two pools with an `HBox`, while every other
+  count used fixed-width `FlowPane` children. Resizing only changed the wrapping width, not the
+  panel width or calculated number of columns. A follow-up runtime check found JavaFX rounding panel
+  widths up by a pixel, so a `FlowPane` wrapped even when the calculated two-column layout fit.
+- **Outcome:** All pool counts now use one viewport-driven responsive `GridPane`. It calculates
+  readable panel width from each matrix, derives the fitting column count, assigns explicit row and
+  column positions, and reflows when the visible board width changes. Tests cover both the pure
+  column-count calculation and a real JavaFX viewport where three five-fencer pools use two columns.
+
+## Pool-capacity and seven-fencer matrix correction
+
+- **Task:** Diagnose two independent defects: a selected maximum of five could still create a
+  six- or seven-fencer pool, and seven-fencer matrices could stack while eight-fencer matrices fit.
+- **Cause:** `PoolGenerator` retained a legacy single-pool-through-seven exception and used seven
+  as the implicit maximum for settings below eight. Separately, the UI gave only eight-fencer
+  matrices compact dimensions, making a seven-fencer matrix wider than an eight-fencer one.
+- **Outcome:** Pool count now always uses `ceil(fencerCount / selectedMaximum)` and snake
+  distribution keeps sizes balanced. Matrix dimensions now compact progressively from six to eight
+  fencers, so the minimum width increases monotonically (456, 480, 498 pixels) rather than jumping
+  at seven. Boundary tests cover every supported maximum and confirm complete, unique assignment.
+
+## Rule-driven responsive pool layout
+
+- **Task:** Remove residual screenshot/count-oriented tuning from the Pools board and make the
+  responsive decision depend only on each pool matrix's readable content bounds and the current
+  viewport.
+- **Decisions:** Extract `PoolLayout` from the JavaFX view. It accepts presentation readability
+  parameters, computes a content-derived minimum panel width, calculates the fitting column count
+  from live viewport width, and interpolates rendered matrix cells between minimum and comfortable
+  dimensions. The `GridPane` then assigns every card by calculated row and column.
+- **Outcome:** Small pools no longer expand into giant tables, larger displays naturally admit more
+  columns, and large numbers of pools wrap instead of shrinking below the defined readable minimum.
+  Pure layout tests cover 1, 2, 3, 6, and 30-pool cases at wide and narrow viewports.

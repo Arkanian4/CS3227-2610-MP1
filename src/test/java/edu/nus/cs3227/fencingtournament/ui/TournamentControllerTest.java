@@ -7,6 +7,7 @@ import edu.nus.cs3227.fencingtournament.domain.Tournament;
 import edu.nus.cs3227.fencingtournament.domain.TournamentPhase;
 import edu.nus.cs3227.fencingtournament.domain.pool.BoutScore;
 import javafx.application.Platform;
+import javafx.stage.Stage;
 import javafx.scene.Scene;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -402,10 +403,8 @@ class TournamentControllerTest {
                     new PoolDashboardPanel(firstPool, "POOL #1", 2, 1, 1, rows),
                     new PoolDashboardPanel(UUID.randomUUID(), "POOL #2", 2, 0, 1, rows)));
 
-            assertEquals(1, view.poolDashboard().getChildren().size());
-            javafx.scene.layout.HBox twoPoolRow = (javafx.scene.layout.HBox) view.poolDashboard().getChildren().getFirst();
-            assertEquals(2, twoPoolRow.getChildren().size());
-            VBox firstPanel = (VBox) twoPoolRow.getChildren().getFirst();
+            assertEquals(2, view.poolDashboard().getChildren().size());
+            VBox firstPanel = (VBox) view.poolDashboard().getChildren().getFirst();
             GridPane matrix = (GridPane) firstPanel.getChildren().get(1);
             Label firstResult = matrix.getChildren().stream().filter(Label.class::isInstance)
                     .map(Label.class::cast).filter(label -> "V5".equals(label.getText())).findFirst().orElseThrow();
@@ -450,7 +449,7 @@ class TournamentControllerTest {
     }
 
     @Test
-    void twoPoolBoardUsesTheCompactSideBySideLayoutMode() throws Exception {
+    void poolBoardUsesDirectResponsivePanelsForTwoPools() throws Exception {
         onJavaFxThread(() -> {
             TournamentView view = new TournamentView();
             List<PoolMatrixRow> rows = eightPersonMatrixRows();
@@ -459,11 +458,29 @@ class TournamentControllerTest {
                     new PoolDashboardPanel(UUID.randomUUID(), "POOL #1", 8, 0, 28, rows),
                     new PoolDashboardPanel(UUID.randomUUID(), "POOL #2", 8, 0, 28, rows)));
 
-            assertTrue(view.poolDashboard().getStyleClass().contains("two-pool-dashboard"));
-            assertEquals(12.0, view.poolDashboard().getHgap());
-            assertEquals(1, view.poolDashboard().getChildren().size());
-            assertEquals(2, ((javafx.scene.layout.HBox) view.poolDashboard().getChildren().getFirst()).getChildren().size());
+            assertEquals(18.0, view.poolDashboard().getHgap());
+            assertEquals(2, view.poolDashboard().getChildren().size());
+            assertTrue(view.poolDashboard().getChildren().stream().allMatch(VBox.class::isInstance));
         });
+    }
+
+    @Test
+    void poolColumnCountUsesAllReadableColumnsAndWrapsOnlyWhenNeeded() {
+        assertEquals(3, PoolLayout.columnCount(3, 1_500, 404, 18));
+        assertEquals(2, PoolLayout.columnCount(6, 1_080, 404, 18));
+        assertEquals(1, PoolLayout.columnCount(6, 700, 404, 18));
+        assertEquals(1, PoolLayout.columnCount(1, 1_500, 404, 18));
+    }
+
+    @Test
+    void poolMetricsAndColumnCountFollowContentAndViewportRatherThanSpecialFencerCounts() {
+        assertEquals(360, PoolLayout.minimumPanelWidth(5, PoolLayout.ORGANISER));
+        assertEquals(452, PoolLayout.minimumPanelWidth(7, PoolLayout.ORGANISER));
+        assertEquals(498, PoolLayout.minimumPanelWidth(8, PoolLayout.ORGANISER));
+        assertEquals(2, PoolLayout.columnCount(2, 1_014,
+                PoolLayout.minimumPanelWidth(7, PoolLayout.ORGANISER), 18));
+        assertEquals(2, PoolLayout.columnCount(2, 1_014,
+                PoolLayout.minimumPanelWidth(8, PoolLayout.ORGANISER), 18));
     }
 
     @Test
@@ -481,6 +498,42 @@ class TournamentControllerTest {
             view.layout();
 
             assertTrue(view.poolDashboard().getPrefWidth() > 1_000);
+        });
+    }
+
+    @Test
+    void poolBoardUsesThreeColumnsForThreeFiveFencerPoolsInAnActualDesktopViewport() throws Exception {
+        onJavaFxThread(() -> {
+            TournamentView view = new TournamentView();
+            view.selectPoolsTab();
+            Stage stage = new Stage();
+            stage.setScene(view.scene());
+            stage.setWidth(1_440);
+            stage.setHeight(900);
+            stage.show();
+            try {
+                List<PoolMatrixRow> rows = poolMatrixRows(5);
+                view.renderPoolDashboard(List.of(
+                        new PoolDashboardPanel(UUID.randomUUID(), "POOL #1", 5, 0, 10, rows),
+                        new PoolDashboardPanel(UUID.randomUUID(), "POOL #2", 5, 0, 10, rows),
+                        new PoolDashboardPanel(UUID.randomUUID(), "POOL #3", 5, 0, 10, rows)));
+                view.applyCss();
+                view.layout();
+
+                javafx.scene.control.ScrollPane dashboardScroll = (javafx.scene.control.ScrollPane) view.lookup(".pool-dashboard-scroll");
+                double viewportWidth = dashboardScroll.getViewportBounds().getWidth();
+                int columns = PoolLayout.columnCount(3, viewportWidth - 4,
+                        PoolLayout.minimumPanelWidth(5, PoolLayout.ORGANISER), 18);
+
+                assertTrue(viewportWidth > 1_000);
+                assertEquals(3, columns);
+                assertEquals(((VBox) view.poolDashboard().getChildren().get(0)).getLayoutY(),
+                        ((VBox) view.poolDashboard().getChildren().get(1)).getLayoutY(), 0.1);
+                assertEquals(((VBox) view.poolDashboard().getChildren().get(0)).getLayoutY(),
+                        ((VBox) view.poolDashboard().getChildren().get(2)).getLayoutY(), 0.1);
+            } finally {
+                stage.hide();
+            }
         });
     }
 
@@ -626,7 +679,11 @@ class TournamentControllerTest {
     }
 
     private static List<PoolMatrixRow> eightPersonMatrixRows() {
-        List<UUID> ids = java.util.stream.IntStream.range(0, 8).mapToObj(ignored -> UUID.randomUUID()).toList();
+        return poolMatrixRows(8);
+    }
+
+    private static List<PoolMatrixRow> poolMatrixRows(int count) {
+        List<UUID> ids = java.util.stream.IntStream.range(0, count).mapToObj(ignored -> UUID.randomUUID()).toList();
         return ids.stream().map(id -> {
             LinkedHashMap<UUID, String> cells = new LinkedHashMap<>();
             ids.forEach(opponent -> cells.put(opponent, id.equals(opponent) ? "—" : ""));

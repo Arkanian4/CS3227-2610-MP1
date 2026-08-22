@@ -32,12 +32,12 @@ class PoolGeneratorTest {
     @Test
     void poolSizesAreBalancedForCommonTournamentSizes() {
         assertPoolSizes(5, 5, List.of(5));
-        assertPoolSizes(7, 5, List.of(7));
+        assertPoolSizes(7, 5, List.of(3, 4));
         assertPoolSizes(10, 5, List.of(5, 5));
-        assertPoolSizes(11, 5, List.of(5, 6));
-        assertPoolSizes(14, 6, List.of(7, 7));
+        assertPoolSizes(11, 5, List.of(3, 4, 4));
+        assertPoolSizes(14, 6, List.of(4, 5, 5));
         assertPoolSizes(15, 6, List.of(5, 5, 5));
-        assertPoolSizes(20, 6, List.of(6, 7, 7));
+        assertPoolSizes(20, 6, List.of(5, 5, 5, 5));
         assertPoolSizes(22, 6, List.of(5, 5, 6, 6));
         assertPoolSizes(30, 6, List.of(6, 6, 6, 6, 6));
     }
@@ -92,11 +92,19 @@ class PoolGeneratorTest {
     }
 
     @Test
-    void sevenOrFewerFencersUseOnePoolAndTwoFencersStillProduceOneBout() {
+    void twoFencersStillProduceOneBout() {
         List<Pool> pools = generator.generate(new Seeding(fencerIds(2)), 5);
 
         assertEquals(1, pools.size());
         assertEquals(1, pools.get(0).bouts().size());
+    }
+
+    @Test
+    void selectedMaximumPoolSizeIsAlwaysAHardUpperBound() {
+        assertCapacityCases(5, List.of(5, 6, 10, 11, 12, 15, 16));
+        assertCapacityCases(6, List.of(6, 7, 12, 13, 16));
+        assertCapacityCases(7, List.of(7, 8, 14, 15, 16));
+        assertCapacityCases(8, List.of(8, 9, 16, 17));
     }
 
     @Test
@@ -119,6 +127,21 @@ class PoolGeneratorTest {
         List<Pool> pools = generator.generate(new Seeding(fencerIds(fencerCount)), targetPoolSize);
 
         assertEquals(expectedSizes, pools.stream().map(pool -> pool.memberIds().size()).sorted().toList());
+    }
+
+    private void assertCapacityCases(int maximumPoolSize, List<Integer> fencerCounts) {
+        for (int fencerCount : fencerCounts) {
+            List<UUID> seeds = fencerIds(fencerCount);
+            List<Pool> pools = generator.generate(new Seeding(seeds), maximumPoolSize);
+            List<UUID> assigned = pools.stream().flatMap(pool -> pool.memberIds().stream()).toList();
+
+            assertEquals((fencerCount + maximumPoolSize - 1) / maximumPoolSize, pools.size());
+            assertTrue(pools.stream().allMatch(pool -> pool.memberIds().size() <= maximumPoolSize));
+            assertTrue(pools.stream().mapToInt(pool -> pool.memberIds().size()).max().orElseThrow()
+                    - pools.stream().mapToInt(pool -> pool.memberIds().size()).min().orElseThrow() <= 1);
+            assertEquals(seeds.size(), assigned.size());
+            assertEquals(seeds.stream().sorted().toList(), assigned.stream().sorted().toList());
+        }
     }
 
     private static List<UUID> fencerIds(int count) {
