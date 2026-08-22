@@ -208,6 +208,18 @@ public final class Tournament {
         pools.addAll(generatedPools);
     }
 
+    /**
+     * Discards every state derived from setup while retaining the roster and its seed order.
+     * The application service is responsible for requiring organiser confirmation first.
+     */
+    public boolean resetToSetupForEditing() {
+        if (pools.isEmpty() && eliminationBracket == null) return false;
+        pools.clear();
+        eliminationBracket = null;
+        completedAt = null;
+        return true;
+    }
+
     public TournamentPhase phase() {
         if (eliminationBracket != null) {
             return eliminationBracket.isComplete() ? TournamentPhase.COMPLETE : TournamentPhase.ELIMINATION_PHASE;

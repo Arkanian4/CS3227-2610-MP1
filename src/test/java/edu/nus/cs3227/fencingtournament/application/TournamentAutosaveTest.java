@@ -81,6 +81,26 @@ class TournamentAutosaveTest {
     }
 
     @Test
+    void resetToSetupPersistsWithTheRosterAndSeedOrderIntact() throws IOException {
+        Path autosaveDirectory = temporaryDirectory.resolve("tournaments");
+        TournamentService service = poolPhaseTournament(autosaveDirectory);
+        Tournament beforeReset = service.currentTournament().orElseThrow();
+        List<UUID> seedOrder = beforeReset.seeding().fencerIds();
+
+        assertTrue(service.resetToSetupForEditing());
+
+        TournamentService reloaded = new TournamentService(new JsonTournamentRepository(), autosaveDirectory);
+        reloaded.loadAll(autosaveDirectory);
+        reloaded.openTournament(beforeReset.id());
+        Tournament restored = reloaded.currentTournament().orElseThrow();
+        assertEquals(TournamentPhase.REGISTRATION, restored.phase());
+        assertTrue(restored.pools().isEmpty());
+        assertTrue(restored.eliminationBracket() == null);
+        assertTrue(restored.completedAt().isEmpty());
+        assertEquals(seedOrder, restored.seeding().fencerIds());
+    }
+
+    @Test
     void editedDeScoreAndDependentResetSurviveReload() throws IOException {
         Path autosaveDirectory = temporaryDirectory.resolve("tournaments");
         TournamentService service = completedFourFencerTournament(autosaveDirectory);

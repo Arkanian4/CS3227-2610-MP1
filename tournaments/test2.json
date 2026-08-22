@@ -35,5 +35,6 @@
     } ]
   } ],
   "eliminationBracket" : null,
-  "lastModified" : "2026-08-22T06:48:15.452317100Z"
+  "lastModified" : "2026-08-22T06:48:15.452317100Z",
+  "completedAt" : null
 }

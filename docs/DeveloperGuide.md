@@ -128,10 +128,19 @@ existing 5--7 pool behavior is retained; selecting a maximum of 8 explicitly per
 pools and lets sixteen fencers form two 8-person pools. Setup has one authoritative `Seeding`
 order: adding a fencer appends its ID, removing a fencer removes its ID, and dragging a seed row
 delegates to `TournamentService.moveSeedFencer` for insertion-based reordering. The pre-pool
-order remains editable until `generatePools` consumes it; older setup JSON with a null seeding
+order remains editable until `generatePools` consumes it, unless the organiser later explicitly
+resets downstream state to edit Setup again; older setup JSON with a null seeding
 value is normalised to registration order on domain reconstruction. Overall placing uses victory ratio,
 indicator, touches scored, and original seed. The top 16 Pool Result
 places advance to a next-power-of-two DE bracket with automatic byes for higher seeds.
+
+Setup remains navigable after pool generation as a historical, read-only view. The view exposes an
+explicit confirmation-gated **Edit setup** action instead of mutating when the user merely navigates
+back. `TournamentService.resetToSetupForEditing` centralizes the destructive transition: the
+aggregate keeps its fencers and `Seeding` order while clearing pools and the elimination bracket;
+derived Pool Result/final standings consequently disappear, phase returns to `REGISTRATION`, and the
+normal mutation path clears completion metadata, updates `lastModified`, and autosaves. UI code only
+collects confirmation and refreshes presentation state.
 
 ## Autosave and correction
 

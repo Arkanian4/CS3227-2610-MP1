@@ -217,6 +217,13 @@ public final class TournamentService {
         });
     }
 
+    /** Resets generated pools and every downstream stage after explicit organiser confirmation. */
+    public boolean resetToSetupForEditing() {
+        Tournament tournament = requireActiveTournament();
+        if (tournament.pools().isEmpty() && tournament.eliminationBracket() == null) return false;
+        return mutate(tournament::resetToSetupForEditing);
+    }
+
     /** Moves one setup fencer to a zero-based target seed position before pools are generated. */
     public boolean moveSeedFencer(UUID fencerId, int targetSeedIndex) {
         Tournament tournament = requireActiveTournament();

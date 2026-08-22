@@ -99,6 +99,31 @@ class TournamentControllerTest {
     }
 
     @Test
+    void setupIsReadOnlyWhenViewedAfterPoolsHaveBeenGenerated() throws Exception {
+        onJavaFxThread(() -> {
+            TournamentService service = new TournamentService(new InMemoryRepository());
+            service.createTournament("Club Open");
+            java.util.stream.IntStream.range(0, 4)
+                    .forEach(index -> service.addFencer("Fencer " + (index + 1)));
+            service.generatePools();
+
+            TournamentView view = new TournamentView();
+            new TournamentController(service, view);
+            view.selectSetupTab();
+
+            assertEquals(TournamentPhase.POOL_PHASE, service.currentPhase());
+            assertEquals(4, view.seedList().getItems().size());
+            assertTrue(view.fencerNameField().isDisable());
+            assertTrue(view.addFencerButton().isDisable());
+            assertTrue(view.seedList().isDisable());
+            assertTrue(view.maximumPoolSizeChoice().isDisable());
+            assertTrue(view.generatePoolsButton().isDisable());
+            assertTrue(view.editSetupButton().isVisible());
+            assertFalse(service.pools().isEmpty());
+        });
+    }
+
+    @Test
     void stageProgressDistinguishesCompletedCurrentAndLockedStages() throws Exception {
         onJavaFxThread(() -> {
             TournamentView view = new TournamentView();

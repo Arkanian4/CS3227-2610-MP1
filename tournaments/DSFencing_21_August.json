@@ -772,5 +772,6 @@
       "nextMatchSlot" : null
     } ]
   },
-  "lastModified" : "2026-08-22T06:48:32.168478100Z"
+  "lastModified" : "2026-08-22T06:48:32.168478100Z",
+  "completedAt" : null
 }

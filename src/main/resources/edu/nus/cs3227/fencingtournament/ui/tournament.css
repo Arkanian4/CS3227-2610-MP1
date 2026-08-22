@@ -519,6 +519,7 @@
 .seed-drag-handle { -fx-font-size: 17px; -fx-font-weight: 700; -fx-text-fill: -ft-text-muted; -fx-cursor: open-hand; }
 .seed-row-number { -fx-min-width: 24; -fx-font-size: 12px; -fx-font-weight: 800; -fx-text-fill: -ft-accent-strong; }
 .seed-row-name { -fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: -ft-text-primary; }
+.setup-read-only-note { -fx-text-fill: -ft-text-secondary; -fx-font-size: 12px; -fx-padding: 2 0 4 0; }
 
 .pool-navigator { -fx-padding: 24 0 24 24; -fx-pref-width: 164; }
 .pool-dashboard-scroll {

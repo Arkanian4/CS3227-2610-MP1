@@ -389,3 +389,15 @@ These entries are factual summaries for developer verification and later reflect
   tracks, thumbs, arrows, and corners rather than screen-specific rules.
 - **Outcome:** Scrollbars remain slim, grabbable, and readable in every colour family and
   appearance without using the tournament accent as a permanently saturated control.
+
+## Safe return to editable Setup
+
+- **Task:** Let organisers correct a roster or seed order after pools exist without silently keeping
+  stale pool, seeding, DE, or final-result data.
+- **Decisions:** Keep historical Setup navigation read-only. Require an explicit confirmation before
+  `TournamentService.resetToSetupForEditing` clears all generated pools and the DE bracket, while
+  retaining the roster and authoritative seed order. Derived standings disappear with the cleared
+  pools; the central mutation path resets completion metadata and autosaves.
+- **Outcome:** Organisers can inspect Setup safely from later stages, then deliberately unlock it to
+  amend the field and regenerate fresh pools. Tests cover no-op historical viewing, reset state,
+  retained seed order, completed-state clearing, and persisted reset state.

@@ -66,6 +66,13 @@ With at least two fencers, choose a maximum pool size and select **Generate pool
 order is used directly to distribute fencers across pools and is retained as the final-standings
 tie-breaker. There is no separate confirmation or registration-to-seeding step.
 
+After pools have been generated, **Setup** remains available from the stage tracker for inspection,
+but its roster, seed order, pool-size, and generation controls are read-only. Choose **Edit setup**
+only when the roster or seed order needs correction. After confirmation, the app keeps the displayed
+roster and seed order but discards generated pools and every dependent result, then returns the
+tournament to editable Setup so fresh pools can be generated. Simply viewing Setup does not change
+the tournament.
+
 ## Pools and Pool Result
 
 Choose a maximum pool size of 5, 6, 7, or 8 and select **Generate pools**. Pools are balanced

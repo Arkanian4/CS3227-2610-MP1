@@ -163,6 +163,31 @@ class TournamentServiceTest {
     }
 
     @Test
+    void resettingToSetupPreservesRosterAndSeedOrderButClearsGeneratedPools() {
+        TournamentService service = new TournamentService(new InMemoryRepository());
+        service.createTournament("Internal Open");
+        List<Fencer> fencers = java.util.stream.IntStream.range(0, 4)
+                .mapToObj(index -> service.addFencer("Fencer " + (index + 1))).toList();
+        service.moveSeedFencer(fencers.get(3).id(), 0);
+        List<UUID> seedOrder = service.currentTournament().orElseThrow().seeding().fencerIds();
+        service.generatePools();
+
+        assertTrue(service.resetToSetupForEditing());
+        Tournament reset = service.currentTournament().orElseThrow();
+        assertEquals(TournamentPhase.REGISTRATION, reset.phase());
+        assertEquals(List.of(), reset.pools());
+        assertTrue(reset.eliminationBracket() == null);
+        assertTrue(reset.completedAt().isEmpty());
+        assertEquals(seedOrder, reset.seeding().fencerIds());
+        assertEquals(fencers.stream().map(Fencer::id).toList(), reset.fencers().stream().map(Fencer::id).toList());
+        assertFalse(service.resetToSetupForEditing());
+
+        Fencer lateEntry = service.addFencer("Late entry");
+        service.generatePools();
+        assertTrue(service.pools().stream().flatMap(pool -> pool.memberIds().stream()).anyMatch(lateEntry.id()::equals));
+    }
+
+    @Test
     void serviceGeneratesEliminationAfterEveryPoolBoutIsComplete() {
         TournamentService service = new TournamentService(new InMemoryRepository());
         service.createTournament("Internal Open");
@@ -215,6 +240,12 @@ class TournamentServiceTest {
         service.openTournament(tournament.id());
         assertEquals(completedAt, tournament.completedAt().orElseThrow());
         assertThrows(IllegalStateException.class, () -> service.recordEliminationBoutResult(finalMatch.id(), new BoutScore(15, 0)));
+
+        assertTrue(service.resetToSetupForEditing());
+        assertEquals(TournamentPhase.REGISTRATION, service.currentPhase());
+        assertTrue(tournament.pools().isEmpty());
+        assertTrue(tournament.eliminationBracket() == null);
+        assertTrue(tournament.completedAt().isEmpty());
     }
 
     @Test

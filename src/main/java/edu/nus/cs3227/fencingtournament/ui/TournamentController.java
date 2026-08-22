@@ -52,6 +52,7 @@ public final class TournamentController {
         view.addFencerButton().setOnAction(event -> addFencer());
         view.setSeedMoveHandler(this::moveSeedFencer);
         view.setFencerRemoveHandler(this::removeFencer);
+        view.editSetupButton().setOnAction(event -> editSetup());
         view.generatePoolsButton().setOnAction(event -> generatePools());
         view.generateEliminationButton().setOnAction(event -> generateEliminationBracket());
         view.poolList().getSelectionModel().selectedItemProperty().addListener(
@@ -195,6 +196,39 @@ public final class TournamentController {
         } catch (IllegalArgumentException | IllegalStateException | TournamentPersistenceException exception) {
             showError(exception);
         }
+    }
+
+    private void editSetup() {
+        Tournament tournament = service.currentTournament().orElse(null);
+        if (tournament == null || tournament.pools().isEmpty()) return;
+        if (!confirmSetupReset(tournament)) return;
+        try {
+            if (!service.resetToSetupForEditing()) return;
+            selectedBout = null;
+            selectedEliminationMatch = null;
+            editingPoolResult = false;
+            editingEliminationResult = false;
+            refreshWorkspace();
+            view.showStatus("Setup is editable. Generate new pools when ready.");
+        } catch (IllegalArgumentException | IllegalStateException | TournamentPersistenceException exception) {
+            showError(exception);
+        }
+    }
+
+    private boolean confirmSetupReset(Tournament tournament) {
+        boolean hasPoolResults = tournament.pools().stream()
+                .flatMap(pool -> pool.bouts().stream()).anyMatch(bout -> bout.score() != null);
+        String message = tournament.eliminationBracket() != null
+                ? "Editing setup will invalidate the current pools and all results generated from them, including recorded pool results, Pool Result standings, Direct Elimination, and final results. Continue?"
+                : hasPoolResults
+                ? "Editing setup will discard the current pools and all recorded pool results. Continue?"
+                : "Editing setup will discard the current pool assignments. Continue?";
+        ButtonType reset = new ButtonType("Edit setup and reset later stages", ButtonBar.ButtonData.OK_DONE);
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, message, ButtonType.CANCEL, reset);
+        UiTheme.apply(alert.getDialogPane());
+        alert.setTitle("Edit tournament setup");
+        alert.setHeaderText("Reset later tournament stages?");
+        return alert.showAndWait().orElse(ButtonType.CANCEL) == reset;
     }
 
     private void moveSeedFencer(UUID fencerId, int destination) {
